@@ -234,6 +234,17 @@ struct Btn {
   int16_t cx, cy;
   const char *const *icon;
 };
+// The 1.28-inch panel uses larger, evenly spaced controls in the lower arc.
+#if defined(BOARD_SPOTPEAR_BALL128)
+Btn buttons[4] = {
+  { 70 + UI_DX, 394, SPR_ICON_FOOD },
+  { 183 + UI_DX, 394, SPR_ICON_PLAY },
+  { 297 + UI_DX, 394, SPR_ICON_LIGHT },
+  { 410 + UI_DX, 394, SPR_ICON_CLEAN },
+};
+#define BTN_HALF 30
+#define BTN_HIT 43
+#else
 Btn buttons[4] = {
   { 140 + UI_DX, 390, SPR_ICON_FOOD },   // comer
   { 202 + UI_DX, 404, SPR_ICON_PLAY },   // jugar
@@ -242,6 +253,7 @@ Btn buttons[4] = {
 };
 #define BTN_HALF 26  // boton de 52x52
 #define BTN_HIT 36   // radio tactil (un poco mas generoso)
+#endif
 
 // grietas del huevo (pixeles 'k' sobre el sprite)
 static const uint8_t CRACK1[][2] = { {15,8},{16,9},{15,10} };
@@ -3305,7 +3317,12 @@ void drawButtons() {
     // durmiendo, con suelo de brillo (Guition) LUZ conserva su relleno claro: es el unico modo de despertar
     if (!pet.sleeping || (i == 2 && BRIGHTNESS_FLOOR > 0)) gfx->fillRoundRect(bx, by, 2 * BTN_HALF, 2 * BTN_HALF, 14, UI_WHITE);
     gfx->drawRoundRect(bx, by, 2 * BTN_HALF, 2 * BTN_HALF, 14, inkColor());
+#if defined(BOARD_SPOTPEAR_BALL128)
+    // 24 px icon on the physical 240x240 panel after 2:1 canvas reduction.
+    if (!off) drawMap(buttons[i].icon, 16, buttons[i].cx - 24, buttons[i].cy - 24, 3, false);
+#else
     if (!off) drawMap(buttons[i].icon, 16, buttons[i].cx - 16, buttons[i].cy - 16, 2, false);
+#endif
   }
 }
 

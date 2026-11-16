@@ -24,3 +24,10 @@ if(MSVC)
   target_compile_options(TamaPoke PRIVATE /utf-8 /W4)
 endif()
 target_link_libraries(TamaPoke PRIVATE shell32)
+
+# Bundle the existing 151-species PMD sprite archive beside the executable.
+add_custom_command(TARGET TamaPoke POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${CMAKE_CURRENT_SOURCE_DIR}/../web/sprites.pak"
+    "$<TARGET_FILE_DIR:TamaPoke>/sprites.pak"
+)

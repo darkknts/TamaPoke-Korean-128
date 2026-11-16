@@ -9,7 +9,7 @@
 
 namespace {
 constexpr wchar_t kClassName[] = L"TamaPokeDesktopWindow";
-constexpr int W=720, H=780;
+constexpr int W=720, H=860;
 Pet pet;
 int page=0;
 int dexPage=0;

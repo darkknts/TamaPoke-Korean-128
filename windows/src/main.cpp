@@ -189,17 +189,175 @@ std::wstring fromUtf8(const char* value) {
   std::wstring out(n,L'\\0'); MultiByteToWideChar(CP_UTF8,0,value,-1,out.data(),n); out.resize(n-1);
   return out;
 }
+static const wchar_t* const KOREAN_DEX_NAMES[DEX_COUNT + 1] = {
+  L"미등록",
+  L"이상해씨", // 1
+  L"이상해풀", // 2
+  L"이상해꽃", // 3
+  L"파이리", // 4
+  L"리자드", // 5
+  L"리자몽", // 6
+  L"꼬부기", // 7
+  L"어니부기", // 8
+  L"거북왕", // 9
+  L"캐터피", // 10
+  L"단데기", // 11
+  L"버터플", // 12
+  L"뿔충이", // 13
+  L"딱충이", // 14
+  L"독침붕", // 15
+  L"구구", // 16
+  L"피죤", // 17
+  L"피죤투", // 18
+  L"꼬렛", // 19
+  L"레트라", // 20
+  L"깨비참", // 21
+  L"깨비드릴조", // 22
+  L"아보", // 23
+  L"아보크", // 24
+  L"피카츄", // 25
+  L"라이츄", // 26
+  L"모래두지", // 27
+  L"고지", // 28
+  L"니드런♀", // 29
+  L"니드리나", // 30
+  L"니드퀸", // 31
+  L"니드런♂", // 32
+  L"니드리노", // 33
+  L"니드킹", // 34
+  L"삐삐", // 35
+  L"픽시", // 36
+  L"식스테일", // 37
+  L"나인테일", // 38
+  L"푸린", // 39
+  L"푸크린", // 40
+  L"주뱃", // 41
+  L"골뱃", // 42
+  L"뚜벅쵸", // 43
+  L"냄새꼬", // 44
+  L"라플레시아", // 45
+  L"파라스", // 46
+  L"파라섹트", // 47
+  L"콘팡", // 48
+  L"도나리", // 49
+  L"디그다", // 50
+  L"닥트리오", // 51
+  L"나옹", // 52
+  L"페르시온", // 53
+  L"고라파덕", // 54
+  L"골덕", // 55
+  L"망키", // 56
+  L"성원숭", // 57
+  L"가디", // 58
+  L"윈디", // 59
+  L"발챙이", // 60
+  L"슈륙챙이", // 61
+  L"강챙이", // 62
+  L"캐이시", // 63
+  L"윤겔라", // 64
+  L"후딘", // 65
+  L"알통몬", // 66
+  L"근육몬", // 67
+  L"괴력몬", // 68
+  L"모다피", // 69
+  L"우츠동", // 70
+  L"우츠보트", // 71
+  L"왕눈해", // 72
+  L"독파리", // 73
+  L"꼬마돌", // 74
+  L"데구리", // 75
+  L"딱구리", // 76
+  L"포니타", // 77
+  L"날쌩마", // 78
+  L"야돈", // 79
+  L"야도란", // 80
+  L"코일", // 81
+  L"레어코일", // 82
+  L"파오리", // 83
+  L"두두", // 84
+  L"두트리오", // 85
+  L"쥬쥬", // 86
+  L"쥬레곤", // 87
+  L"질퍽이", // 88
+  L"질뻐기", // 89
+  L"셀러", // 90
+  L"파르셀", // 91
+  L"고오스", // 92
+  L"고우스트", // 93
+  L"팬텀", // 94
+  L"롱스톤", // 95
+  L"슬리프", // 96
+  L"슬리퍼", // 97
+  L"크랩", // 98
+  L"킹크랩", // 99
+  L"찌리리공", // 100
+  L"붐볼", // 101
+  L"아라리", // 102
+  L"나시", // 103
+  L"탕구리", // 104
+  L"텅구리", // 105
+  L"시라소몬", // 106
+  L"홍수몬", // 107
+  L"내루미", // 108
+  L"또가스", // 109
+  L"또도가스", // 110
+  L"뿔카노", // 111
+  L"코뿌리", // 112
+  L"럭키", // 113
+  L"덩쿠리", // 114
+  L"캥카", // 115
+  L"쏘드라", // 116
+  L"시드라", // 117
+  L"콘치", // 118
+  L"왕콘치", // 119
+  L"별가사리", // 120
+  L"아쿠스타", // 121
+  L"마임맨", // 122
+  L"스라크", // 123
+  L"루주라", // 124
+  L"에레브", // 125
+  L"마그마", // 126
+  L"쁘사이저", // 127
+  L"켄타로스", // 128
+  L"잉어킹", // 129
+  L"갸라도스", // 130
+  L"라프라스", // 131
+  L"메타몽", // 132
+  L"이브이", // 133
+  L"샤미드", // 134
+  L"쥬피썬더", // 135
+  L"부스터", // 136
+  L"폴리곤", // 137
+  L"암나이트", // 138
+  L"암스타", // 139
+  L"투구", // 140
+  L"투구푸스", // 141
+  L"프테라", // 142
+  L"잠만보", // 143
+  L"프리져", // 144
+  L"썬더", // 145
+  L"파이어", // 146
+  L"미뇽", // 147
+  L"신뇽", // 148
+  L"망나뇽", // 149
+  L"뮤츠", // 150
+  L"뮤" // 151
+};
+std::wstring speciesName(int dex) {
+  if(dex<1||dex>DEX_COUNT)return L"알 수 없음";
+  return KOREAN_DEX_NAMES[dex];
+}
 std::wstring petName() {
   if(pet.isEgg()) return L"알";
   if(pet.nick[0]) return fromUtf8(pet.nick);
-  return fromUtf8(DEX_TBL[pet.speciesId].name);
+  return speciesName(pet.speciesId);
 }
 void drawPet(HDC dc) {
   COLORREF accent=pet.isEgg()?RGB(248,220,155):rgb565(DEX_TBL[pet.speciesId].accent);
-  HBRUSH shadow=CreateSolidBrush(RGB(28,31,42)); HPEN rim=CreatePen(PS_SOLID,9,RGB(204,164,112));
+  HBRUSH shadow=CreateSolidBrush(RGB(220,232,238)); HPEN rim=CreatePen(PS_SOLID,9,RGB(204,164,112));
   auto ob=SelectObject(dc,shadow);auto op=SelectObject(dc,rim);Ellipse(dc,210,92,510,392);
   SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(shadow);DeleteObject(rim);
-  HBRUSH inner=CreateSolidBrush(RGB(43,50,66));HPEN no=CreatePen(PS_NULL,0,RGB(43,50,66));
+  HBRUSH inner=CreateSolidBrush(RGB(242,247,242));HPEN no=CreatePen(PS_NULL,0,RGB(242,247,242));
   ob=SelectObject(dc,inner);op=SelectObject(dc,no);Ellipse(dc,224,106,496,378);
   SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(inner);DeleteObject(no);
   const char* const* sprite=nullptr;
@@ -386,7 +544,7 @@ void drawDex(HDC dc) {
     int col=i%4,row=i/4,x=48+col*158,y=215+row*62;
     bool seen=pet.isRegistered(id);
     fillRound(dc,RECT{x,y,x+145,y+50},seen?RGB(255,249,236):RGB(235,231,222),RGB(216,204,184),10);
-    std::wstring name=seen?std::wstring(DEX_TBL[id].name,DEX_TBL[id].name+strlen(DEX_TBL[id].name)):L"???";
+    std::wstring name=seen?speciesName(id):L"???";
     if(seen) drawDesktopSprite(dc,id,RECT{x+5,y+5,x+48,y+47},0,GetTickCount());
     else {
       HBRUSH silhouette=CreateSolidBrush(RGB(210,205,195));

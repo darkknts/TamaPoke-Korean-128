@@ -55,7 +55,7 @@ void loadDesktopSprites() {
             size_t frameBytes=(size_t)w*h;
             size_t durationBytes=(size_t)frames*2;
             size_t pixelBytes=frameBytes*frames;
-            if(id==0||id==3||id==4){
+            if(id==0||id==3||id==4||id==6||id==7||id==8||id==9||id==10||id==11){
               DesktopAnimation anim;anim.w=w;anim.h=h;
               anim.durations.reserve(frames);
               for(uint8_t frame=0;frame<frames;frame++){
@@ -165,7 +165,13 @@ void drawPet(HDC dc) {
   if(pet.isEgg()) sprite=SPR_EGG;
   else if(pet.speciesId>=1&&pet.speciesId<=151&&desktopSprites[pet.speciesId].actions[0].w>0) {
     int saved=SaveDC(dc); HRGN mask=CreateEllipticRgn(224,106,496,378); SelectClipRgn(dc,mask);
-    const int actionId=pet.eating()?4:(pet.sleeping?3:0);
+    int actionId=0;
+    if(pet.eating()) actionId=4;
+    else if(pet.sleeping) actionId=3;
+    else if(pet.evolving()) actionId=8;
+    else if(pet.showHeart()) actionId=9;
+    else if(pet.energy<20) actionId=10;
+    else if(pet.joy<20) actionId=11;
     drawDesktopSprite(dc,pet.speciesId,RECT{245,130,475,360},actionId,GetTickCount());
     RestoreDC(dc,saved); DeleteObject(mask);
     if(pet.showHeart()) text(dc,L"♥",RECT{410,145,470,205},36,RGB(255,130,150),true);

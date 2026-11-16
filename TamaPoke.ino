@@ -1180,12 +1180,13 @@ void onSwipe(int dir) {
     return;
   }
   int np = galleryPage - dir;  // deslizar a la izquierda avanza pagina
+  const int maxGalleryPage = (151 + GAL_PAGE_SIZE - 1) / GAL_PAGE_SIZE - 1;
   if (np < 0) {                // retroceder desde la primera = salir
     galleryOpen = false;
     galleryPmd.unload();
     return;
   }
-  if (np > 9) np = 9;
+  if (np > maxGalleryPage) np = maxGalleryPage;
   if (np != galleryPage) {
     galleryPage = np;
     galleryDirty = true;
@@ -2709,9 +2710,21 @@ void keyboardTap(int16_t x, int16_t y) {
 
 // ---------- galeria pokedex ----------
 
+#if defined(BOARD_SPOTPEAR_BALL128)
+#define GAL_X (72 + UI_DX)
+#define GAL_Y 92
+#define GAL_CELL 112
+#define GAL_COLS 3
+#define GAL_ROWS 3
+#define GAL_PAGE_SIZE 9
+#else
 #define GAL_X (73 + UI_DX)
 #define GAL_Y 84
 #define GAL_CELL 80
+#define GAL_COLS 4
+#define GAL_ROWS 4
+#define GAL_PAGE_SIZE 16
+#endif
 
 // dibuja una miniatura centrada en su celda; sil=true la pinta en tinta
 void drawThumb(const uint8_t *b, int x, int y, int s, bool sil) {
@@ -2774,14 +2787,20 @@ void renderGallery() {
   setCur(centerX(head, 3), 36);
   printT(head);
 
-  for (int r = 0; r < 4; r++) {
-    for (int c = 0; c < 4; c++) {
-      int16_t dex = galleryPage * 16 + r * 4 + c + 1;
+  for (int r = 0; r < GAL_ROWS; r++) {
+    for (int c = 0; c < GAL_COLS; c++) {
+      int16_t dex = galleryPage * GAL_PAGE_SIZE + r * GAL_COLS + c + 1;
       if (dex > 151) break;
       int x = GAL_X + c * GAL_CELL, y = GAL_Y + r * GAL_CELL;
+#if defined(BOARD_SPOTPEAR_BALL128)
+      const uint8_t *t = thumbs.get(dex);
+      if (t) {
+        drawThumb(t, x, y, 3, !pet.isRegistered(dex));
+#else
       const uint8_t *t = thumbs.get(dex);
       if (t) {
         drawThumb(t, x, y, 2, !pet.isRegistered(dex));
+#endif
         if (pet.isShinyRegistered(dex)) {
           gfx->setTextColor(UI_BAR_WARN);
           setSize(2);
@@ -2798,11 +2817,20 @@ void renderGallery() {
       }
     }
   }
+#if defined(BOARD_SPOTPEAR_BALL128)
+  char pageLabel[20];
+  snprintf(pageLabel, sizeof(pageLabel), "%d / %d", galleryPage + 1, (151 + GAL_PAGE_SIZE - 1) / GAL_PAGE_SIZE);
+  gfx->setTextColor(UI_TRACK);
+  setSize(2);
+  setCur(centerX(pageLabel, 2), 438);
+  printT(pageLabel);
+#else
   // puntos de pagina
   for (int i = 0; i < 10; i++) {
     if (i == galleryPage) gfx->fillCircle(170 + UI_DX + i * 14, 436, 4, UI_INK);
     else gfx->drawCircle(170 + UI_DX + i * 14, 436, 3, UI_INK);
   }
+#endif
   flushUI();
 }
 
@@ -2821,8 +2849,8 @@ void galleryTap(int16_t x, int16_t y) {
   // mismo motivo que en el teclado: filtrar antes de dividir
   if (x < GAL_X || y < GAL_Y) return;
   int c = (x - GAL_X) / GAL_CELL, r = (y - GAL_Y) / GAL_CELL;
-  if (c > 3 || r > 3) return;
-  int16_t dex = galleryPage * 16 + r * 4 + c + 1;
+  if (c >= GAL_COLS || r >= GAL_ROWS) return;
+  int16_t dex = galleryPage * GAL_PAGE_SIZE + r * GAL_COLS + c + 1;
   if (dex > 151) return;
   galleryDetail = dex;
   galleryPmd.load(dex, pet.isShinyRegistered(dex));

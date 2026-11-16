@@ -24,6 +24,7 @@ constexpr int W=720, H=860;
 constexpr wchar_t kMiniClassName[] = L"TamaPokeMiniPetWindow";
 constexpr COLORREF kMiniTransparent = RGB(255,0,255);
 HWND miniHwnd=nullptr;
+HWND mainHwnd=nullptr;
 bool miniMode=false;
 Pet pet;
 int page=0;
@@ -318,7 +319,7 @@ void drawMini(HWND hwnd) {
     int action=pet.sleeping?3:(pet.eating()?4:(pet.showHeart()?9:(pet.energy<20?10:0)));
     drawDesktopSprite(dc,pet.speciesId,RECT{35,58,145,170},action,GetTickCount());
   } else {
-    text(dc,L"🥚",RECT{35,65,145,165},54,RGB(120,90,55),true);
+    text(dc,L"알",RECT{35,65,145,165},54,RGB(120,90,55),true);
   }
   EndPaint(hwnd,&ps);
 }
@@ -339,16 +340,16 @@ LRESULT CALLBACK miniProc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
   switch(msg) {
     case WM_PAINT: drawMini(hwnd); return 0;
     case WM_TIMER: InvalidateRect(hwnd,nullptr,FALSE); return 0;
-    case WM_LBUTTONDBLCLK: restoreMain(GetWindow(hwnd,GW_OWNER)); return 0;
+    case WM_LBUTTONDBLCLK: case WM_NCLBUTTONDBLCLK: restoreMain(mainHwnd); return 0;
     case WM_NCHITTEST: return HTCAPTION;
     case WM_RBUTTONUP: {
       HMENU menu=CreatePopupMenu();
       AppendMenuW(menu,MF_STRING,1,L"TamaPoke 열기");
       AppendMenuW(menu,MF_STRING,2,L"미니 모드 종료");
-      POINT pt{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
+      POINT pt{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)}; ClientToScreen(hwnd,&pt);
       SetForegroundWindow(hwnd); int cmd=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,pt.x,pt.y,0,hwnd,nullptr);
       DestroyMenu(menu);
-      if(cmd==1) restoreMain(GetWindow(hwnd,GW_OWNER));
+      if(cmd==1) restoreMain(mainHwnd);
       else if(cmd==2) { miniMode=false; ShowWindow(hwnd,SW_HIDE); }
       return 0;
     }
@@ -508,8 +509,9 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show){
   HWND hwnd=CreateWindowExW(0,kClassName,L"TamaPoke",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
     CW_USEDEFAULT,CW_USEDEFAULT,r.right-r.left,r.bottom-r.top,nullptr,nullptr,instance,nullptr);
   if(!hwnd)return 1;
+  mainHwnd=hwnd;
   miniHwnd=CreateWindowExW(WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_TOPMOST|WS_EX_NOACTIVATE,kMiniClassName,L"TamaPoke Mini",
-    WS_POPUP,0,0,180,185,hwnd,nullptr,instance,nullptr);
+    WS_POPUP,0,0,180,185,nullptr,nullptr,instance,nullptr);
   if(!miniHwnd)return 1;
   SetLayeredWindowAttributes(miniHwnd,kMiniTransparent,0,LWA_COLORKEY);
   SetTimer(miniHwnd,2,250,nullptr);ShowWindow(miniHwnd,SW_HIDE);

@@ -10,7 +10,7 @@ support. From PowerShell at the repository root:
     cmake -S windows -B build/windows -A x64
     cmake --build build/windows --config Release
 
-Run `build/windows/Release/TamaPoke.exe`.
+Run `build/windows/Release/TamaPoke.exe`. Keep the adjacent `sprites.pak` file in the same folder; CMake copies it there automatically.
 
 The GitHub Actions workflow also builds the Windows target and uploads a
 `TamaPoke-Windows-x64` artifact when the branch is pushed. Open the repository's
@@ -23,7 +23,9 @@ Actions tab, select the successful CI run, and download the artifact.
 - First-run starter selection (Bulbasaur, Charmander, Squirtle) and egg hatching.
 - Feeding, play/care, bathing, sleep toggle, strength training and evolution.
 - Home/status/Pokedex screens with the original 151-species registration data.
-- Original pixel sprites for egg and the three starter evolution lines.
+- Loads the original `web/sprites.pak` archive and renders the first idle frame for all 151 species when the pack is beside the executable.
+- A 15-second target-click minigame that rewards the shared game logic.
+- UTF-8 nickname editing and persistent sound on/off setting (Windows system beeps).
 - Persistent save data under `%LOCALAPPDATA%\\TamaPoke\\save.dat`.
 - Game time continues while the app is closed, using the same offline catch-up
   rules as the firmware.

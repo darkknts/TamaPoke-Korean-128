@@ -192,7 +192,8 @@ void drawStats(HDC dc) {
   text(dc,L"훈련은 아래 버튼에서 진행할 수 있습니다.",RECT{100,590,620,630},15,RGB(120,100,80));
   button(dc,240,650,240,58,L"힘 훈련하기");
 }
-int gameSecondsLeft(){DWORD elapsed=GetTickCount()-gameStarted;return elapsed>=15000?0:(int)((15000-elapsed+999)/1000);}\nvoid drawMore(HDC dc) {
+int gameSecondsLeft(){DWORD elapsed=GetTickCount()-gameStarted;return elapsed>=15000?0:(int)((15000-elapsed+999)/1000);}
+void drawMore(HDC dc) {
   text(dc,L"더보기",RECT{100,105,620,150},27,RGB(76,60,47),true);
   text(dc,L"미니게임 · 설정 · 포켓몬 이름",RECT{100,155,620,190},16,RGB(120,100,80));
   if(gameActive) {

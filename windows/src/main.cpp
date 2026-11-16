@@ -113,7 +113,10 @@ void loadDesktopSprites() {
                 anim.opaque[z]=(ix!=255&&ix<pal.size())?1:0;
                 anim.pixels[z]=anim.opaque[z]?pal[ix]:0;
               }
-              buildAnimationBitmaps(anim); desktopSprites[dex].actions[id]=std::move(anim);
+              buildAnimationBitmaps(anim);
+              anim.pixels.clear(); anim.pixels.shrink_to_fit();
+              anim.opaque.clear(); anim.opaque.shrink_to_fit();
+              desktopSprites[dex].actions[id]=std::move(anim);
             }
             q+=pixelBytes;
           }
@@ -132,7 +135,7 @@ void drawDesktopSprite(HDC dc,int dex,RECT bounds,int actionId=0,DWORD animation
   const DesktopAnimation* anim=&sprite.actions[actionId];
   if(anim->w<=0||anim->h<=0||anim->durations.empty())anim=&sprite.actions[0];
   const auto& sp=*anim;
-  if(sp.w<=0||sp.h<=0||sp.durations.empty()||sp.pixels.size()!=(size_t)sp.w*sp.h*sp.durations.size()||sp.opaque.size()!=sp.pixels.size())return;
+  if(sp.w<=0||sp.h<=0||sp.durations.empty()||sp.frameBitmaps.size()!=sp.durations.size())return;
   size_t frame=0;
   if(sp.totalDuration){uint32_t tick=animationClock%sp.totalDuration;while(frame+1<sp.durations.size()&&tick>=sp.durations[frame]){tick-=sp.durations[frame];frame++;}}
   const int bw=bounds.right-bounds.left,bh=bounds.bottom-bounds.top;

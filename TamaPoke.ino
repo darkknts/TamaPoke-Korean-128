@@ -2790,6 +2790,33 @@ void drawBattery() {
 }
 
 void drawHeader(const char *name, uint16_t nameColor, const char *msg) {
+#if defined(BOARD_SPOTPEAR_BALL128)
+  // Compact top strip: keep the title and mood line clear of the pet sprite.
+  int pc = batPercent();
+  if (pc >= 0) {
+    int bx = LCD_WIDTH - 52, by = 18, bw = 26, bh = 12;
+    uint16_t bc = batCharging() ? UI_BAR_OK
+                  : (pc >= 40) ? inkColor()
+                  : (pc >= 15) ? UI_BAR_WARN : UI_BAR_BAD;
+    gfx->drawRoundRect(bx, by, bw, bh, 3, bc);
+    gfx->fillRect(bx + bw, by + 3, 3, 6, bc);
+    if (!batCharging()) {
+      int fw = (bw - 4) * pc / 100;
+      if (fw > 0) gfx->fillRect(bx + 2, by + 2, fw, bh - 4, bc);
+    } else {
+      gfx->fillTriangle(bx + 16, by + 1, bx + 10, by + 6, bx + 15, by + 6, UI_WHITE);
+      gfx->fillTriangle(bx + 14, by + 5, bx + 19, by + 5, bx + 12, by + 10, UI_WHITE);
+    }
+  }
+  gfx->setTextColor(nameColor);
+  setSize(3);
+  setCur(centerX(name, 3), 48);
+  printT(name);
+  gfx->setTextColor(inkColor());
+  setSize(2);
+  setCur(centerX(msg, 2), 78);
+  printT(msg);
+#else
   drawBattery();
   gfx->setTextColor(nameColor);
   setSize(3);
@@ -2799,6 +2826,7 @@ void drawHeader(const char *name, uint16_t nameColor, const char *msg) {
   setSize(2);
   setCur(centerX(msg, 2), 90);
   printT(msg);
+#endif
 }
 
 // animacion de la ceremonia (10s): despedida = reverencia con corazones y se
@@ -3269,10 +3297,29 @@ void drawPoops() {
 }
 
 void drawBars() {
+#if defined(BOARD_SPOTPEAR_BALL128)
+  // Four compact, readable meters in a 2x2 grid above the action buttons.
+  const int xs[4] = { 28 + UI_DX, 260 + UI_DX, 28 + UI_DX, 260 + UI_DX };
+  const int ys[4] = { 320, 320, 354, 354 };
+  const StrId ids[4] = { S_BAR_FOOD, S_BAR_JOY, S_BAR_ENE, S_BAR_HYG };
+  const uint8_t vals[4] = { pet.fullness, pet.joy, pet.energy, pet.hygiene };
+  for (int i = 0; i < 4; i++) {
+    gfx->setTextColor(inkColor());
+    setSize(2);
+    setCur(xs[i], ys[i]);
+    printT(T(ids[i]));
+    int bx = xs[i] + 72, by = ys[i] - 11, bw = 116, bh = 13;
+    uint16_t fill = (vals[i] >= 50) ? UI_BAR_OK : (vals[i] >= 25) ? UI_BAR_WARN : UI_BAR_BAD;
+    gfx->fillRoundRect(bx, by, bw, bh, 4, UI_TRACK);
+    int fw = (bw - 4) * vals[i] / 100;
+    if (fw > 0) gfx->fillRoundRect(bx + 2, by + 2, fw, bh - 4, 3, fill);
+  }
+#else
   drawBar(78 + UI_DX, 318, T(S_BAR_FOOD), pet.fullness);
   drawBar(244 + UI_DX, 318, T(S_BAR_JOY), pet.joy);
   drawBar(78 + UI_DX, 346, T(S_BAR_ENE), pet.energy);
   drawBar(244 + UI_DX, 346, T(S_BAR_HYG), pet.hygiene);
+#endif
 }
 
 // Separacion entre la etiqueta y su barra en la fila de necesidades. Estaba fija

@@ -11,6 +11,7 @@
 #include <cstring>
 #include <iterator>
 #include <map>
+#include <cmath>
 #include "audio.h"
 #include "Arduino.h"
 #include "pet.h"
@@ -124,8 +125,7 @@ void loadDesktopSprites() {
 }
 std::wstring notice=L"반가워요! 타마포크를 시작해 보세요.";
 
-COLORREF rgb565(uint16_t c);
-void drawDesktopSprite(HDC dc,int dex,RECT bounds,int actionId=0,DWORD animationClock=0) {
+void drawDesktopSprite(HDC dc,int dex,RECT bounds,int actionId=0,DWORD animationClock=0,BYTE opacity=255) {
   if(dex<1||dex>151)return;
   const auto& sprite=desktopSprites[dex];
   if(actionId<0||actionId>=12)actionId=0;
@@ -411,7 +411,7 @@ void act(HWND hwnd,int x,int y) {
   }
   if(y>=100&&y<=400){
     pet.caress();
-    transientAction=(x<360)?1:2;
+    transientAction=(x<320)?1:((x>400)?2:7);
     transientActionUntil=GetTickCount()+900;
     notice=L"쓰다듬어 줬어요!";
     InvalidateRect(hwnd,nullptr,FALSE);

@@ -51,7 +51,6 @@ void loadDesktopSprites() {
           for(uint8_t a=0;a<acts&&q+4<=p+e.size;a++){
             uint8_t id=b[q],w=b[q+1],h=b[q+2],frames=b[q+3];q+=4;
             if(!w||!h||!frames||q+(size_t)frames*2+(size_t)w*h*frames>p+e.size)break;
-            q+=(size_t)frames*2;
             size_t frameBytes=(size_t)w*h;
             if(id==0){
               DesktopSprite sp;sp.w=w;sp.h=h;
@@ -72,7 +71,7 @@ void loadDesktopSprites() {
               q+=frameBytes*frames;
               continue;
             }
-            q+=frameBytes*frames;
+            q+=(size_t)frames*2+frameBytes*frames;
           }
         }
       }

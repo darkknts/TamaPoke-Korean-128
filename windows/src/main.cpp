@@ -24,7 +24,8 @@ int page=0;
 int dexPage=0;
 bool gameActive=false; DWORD gameStarted=0; int gameScore=0; int targetX=360,targetY=330;
 time_t lastClockSync=0;
-struct DesktopSprite { int w=0,h=0; std::vector<uint16_t> pixels; std::vector<uint8_t> opaque; std::vector<uint16_t> durations; uint32_t totalDuration=0; };
+struct DesktopAnimation { int w=0,h=0; std::vector<uint16_t> pixels; std::vector<uint8_t> opaque; std::vector<uint16_t> durations; uint32_t totalDuration=0; };
+struct DesktopSprite { std::vector<DesktopAnimation> actions=std::vector<DesktopAnimation>(12); };
 std::vector<DesktopSprite> desktopSprites(152);
 uint16_t read16(const std::vector<unsigned char>& b,size_t p){return (uint16_t)(b[p]|(b[p+1]<<8));}
 uint32_t read32(const std::vector<unsigned char>& b,size_t p){return (uint32_t)b[p]|((uint32_t)b[p+1]<<8)|((uint32_t)b[p+2]<<16)|((uint32_t)b[p+3]<<24);}
@@ -52,26 +53,26 @@ void loadDesktopSprites() {
             uint8_t id=b[q],w=b[q+1],h=b[q+2],frames=b[q+3];q+=4;
             if(!w||!h||!frames||q+(size_t)frames*2+(size_t)w*h*frames>p+e.size)break;
             size_t frameBytes=(size_t)w*h;
-            if(id==0){
-              DesktopSprite sp;sp.w=w;sp.h=h;
-              sp.durations.reserve(frames);
+            size_t durationBytes=(size_t)frames*2;
+            size_t pixelBytes=frameBytes*frames;
+            if(id==0||id==3||id==4){
+              DesktopAnimation anim;anim.w=w;anim.h=h;
+              anim.durations.reserve(frames);
               for(uint8_t frame=0;frame<frames;frame++){
                 uint16_t duration=read16(b,q+(size_t)frame*2);
-                sp.durations.push_back(duration?duration:100);
-                sp.totalDuration+=sp.durations.back();
+                anim.durations.push_back(duration?duration:100);
+                anim.totalDuration+=anim.durations.back();
               }
-              q+=(size_t)frames*2;
-              sp.pixels.resize(frameBytes*frames);sp.opaque.resize(frameBytes*frames);
-              for(size_t z=0;z<frameBytes*frames;z++){
+              q+=durationBytes;
+              anim.pixels.resize(pixelBytes);anim.opaque.resize(pixelBytes);
+              for(size_t z=0;z<pixelBytes;z++){
                 uint8_t ix=b[q+z];
-                sp.opaque[z]=(ix!=255&&ix<pal.size())?1:0;
-                sp.pixels[z]=sp.opaque[z]?pal[ix]:0;
+                anim.opaque[z]=(ix!=255&&ix<pal.size())?1:0;
+                anim.pixels[z]=anim.opaque[z]?pal[ix]:0;
               }
-              desktopSprites[dex]=std::move(sp);
-              q+=frameBytes*frames;
-              continue;
+              desktopSprites[dex].actions[id]=std::move(anim);
             }
-            q+=(size_t)frames*2+frameBytes*frames;
+            q+=pixelBytes;
           }
         }
       }
@@ -82,9 +83,13 @@ void loadDesktopSprites() {
 std::wstring notice=L"반가워요! 타마포크를 시작해 보세요.";
 
 COLORREF rgb565(uint16_t c);
-void drawDesktopSprite(HDC dc,int dex,RECT bounds,DWORD animationClock=0) {
+void drawDesktopSprite(HDC dc,int dex,RECT bounds,int actionId=0,DWORD animationClock=0) {
   if(dex<1||dex>151)return;
-  const auto& sp=desktopSprites[dex];
+  const auto& sprite=desktopSprites[dex];
+  if(actionId<0||actionId>=12)actionId=0;
+  const DesktopAnimation* anim=&sprite.actions[actionId];
+  if(anim->w<=0||anim->h<=0||anim->durations.empty())anim=&sprite.actions[0];
+  const auto& sp=*anim;
   if(sp.w<=0||sp.h<=0||sp.durations.empty()||sp.pixels.size()!=(size_t)sp.w*sp.h*sp.durations.size()||sp.opaque.size()!=sp.pixels.size())return;
   size_t frame=0;
   if(sp.totalDuration){uint32_t tick=animationClock%sp.totalDuration;while(frame+1<sp.durations.size()&&tick>=sp.durations[frame]){tick-=sp.durations[frame];frame++;}}
@@ -158,9 +163,10 @@ void drawPet(HDC dc) {
   SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(inner);DeleteObject(no);
   const char* const* sprite=nullptr;
   if(pet.isEgg()) sprite=SPR_EGG;
-  else if(pet.speciesId>=1&&pet.speciesId<=151&&desktopSprites[pet.speciesId].w>0) {
+  else if(pet.speciesId>=1&&pet.speciesId<=151&&desktopSprites[pet.speciesId].actions[0].w>0) {
     int saved=SaveDC(dc); HRGN mask=CreateEllipticRgn(224,106,496,378); SelectClipRgn(dc,mask);
-    drawDesktopSprite(dc,pet.speciesId,RECT{245,130,475,360},GetTickCount());
+    const int actionId=pet.eating()?4:(pet.sleeping?3:0);
+    drawDesktopSprite(dc,pet.speciesId,RECT{245,130,475,360},actionId,GetTickCount());
     RestoreDC(dc,saved); DeleteObject(mask);
     if(pet.showHeart()) text(dc,L"♥",RECT{410,145,470,205},36,RGB(255,130,150),true);
     if(pet.eating()) text(dc,L"냠!",RECT{250,145,310,190},22,RGB(255,226,150),true);
@@ -256,7 +262,7 @@ void drawDex(HDC dc) {
     bool seen=pet.isRegistered(id);
     fillRound(dc,RECT{x,y,x+145,y+50},seen?RGB(255,249,236):RGB(235,231,222),RGB(216,204,184),10);
     std::wstring name=seen?std::wstring(DEX_TBL[id].name,DEX_TBL[id].name+strlen(DEX_TBL[id].name)):L"???";
-    if(seen) drawDesktopSprite(dc,id,RECT{x+5,y+5,x+48,y+47},GetTickCount());
+    if(seen) drawDesktopSprite(dc,id,RECT{x+5,y+5,x+48,y+47},0,GetTickCount());
     else {
       HBRUSH silhouette=CreateSolidBrush(RGB(210,205,195));
       HBRUSH oldBrush=(HBRUSH)SelectObject(dc,silhouette);

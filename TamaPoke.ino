@@ -2448,22 +2448,52 @@ void renderCardProfile() {
 
 // pagina 1: combate (4 barras + boton de entrenar)
 void renderCardStats() {
+#if defined(BOARD_SPOTPEAR_BALL128)
+  gfx->setTextColor(UI_INK);
+  setSize(4);
+  setCur(centerX(T(S_BATTLE), 4), 42);
+  printT(T(S_BATTLE));
+  // Wider row spacing and thicker meters survive the 2:1 panel reduction.
+  const int ys[4] = { 126, 184, 242, 300 };
+  const char *labels[4] = { T(S_STAT_ATK), T(S_STAT_DEF), T(S_STAT_SPE), T(S_STAT_WGT) };
+  const uint16_t vals[4] = { pet.atkStat(), pet.defStat(), pet.speStat(), pet.weight };
+  const uint16_t maxs[4] = { 260, 260, 260, 100 };
+  const uint16_t cols[4] = { UI_BAR_BAD, 0x4C98, UI_BAR_WARN, 0xB3C8 };
+  for (int i = 0; i < 4; i++) {
+    gfx->setTextColor(UI_INK);
+    setSize(3);
+    setCur(58 + UI_DX, ys[i]);
+    printT(labels[i]);
+    char num[8];
+    snprintf(num, sizeof(num), "%u", vals[i]);
+    setCur(356 + UI_DX, ys[i]);
+    printT(num);
+    int bx = 58 + UI_DX, by = ys[i] + 24, bw = 302, bh = 18;
+    gfx->fillRoundRect(bx, by, bw, bh, 5, UI_TRACK);
+    int fw = (int)vals[i] * (bw - 4) / maxs[i];
+    if (fw > bw - 4) fw = bw - 4;
+    if (fw > 0) gfx->fillRoundRect(bx + 2, by + 2, fw, bh - 4, 4, cols[i]);
+  }
+  gfx->fillRoundRect(76 + UI_DX, 374, 328, 48, 12, UI_BAR_BAD);
+  gfx->setTextColor(UI_BG_DAY);
+  setSize(3);
+  setCur(centerX(T(S_TRAIN_STR), 3), 386);
+  printT(T(S_TRAIN_STR));
+#else
   gfx->setTextColor(UI_INK);
   setSize(3);
   setCur(centerX(T(S_BATTLE), 3), 48);
   printT(T(S_BATTLE));
-
   drawCardStat(118, T(S_STAT_ATK), pet.atkStat(), 260, UI_BAR_BAD);
   drawCardStat(160, T(S_STAT_DEF), pet.defStat(), 260, 0x4C98);
   drawCardStat(202, T(S_STAT_SPE), pet.speStat(), 260, UI_BAR_WARN);
   drawCardStat(244, T(S_STAT_WGT), pet.weight, 100, 0xB3C8);
-
-  // boton: saco de entrenamiento de fuerza
   gfx->fillRoundRect(96 + UI_DX, 300, 274, 40, 12, UI_BAR_BAD);
   gfx->setTextColor(UI_BG_DAY);
   setSize(2);
   setCur(centerX(T(S_TRAIN_STR), 2), 311);
   printT(T(S_TRAIN_STR));
+#endif
 }
 
 // pagina 2: medallas con etiqueta descriptiva
@@ -2564,7 +2594,18 @@ void renderCard() {
   else if (cardPage == 2) renderCardMedals();
   else renderCardProgress();
 
-  // indicador de 4 paginas + ayuda
+#if defined(BOARD_SPOTPEAR_BALL128)
+  // Clear, larger page indicator and back hint in the bottom safe area.
+  for (int i = 0; i < 4; i++) {
+    int px = 198 + UI_DX + i * 28;
+    if (i == cardPage) gfx->fillCircle(px, 438, 7, UI_INK);
+    else gfx->drawCircle(px, 438, 6, UI_INK);
+  }
+  gfx->setTextColor(UI_TRACK);
+  setSize(3);
+  setCur(centerX(T(S_BACK), 3), 458);
+  printT(T(S_BACK));
+#else
   for (int i = 0; i < 4; i++) {
     if (i == cardPage) gfx->fillCircle(194 + UI_DX + i * 26, 374, 5, UI_INK);
     else gfx->drawCircle(194 + UI_DX + i * 26, 374, 4, UI_INK);
@@ -2573,6 +2614,7 @@ void renderCard() {
   setSize(2);
   setCur(centerX(T(S_BACK), 2), 398);
   printT(T(S_BACK));
+#endif
   flushUI();
 }
 

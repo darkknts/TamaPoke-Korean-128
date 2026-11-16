@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iterator>
+#include <map>
 #include "audio.h"
 #include "Arduino.h"
 #include "pet.h"
@@ -24,9 +25,50 @@ int page=0;
 int dexPage=0;
 bool gameActive=false; DWORD gameStarted=0; int gameScore=0; int targetX=360,targetY=330;
 time_t lastClockSync=0;
-struct DesktopAnimation { int w=0,h=0; std::vector<uint16_t> pixels; std::vector<uint8_t> opaque; std::vector<uint16_t> durations; uint32_t totalDuration=0; };
+int transientAction=0; DWORD transientActionUntil=0;
+struct DesktopAnimation {
+  int w=0,h=0;
+  std::vector<uint16_t> pixels;
+  std::vector<uint8_t> opaque;
+  std::vector<uint16_t> durations;
+  std::vector<HBITMAP> frameBitmaps;
+  uint32_t totalDuration=0;
+};
 struct DesktopSprite { std::vector<DesktopAnimation> actions=std::vector<DesktopAnimation>(12); };
 std::vector<DesktopSprite> desktopSprites(152);
+COLORREF rgb565(uint16_t c) {
+  int r=(c>>11)&31, g=(c>>5)&63, b=c&31;
+  return RGB(r*255/31,g*255/63,b*255/31);
+}
+void buildAnimationBitmaps(DesktopAnimation& anim) {
+  if(anim.w<=0||anim.h<=0||anim.durations.empty())return;
+  const size_t frameBytes=(size_t)anim.w*anim.h;
+  BITMAPINFO info{};
+  info.bmiHeader.biSize=sizeof(BITMAPINFOHEADER);
+  info.bmiHeader.biWidth=anim.w;
+  info.bmiHeader.biHeight=-anim.h; // top-down DIB
+  info.bmiHeader.biPlanes=1;
+  info.bmiHeader.biBitCount=32;
+  info.bmiHeader.biCompression=BI_RGB;
+  anim.frameBitmaps.reserve(anim.durations.size());
+  for(size_t frame=0;frame<anim.durations.size();++frame) {
+    void* bits=nullptr;
+    HBITMAP bitmap=CreateDIBSection(nullptr,&info,DIB_RGB_COLORS,&bits,nullptr,0);
+    if(!bitmap||!bits) { if(bitmap)DeleteObject(bitmap); anim.frameBitmaps.push_back(nullptr); continue; }
+    auto* dst=(uint32_t*)bits;
+    for(size_t i=0;i<frameBytes;i++) {
+      size_t src=frame*frameBytes+i;
+      COLORREF c=rgb565(anim.pixels[src]);
+      uint8_t a=anim.opaque[src]?255:0;
+      dst[i]=((uint32_t)a<<24)|((uint32_t)GetRValue(c)<<16)|((uint32_t)GetGValue(c)<<8)|GetBValue(c);
+    }
+    anim.frameBitmaps.push_back(bitmap);
+  }
+}
+void destroyDesktopBitmaps() {
+  for(auto& sprite:desktopSprites)for(auto& anim:sprite.actions)
+    for(HBITMAP bitmap:anim.frameBitmaps)if(bitmap)DeleteObject(bitmap);
+}
 uint16_t read16(const std::vector<unsigned char>& b,size_t p){return (uint16_t)(b[p]|(b[p+1]<<8));}
 uint32_t read32(const std::vector<unsigned char>& b,size_t p){return (uint32_t)b[p]|((uint32_t)b[p+1]<<8)|((uint32_t)b[p+2]<<16)|((uint32_t)b[p+3]<<24);}
 void loadDesktopSprites() {
@@ -55,7 +97,7 @@ void loadDesktopSprites() {
             size_t frameBytes=(size_t)w*h;
             size_t durationBytes=(size_t)frames*2;
             size_t pixelBytes=frameBytes*frames;
-            if(id==0||id==3||id==4||id==6||id==7||id==8||id==9||id==10||id==11){
+            if(id==0||id==1||id==2||id==3||id==4||id==6||id==7||id==8||id==9||id==10||id==11){
               DesktopAnimation anim;anim.w=w;anim.h=h;
               anim.durations.reserve(frames);
               for(uint8_t frame=0;frame<frames;frame++){
@@ -70,7 +112,7 @@ void loadDesktopSprites() {
                 anim.opaque[z]=(ix!=255&&ix<pal.size())?1:0;
                 anim.pixels[z]=anim.opaque[z]?pal[ix]:0;
               }
-              desktopSprites[dex].actions[id]=std::move(anim);
+              buildAnimationBitmaps(anim); desktopSprites[dex].actions[id]=std::move(anim);
             }
             q+=pixelBytes;
           }
@@ -97,23 +139,14 @@ void drawDesktopSprite(HDC dc,int dex,RECT bounds,int actionId=0,DWORD animation
   if(bw<=0||bh<=0)return;
   const double scale=std::min((double)bw/sp.w,(double)bh/sp.h);
   const int dw=std::max(1,(int)(sp.w*scale)),dh=std::max(1,(int)(sp.h*scale));
+  if(opacity==0||frame>=sp.frameBitmaps.size()||!sp.frameBitmaps[frame])return;
   const int ox=bounds.left+(bw-dw)/2,oy=bounds.top+(bh-dh)/2;
-  for(int y=0;y<dh;y++){
-    int sy=std::min(sp.h-1,(int)((double)y*sp.h/dh));
-    for(int x=0;x<dw;x++){
-      int sx=std::min(sp.w-1,(int)((double)x*sp.w/dw));
-      size_t index=frame*(size_t)sp.w*sp.h+(size_t)sy*sp.w+sx;
-      if(!sp.opaque[index])continue;
-      HBRUSH px=CreateSolidBrush(rgb565(sp.pixels[index]));
-      RECT pr{ox+x,oy+y,ox+x+1,oy+y+1};
-      FillRect(dc,&pr,px);DeleteObject(px);
-    }
-  }
-}
-
-COLORREF rgb565(uint16_t c) {
-  int r=(c>>11)&31, g=(c>>5)&63, b=c&31;
-  return RGB(r*255/31,g*255/63,b*255/31);
+  HDC memory=CreateCompatibleDC(dc);
+  HGDIOBJ previous=SelectObject(memory,sp.frameBitmaps[frame]);
+  BLENDFUNCTION blend{AC_SRC_OVER,0,opacity,AC_SRC_ALPHA};
+  AlphaBlend(dc,ox,oy,dw,dh,memory,0,0,sp.w,sp.h,blend);
+  SelectObject(memory,previous);
+  DeleteDC(memory);
 }
 void text(HDC dc,const std::wstring&s,RECT r,int size,COLORREF color,bool bold=false) {
   HFONT f=CreateFontW(size,0,0,0,bold?FW_BOLD:FW_NORMAL,FALSE,FALSE,FALSE,
@@ -166,13 +199,31 @@ void drawPet(HDC dc) {
   else if(pet.speciesId>=1&&pet.speciesId<=151&&desktopSprites[pet.speciesId].actions[0].w>0) {
     int saved=SaveDC(dc); HRGN mask=CreateEllipticRgn(224,106,496,378); SelectClipRgn(dc,mask);
     int actionId=0;
+    DWORD now=GetTickCount();
     if(pet.eating()) actionId=4;
     else if(pet.sleeping) actionId=3;
     else if(pet.evolving()) actionId=8;
     else if(pet.showHeart()) actionId=9;
+    else if(now<transientActionUntil) actionId=transientAction;
     else if(pet.energy<20) actionId=10;
     else if(pet.joy<20) actionId=11;
-    drawDesktopSprite(dc,pet.speciesId,RECT{245,130,475,360},actionId,GetTickCount());
+    if(pet.evolving()&&pet.prevSpeciesId>=1&&pet.prevSpeciesId<=151) {
+      float t=std::clamp(pet.evolveT(),0.0f,1.0f);
+      BYTE oldAlpha=(BYTE)(255.0f*(1.0f-t));
+      BYTE newAlpha=(BYTE)(255.0f*t);
+      RECT spriteBounds{245,130,475,360};
+      drawDesktopSprite(dc,pet.prevSpeciesId,spriteBounds,8,now,oldAlpha);
+      drawDesktopSprite(dc,pet.speciesId,spriteBounds,8,now,newAlpha);
+      if(t>0.38f&&t<0.62f) {
+        int pulse=(int)(12.0f*(1.0f-std::abs(t-0.5f)*2.0f));
+        HPEN glow=CreatePen(PS_SOLID,3,RGB(255,231,155));
+        HGDIOBJ oldPen=SelectObject(dc,glow); HGDIOBJ oldBrush=SelectObject(dc,GetStockObject(HOLLOW_BRUSH));
+        Ellipse(dc,224-pulse,106-pulse,496+pulse,378+pulse);
+        SelectObject(dc,oldBrush);SelectObject(dc,oldPen);DeleteObject(glow);
+      }
+    } else {
+      drawDesktopSprite(dc,pet.speciesId,RECT{245,130,475,360},actionId,now);
+    }
     RestoreDC(dc,saved); DeleteObject(mask);
     if(pet.showHeart()) text(dc,L"♥",RECT{410,145,470,205},36,RGB(255,130,150),true);
     if(pet.eating()) text(dc,L"냠!",RECT{250,145,310,190},22,RGB(255,226,150),true);
@@ -348,7 +399,7 @@ void act(HWND hwnd,int x,int y) {
   if(pet.isEgg()&&y>=100&&y<=400){pet.eggTap();notice=L"알을 톡톡 두드렸어요!";InvalidateRect(hwnd,nullptr,FALSE);return;}
   if(y>=620&&y<=685){
     if(x<195){pet.feedBerry(0);notice=L"맛있는 베리를 줬어요!";}
-    else if(x<352){pet.playResult(5);pet.caress();notice=L"함께 놀았어요!";}
+    else if(x<352){pet.playResult(5);pet.caress();transientAction=6;transientActionUntil=GetTickCount()+1100;notice=L"함께 놀았어요!";}
     else if(x<510){pet.clean();notice=L"깨끗하게 목욕했어요!";}
     else {pet.toggleLight();notice=pet.sleeping?L"잘 자요!":L"일어났어요!";}
     InvalidateRect(hwnd,nullptr,FALSE);return;
@@ -358,16 +409,22 @@ void act(HWND hwnd,int x,int y) {
     else if(pet.wantFarewellButton()){if(MessageBoxW(hwnd,L"정말 작별 인사를 할까요?\n작별 후에는 새로운 알이 찾아옵니다.",L"TamaPoke",MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2)==IDYES){pet.startFarewell();notice=L"작별 인사를 시작했어요.";}else{pet.declineFarewell();notice=L"조금 더 함께하기로 했어요.";}}
     InvalidateRect(hwnd,nullptr,FALSE);return;
   }
-  if(y>=100&&y<=400){pet.caress();notice=L"쓰다듬어 줬어요!";InvalidateRect(hwnd,nullptr,FALSE);}
+  if(y>=100&&y<=400){
+    pet.caress();
+    transientAction=(x<360)?1:2;
+    transientActionUntil=GetTickCount()+900;
+    notice=L"쓰다듬어 줬어요!";
+    InvalidateRect(hwnd,nullptr,FALSE);
+  }
 }
 LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
   switch(msg){
     case WM_CREATE:{std::srand((unsigned)std::time(nullptr));audioBegin();loadDesktopSprites();pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
-    case WM_TIMER:{pet.update(millis());if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
+    case WM_TIMER:{pet.update(millis());if(GetTickCount()>=transientActionUntil)transientAction=0;if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
     case WM_LBUTTONUP:act(hwnd,LOWORD(lp),HIWORD(lp));return 0;
     case WM_PAINT:paint(hwnd);return 0;
     case WM_ERASEBKGND:return 1;
-    case WM_DESTROY:KillTimer(hwnd,1);pet.setClock((uint32_t)std::time(nullptr));PostQuitMessage(0);return 0;
+    case WM_DESTROY:KillTimer(hwnd,1);pet.setClock((uint32_t)std::time(nullptr));destroyDesktopBitmaps();PostQuitMessage(0);return 0;
     default:return DefWindowProcW(hwnd,msg,wp,lp);
   }
 }

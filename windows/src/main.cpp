@@ -72,6 +72,7 @@ void loadDesktopSprites() {
 }
 std::wstring notice=L"반가워요! 타마포크를 시작해 보세요.";
 
+COLORREF rgb565(uint16_t c);
 void drawDesktopSprite(HDC dc,int dex,RECT bounds) {
   if(dex<1||dex>151)return;
   const auto& sp=desktopSprites[dex];
@@ -147,7 +148,9 @@ void drawPet(HDC dc) {
   const char* const* sprite=nullptr;
   if(pet.isEgg()) sprite=SPR_EGG;
   else if(pet.speciesId>=1&&pet.speciesId<=151&&desktopSprites[pet.speciesId].w>0) {
+    int saved=SaveDC(dc); HRGN mask=CreateEllipticRgn(224,106,496,378); SelectClipRgn(dc,mask);
     drawDesktopSprite(dc,pet.speciesId,RECT{245,130,475,360});
+    RestoreDC(dc,saved); DeleteObject(mask);
     if(pet.showHeart()) text(dc,L"♥",RECT{410,145,470,205},36,RGB(255,130,150),true);
     if(pet.eating()) text(dc,L"냠!",RECT{250,145,310,190},22,RGB(255,226,150),true);
     return;

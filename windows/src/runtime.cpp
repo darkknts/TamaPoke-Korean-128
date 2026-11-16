@@ -5,6 +5,8 @@
 #include <map>
 #include <vector>
 #include <fstream>
+#include <filesystem>
+#include "audio.h"
 
 DesktopSerial Serial;
 uint32_t millis() { return GetTickCount(); }
@@ -14,19 +16,19 @@ long random(long lower, long upper) { return upper <= lower ? lower : lower + ra
 using Values = std::map<std::string, std::vector<unsigned char>>;
 static std::map<std::string, Values> store;
 static bool loaded = false;
-static std::string savePath() {
+static std::wstring savePath() {
   wchar_t path[MAX_PATH]{};
   if (SUCCEEDED(SHGetFolderPathW(nullptr, CSIDL_LOCAL_APPDATA, nullptr, SHGFP_TYPE_CURRENT, path))) {
     std::wstring p(path); p += L"\\TamaPoke";
     CreateDirectoryW(p.c_str(), nullptr); p += L"\\save.dat";
-    return std::string(p.begin(), p.end());
+    return p;
   }
-  return "tamapoke-save.dat";
+  return L"tamapoke-save.dat";
 }
 static void loadStore() {
   if (loaded) return;
   loaded = true;
-  std::ifstream in(savePath(), std::ios::binary);
+  std::ifstream in(std::filesystem::path(savePath()), std::ios::binary);
   if (!in) return;
   uint32_t groups = 0; in.read((char*)&groups, 4); if (!in || groups > 20) return;
   for (uint32_t i=0; i<groups; ++i) {
@@ -44,7 +46,7 @@ static void loadStore() {
   }
 }
 static void persist() {
-  std::ofstream out(savePath(), std::ios::binary|std::ios::trunc);
+  std::ofstream out(std::filesystem::path(savePath()), std::ios::binary|std::ios::trunc);
   uint32_t groups=(uint32_t)store.size(); out.write((char*)&groups,4);
   for (const auto& g:store) {
     uint16_t nl=(uint16_t)g.first.size(); out.write((char*)&nl,2); out.write(g.first.data(),nl);
@@ -89,3 +91,5 @@ size_t Preferences::getString(const char*k,char*b,size_t n){
   if(!open_||!n)return 0;auto i=store[ns_].find(k);if(i==store[ns_].end()){b[0]=0;return 0;}
   size_t z=std::min(n-1,i->second.size());memcpy(b,i->second.data(),z);b[z]=0;return strlen(b);
 }
+
+void sfxPlay(uint8_t) {}

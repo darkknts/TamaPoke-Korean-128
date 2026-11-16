@@ -114,3 +114,13 @@ jobs:
         with:
           python-version: "3.x"
       - run: python3 tools/test_i18n_formats.py
+
+  windows-desktop:
+    name: Build Windows desktop app
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake -S windows -B build/windows -A x64
+      - name: Build
+        run: cmake --build build/windows --config Release

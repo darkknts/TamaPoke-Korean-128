@@ -187,7 +187,7 @@ std::wstring fromUtf8(const char* value) {
   if (!value || !*value) return L"";
   int n=MultiByteToWideChar(CP_UTF8,0,value,-1,nullptr,0);
   if(n<=1) return L"";
-  std::wstring out(n,L'\\0'); MultiByteToWideChar(CP_UTF8,0,value,-1,out.data(),n); out.resize(n-1);
+  std::wstring out(n,L'\x5c0'); MultiByteToWideChar(CP_UTF8,0,value,-1,out.data(),n); out.resize(n-1);
   return out;
 }
 static const wchar_t* const KOREAN_DEX_NAMES[DEX_COUNT + 1] = {

@@ -1242,8 +1242,13 @@ void onTap(int16_t x, int16_t y) {
     return;
   }
   if (choiceKind) {          // dialogo de decision: boton accion (arriba) / mantener (abajo)
+#if defined(BOARD_SPOTPEAR_BALL128)
+    bool b1 = (x >= 70 + UI_DX && x <= 396 + UI_DX && y >= 210 && y <= 272);  // accion
+    bool b2 = (x >= 70 + UI_DX && x <= 396 + UI_DX && y >= 286 && y <= 348);  // mantener / quedaros
+#else
     bool b1 = (x >= 93 + UI_DX && x <= 373 + UI_DX && y >= 206 && y <= 258);  // accion
     bool b2 = (x >= 93 + UI_DX && x <= 373 + UI_DX && y >= 268 && y <= 320);  // mantener / quedaros
+#endif
     if (choiceKind == 1) {                 // evolucion
       if (b1) { int16_t old = pet.speciesId; pet.evolve(); evoPmd.load(old, pet.shiny); }
       else if (b2) pet.declineEvolve();
@@ -2196,6 +2201,16 @@ void drawClockBtn(int x, int y, const char *l) {
 }
 
 // pildoras de idioma centradas en y; rellena la activa
+#if defined(BOARD_SPOTPEAR_BALL128)
+#define LANG_PILL_Y 292
+#define LANG_PILL_H 42
+#define LANG_PILL_X (310 + UI_DX)
+#define LANG_PILL_W 152
+#define SND_PILL_X (18 + UI_DX)
+#define SND_PILL_W 132
+#define BRI_PILL_X (164 + UI_DX)
+#define BRI_PILL_W 132
+#else
 #define LANG_PILL_Y 296
 #define LANG_PILL_H 30
 #define LANG_PILL_X (336 + UI_DX)          // pildora de idioma (cicla LANG_COUNT al tocar)
@@ -2204,6 +2219,7 @@ void drawClockBtn(int x, int y, const char *l) {
 #define SND_PILL_W 96
 #define BRI_PILL_X (183 + UI_DX)         // pildora de brillo, centrada (cicla los niveles al tocar)
 #define BRI_PILL_W 100
+#endif
 static const char *const LANG_CODES[LANG_COUNT] = { "ES", "EN", "FR", "DE", "IT", "PT", "JA", "KO", "NL" };
 
 // tres barras crecientes (brillo, volumen); las `lit` primeras van rellenas
@@ -2282,23 +2298,33 @@ void renderClock() {
   setCur(LANG_PILL_X + (LANG_PILL_W - textW(lp, 2)) / 2, LANG_PILL_Y + 8);
   printT(lp);
 
+#if defined(BOARD_SPOTPEAR_BALL128)
+  gfx->fillRoundRect(104 + UI_DX, 354, 256, 54, 14, UI_BAR_OK);
+  gfx->setTextColor(UI_BG_DAY);
+  setSize(4);
+  setCur(CX - 24, 365);
+  printT("OK");
+  gfx->setTextColor(UI_TRACK);
+  setSize(2);
+  setCur(centerX(T(S_CLOCK_CANCEL), 2), 426);
+  printT(T(S_CLOCK_CANCEL));
+#else
   gfx->fillRoundRect(133 + UI_DX, 340, 200, 48, 14, UI_BAR_OK);
   gfx->setTextColor(UI_BG_DAY);
   setSize(3);
   setCur(CX - 18, 352);
   printT("OK");
-
   gfx->setTextColor(UI_TRACK);
   setSize(2);
   setCur(centerX(T(S_CLOCK_CANCEL), 2), 410);
   printT(T(S_CLOCK_CANCEL));
-
   // version del firmware (discreta, abajo del todo)
   char ver[20];
   snprintf(ver, sizeof(ver), "TamaPoke v%s", FW_VERSION);
   setSize(1);
   setCur(centerX(ver, 1), 436);
   printT(ver);
+#endif
   flushUI();
 }
 
@@ -2339,7 +2365,11 @@ void clockTap(int16_t x, int16_t y) {
       return;
     }
   }
+#if defined(BOARD_SPOTPEAR_BALL128)
+  if (y >= 354 && y <= 408 && x >= 104 + UI_DX && x <= 360 + UI_DX) { applyClock(); return; }
+#else
   if (y >= 340 && y <= 388 && x >= 133 + UI_DX && x <= 333 + UI_DX) { applyClock(); return; }
+#endif
 }
 
 // llama + numero de racha arriba a la izquierda
@@ -2990,6 +3020,23 @@ void drawChoiceDialog() {
     q = T(S_FAR_Q); o1 = T(S_FAR_GO); o2 = T(S_FAR_STAY);
     c1 = UI_BAR_WARN; t1 = UI_INK; c2 = UI_BAR_OK; t2 = UI_WHITE;
   }
+#if defined(BOARD_SPOTPEAR_BALL128)
+  gfx->fillRoundRect(48 + UI_DX, 142, 370, 218, 18, UI_WHITE);
+  gfx->drawRoundRect(48 + UI_DX, 142, 370, 218, 18, UI_INK);
+  gfx->setTextColor(UI_INK);
+  setSize(3);
+  setCur(centerX(q, 3), 160);
+  printT(q);
+  gfx->fillRoundRect(70 + UI_DX, 210, 326, 62, 14, c1);
+  gfx->setTextColor(t1);
+  setSize(3);
+  setCur(centerX(o1, 3), 229);
+  printT(o1);
+  gfx->fillRoundRect(70 + UI_DX, 286, 326, 62, 14, c2);
+  gfx->setTextColor(t2);
+  setCur(centerX(o2, 3), 305);
+  printT(o2);
+#else
   gfx->fillRoundRect(73 + UI_DX, 156, 320, 188, 16, UI_WHITE);
   gfx->drawRoundRect(73 + UI_DX, 156, 320, 188, 16, UI_INK);
   gfx->setTextColor(UI_INK);
@@ -3004,6 +3051,7 @@ void drawChoiceDialog() {
   gfx->setTextColor(t2);
   setCur(centerX(o2, 2), 286);
   printT(o2);
+#endif
 }
 
 // boton-CTA rojo y grande para evolucionar (pulsa para llamar la atencion)

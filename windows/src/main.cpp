@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <ctime>
 #include <string>
+#include <cstdlib>
+#include "audio.h"
 #include "Arduino.h"
 #include "pet.h"
 #include "dex.h"
@@ -14,6 +16,7 @@ constexpr int W=720, H=860;
 Pet pet;
 int page=0;
 int dexPage=0;
+bool gameActive=false; DWORD gameStarted=0; int gameScore=0; int targetX=360,targetY=330;
 time_t lastClockSync=0;
 std::wstring notice=L"반가워요! 타마포크를 시작해 보세요.";
 
@@ -47,10 +50,17 @@ void bar(HDC dc,int x,int y,const wchar_t* label,uint8_t value,COLORREF tint) {
   if(width>0){RECT f{track.left,track.top,track.left+width,track.bottom};fillRound(dc,f,tint,tint,10);}
   text(dc,std::to_wstring(value),RECT{x+390,y,x+435,y+26},14,RGB(83,72,62),true);
 }
+std::wstring fromUtf8(const char* value) {
+  if (!value || !*value) return L"";
+  int n=MultiByteToWideChar(CP_UTF8,0,value,-1,nullptr,0);
+  if(n<=1) return L"";
+  std::wstring out(n-1,L'\\0'); MultiByteToWideChar(CP_UTF8,0,value,-1,out.data(),n);
+  return out;
+}
 std::wstring petName() {
   if(pet.isEgg()) return L"알";
-  if(pet.nick[0]) return std::wstring(pet.nick,pet.nick+strlen(pet.nick));
-  return std::wstring(DEX_TBL[pet.speciesId].name,DEX_TBL[pet.speciesId].name+strlen(DEX_TBL[pet.speciesId].name));
+  if(pet.nick[0]) return fromUtf8(pet.nick);
+  return fromUtf8(DEX_TBL[pet.speciesId].name);
 }
 void drawPet(HDC dc) {
   COLORREF accent=pet.isEgg()?RGB(248,220,155):rgb565(DEX_TBL[pet.speciesId].accent);
@@ -124,6 +134,24 @@ void drawStats(HDC dc) {
   text(dc,L"훈련은 아래 버튼에서 진행할 수 있습니다.",RECT{100,590,620,630},15,RGB(120,100,80));
   button(dc,240,650,240,58,L"힘 훈련하기");
 }
+void drawMore(HDC dc) {
+  text(dc,L"더보기",RECT{100,105,620,150},27,RGB(76,60,47),true);
+  text(dc,L"미니게임 · 설정 · 포켓몬 이름",RECT{100,155,620,190},16,RGB(120,100,80));
+  if(gameActive) {
+    text(dc,L"타이밍 캐치  ·  남은 시간 "+std::to_wstring((15-(GetTickCount()-gameStarted)/1000)>0?15-(GetTickCount()-gameStarted)/1000:0)+L"초",RECT{90,215,630,255},20,RGB(76,60,47),true);
+    text(dc,L"점수 "+std::to_wstring(gameScore),RECT{90,265,630,300},18,RGB(88,71,56),true);
+    HBRUSH b=CreateSolidBrush(RGB(237,166,75)); HPEN p=CreatePen(PS_SOLID,3,RGB(160,110,55));
+    auto ob=SelectObject(dc,b);auto op=SelectObject(dc,p);Ellipse(dc,targetX-30,targetY-30,targetX+30,targetY+30);
+    SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(b);DeleteObject(p);
+    text(dc,L"원을 빠르게 클릭하세요!",RECT{120,500,600,540},18,RGB(95,73,52),true);
+  } else {
+    button(dc,180,235,360,58,L"미니게임 시작",true);
+    button(dc,180,315,360,58,L"포켓몬 이름 변경");
+    button(dc,180,395,360,58,audioEnabled()?L"효과음: 켜짐":L"효과음: 꺼짐");
+    text(dc,L"15초 동안 움직이는 표적을 클릭해 점수를 얻으세요.",RECT{90,485,630,530},15,RGB(120,100,80));
+    text(dc,L"효과음 설정은 다음 실행에도 유지됩니다.",RECT{90,535,630,575},14,RGB(120,100,80));
+  }
+}
 void drawDex(HDC dc) {
   text(dc,L"포켓몬 도감",RECT{100,100,620,150},27,RGB(76,60,47),true);
   text(dc,L"등록 "+std::to_wstring(pet.registeredCount())+L" / 151",RECT{100,150,620,190},20,RGB(88,71,56),true);
@@ -146,16 +174,59 @@ void paint(HWND hwnd) {
   HBRUSH bg=CreateSolidBrush(RGB(248,242,231));FillRect(dc,&client,bg);DeleteObject(bg);
   text(dc,L"TamaPoke",RECT{20,15,700,62},32,RGB(79,62,49),true);
   text(dc,L"나만의 포켓몬을 돌보는 작은 데스크톱 게임",RECT{20,60,700,88},14,RGB(133,112,91));
-  if(page==0)drawHome(dc);else if(page==1)drawStats(dc);else drawDex(dc);
+  if(page==0)drawHome(dc);else if(page==1)drawStats(dc);else if(page==2)drawDex(dc);else drawMore(dc);
   fillRound(dc,RECT{38,730,682,770},RGB(238,228,211),RGB(224,210,188),12);
   text(dc,notice,RECT{50,733,670,767},14,RGB(105,84,65));
-  button(dc,85,790,150,48,L"돌보기",page==0);
-  button(dc,285,790,150,48,L"상태",page==1);
-  button(dc,485,790,150,48,L"도감",page==2);
+  button(dc,28,790,145,48,L"돌보기",page==0);
+  button(dc,190,790,145,48,L"상태",page==1);
+  button(dc,352,790,145,48,L"도감",page==2);
+  button(dc,514,790,178,48,L"더보기",page==3);
   EndPaint(hwnd,&ps);
 }
+LRESULT CALLBACK renameProc(HWND h,UINT m,WPARAM w,LPARAM l) {
+  static HWND edit=nullptr;
+  switch(m) {
+    case WM_CREATE: {
+      edit=CreateWindowExW(WS_EX_CLIENTEDGE,L"EDIT",petName().c_str(),WS_CHILD|WS_VISIBLE|ES_AUTOHSCROLL,22,22,310,32,h,(HMENU)101,GetModuleHandleW(nullptr),nullptr);
+      CreateWindowW(L"BUTTON",L"저장",WS_CHILD|WS_VISIBLE|BS_DEFPUSHBUTTON,160,72,80,34,h,(HMENU)IDOK,GetModuleHandleW(nullptr),nullptr);
+      CreateWindowW(L"BUTTON",L"취소",WS_CHILD|WS_VISIBLE,250,72,80,34,h,(HMENU)IDCANCEL,GetModuleHandleW(nullptr),nullptr);
+      SetFocus(edit); SendMessageW(edit,EM_SETSEL,0,-1); return 0;
+    }
+    case WM_COMMAND:
+      if(LOWORD(w)==IDOK) {
+        wchar_t wide[64]{}; GetWindowTextW(edit,wide,64);
+        char utf[64]{}; int n=WideCharToMultiByte(CP_UTF8,0,wide,-1,utf,sizeof(utf),nullptr,nullptr);
+        if(n>0&&n<=12&&wide[0]) {pet.rename(utf);DestroyWindow(h);}
+        else MessageBoxW(h,L"이름은 UTF-8 기준 11바이트 이내로 입력해 주세요.",L"TamaPoke",MB_OK|MB_ICONINFORMATION);
+        return 0;
+      }
+      if(LOWORD(w)==IDCANCEL){DestroyWindow(h);return 0;} break;
+    case WM_CLOSE: DestroyWindow(h);return 0;
+    case WM_DESTROY: PostQuitMessage(0);return 0;
+  }
+  return DefWindowProcW(h,m,w,l);
+}
+void renamePet(HWND owner) {
+  static bool registered=false;
+  if(!registered){WNDCLASSW wc{};wc.lpfnWndProc=renameProc;wc.hInstance=GetModuleHandleW(nullptr);wc.lpszClassName=L"TamaPokeRenameDialog";wc.hCursor=LoadCursor(nullptr,IDC_IBEAM);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);RegisterClassW(&wc);registered=true;}
+  HWND dlg=CreateWindowExW(WS_EX_DLGMODALFRAME,L"TamaPokeRenameDialog",L"포켓몬 이름 변경",WS_CAPTION|WS_SYSMENU|WS_POPUP|WS_VISIBLE,0,0,360,150,owner,nullptr,GetModuleHandleW(nullptr),nullptr);
+  RECT wr{};GetWindowRect(owner,&wr);SetWindowPos(dlg,nullptr,wr.left+(wr.right-wr.left-360)/2,wr.top+(wr.bottom-wr.top-150)/2,0,0,SWP_NOSIZE|SWP_NOZORDER);
+  EnableWindow(owner,FALSE); MSG msg{};while(IsWindow(dlg)&&GetMessageW(&msg,nullptr,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}EnableWindow(owner,TRUE);SetActiveWindow(owner);
+}
 void act(HWND hwnd,int x,int y) {
-  if(y>=790&&y<=838){page=x<260?0:x<460?1:2;InvalidateRect(hwnd,nullptr,FALSE);return;}
+  if(y>=790&&y<=838){page=x<180?0:x<342?1:x<505?2:3;InvalidateRect(hwnd,nullptr,FALSE);return;}
+  if(page==3) {
+    if(gameActive) {
+      if(x>=targetX-42&&x<=targetX+42&&y>=targetY-42&&y<=targetY+42) {
+        gameScore++; targetX=110+std::rand()%500; targetY=320+std::rand()%150;
+      }
+      InvalidateRect(hwnd,nullptr,FALSE);return;
+    }
+    if(y>=225&&y<=300) {gameActive=true;gameScore=0;gameStarted=GetTickCount();targetX=360;targetY=350;notice=L"표적을 클릭해 점수를 올려보세요!";InvalidateRect(hwnd,nullptr,FALSE);return;}
+    if(y>=305&&y<=380) {renamePet(hwnd);InvalidateRect(hwnd,nullptr,FALSE);return;}
+    if(y>=385&&y<=465) {audioSetEnabled(!audioEnabled());notice=audioEnabled()?L"효과음을 켰어요.":L"효과음을 껐어요.";InvalidateRect(hwnd,nullptr,FALSE);return;}
+    return;
+  }
   if(page==2&&y>=640&&y<=710){if(x<360&&dexPage>0)dexPage--;else if(x>430&&dexPage<6)dexPage++;InvalidateRect(hwnd,nullptr,FALSE);return;}
   if(page==1&&y>=640&&y<=715){uint8_t gain=pet.trainStrength(24);notice=L"힘 훈련 완료! 상승량 "+std::to_wstring(gain);InvalidateRect(hwnd,nullptr,FALSE);return;}
   if(page!=0)return;
@@ -180,7 +251,7 @@ void act(HWND hwnd,int x,int y) {
 LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
   switch(msg){
     case WM_CREATE:{std::srand((unsigned)std::time(nullptr));pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
-    case WM_TIMER:{pet.update(millis());time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
+    case WM_TIMER:{pet.update(millis());if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
     case WM_LBUTTONUP:act(hwnd,LOWORD(lp),HIWORD(lp));return 0;
     case WM_PAINT:paint(hwnd);return 0;
     case WM_ERASEBKGND:return 1;

@@ -342,11 +342,12 @@ LRESULT CALLBACK miniProc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
     case WM_TIMER: InvalidateRect(hwnd,nullptr,FALSE); return 0;
     case WM_LBUTTONDBLCLK: case WM_NCLBUTTONDBLCLK: restoreMain(mainHwnd); return 0;
     case WM_NCHITTEST: return HTCAPTION;
-    case WM_RBUTTONUP: {
+    case WM_RBUTTONUP: case WM_NCRBUTTONUP: {
+      const bool nonClient=(msg==WM_NCRBUTTONUP);
       HMENU menu=CreatePopupMenu();
       AppendMenuW(menu,MF_STRING,1,L"TamaPoke 열기");
       AppendMenuW(menu,MF_STRING,2,L"미니 모드 종료");
-      POINT pt{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)}; ClientToScreen(hwnd,&pt);
+      POINT pt{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)}; if(!nonClient) ClientToScreen(hwnd,&pt);
       SetForegroundWindow(hwnd); int cmd=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,pt.x,pt.y,0,hwnd,nullptr);
       DestroyMenu(menu);
       if(cmd==1) restoreMain(mainHwnd);

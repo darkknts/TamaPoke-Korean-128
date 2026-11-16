@@ -54,7 +54,7 @@ std::wstring fromUtf8(const char* value) {
   if (!value || !*value) return L"";
   int n=MultiByteToWideChar(CP_UTF8,0,value,-1,nullptr,0);
   if(n<=1) return L"";
-  std::wstring out(n-1,L'\\0'); MultiByteToWideChar(CP_UTF8,0,value,-1,out.data(),n);
+  std::wstring out(n,L'\\0'); MultiByteToWideChar(CP_UTF8,0,value,-1,out.data(),n); out.resize(n-1);
   return out;
 }
 std::wstring petName() {
@@ -202,7 +202,6 @@ LRESULT CALLBACK renameProc(HWND h,UINT m,WPARAM w,LPARAM l) {
       }
       if(LOWORD(w)==IDCANCEL){DestroyWindow(h);return 0;} break;
     case WM_CLOSE: DestroyWindow(h);return 0;
-    case WM_DESTROY: PostQuitMessage(0);return 0;
   }
   return DefWindowProcW(h,m,w,l);
 }
@@ -250,7 +249,7 @@ void act(HWND hwnd,int x,int y) {
 }
 LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
   switch(msg){
-    case WM_CREATE:{std::srand((unsigned)std::time(nullptr));pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
+    case WM_CREATE:{std::srand((unsigned)std::time(nullptr));audioBegin();pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
     case WM_TIMER:{pet.update(millis());if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
     case WM_LBUTTONUP:act(hwnd,LOWORD(lp),HIWORD(lp));return 0;
     case WM_PAINT:paint(hwnd);return 0;

@@ -2629,11 +2629,19 @@ void renderCard() {
 // ---------- teclado para renombrar ----------
 
 static const char KB_KEYS[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-";  // 28 + DEL + OK = 30
+#if defined(BOARD_SPOTPEAR_BALL128)
+#define KB_COLS 5
+#define KB_X (20 + UI_DX)
+#define KB_Y 140
+#define KB_W 88
+#define KB_H 46
+#else
 #define KB_COLS 6
 #define KB_X (40 + UI_DX)
 #define KB_Y 150
 #define KB_W 64
 #define KB_H 52
+#endif
 
 void openKeyboard() {
   kbOpen = true;
@@ -2662,7 +2670,11 @@ void renderKeyboard() {
     gfx->fillRoundRect(x, y, KB_W - 6, KB_H - 6, 6, special ? UI_BAR_WARN : UI_WHITE);
     gfx->drawRoundRect(x, y, KB_W - 6, KB_H - 6, 6, UI_INK);
     gfx->setTextColor(UI_INK);
+#if defined(BOARD_SPOTPEAR_BALL128)
+    setSize(3);
+#else
     setSize(2);
+#endif
     if (i < 28) {
       setCur(x + KB_W / 2 - 9, y + KB_H / 2 - 10);
       printT(KB_KEYS[i]);
@@ -2681,7 +2693,7 @@ void keyboardTap(int16_t x, int16_t y) {
   // saldria 0 en vez de negativo y el filtro de abajo no lo detectaria
   if (x < KB_X || y < KB_Y) return;
   int col = (x - KB_X) / KB_W, row = (y - KB_Y) / KB_H;
-  if (col >= KB_COLS || row >= 5) return;
+  if (col >= KB_COLS || row >= (30 + KB_COLS - 1) / KB_COLS) return;
   int i = row * KB_COLS + col;
   if (i >= 30) return;
   if (i == 28) {  // borrar

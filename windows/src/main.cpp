@@ -160,7 +160,7 @@ void act(HWND hwnd,int x,int y) {
   if(page==1&&y>=640&&y<=715){uint8_t gain=pet.trainStrength(24);notice=L"힘 훈련 완료! 상승량 "+std::to_wstring(gain);InvalidateRect(hwnd,nullptr,FALSE);return;}
   if(page!=0)return;
   if(pet.awaitingStarter()&&y>=650&&y<=720){
-    int id=x<265?1:x<455?4:7;pet.chooseStarter(id);pet.eggTap();notice=L"첫 파트너를 선택했어요!";InvalidateRect(hwnd,nullptr,FALSE);return;
+    int id=x<265?1:x<455?4:7;pet.chooseStarter(id);notice=L"첫 파트너를 선택했어요! 이제 알을 세 번 톡톡 두드려 부화시켜 보세요." ;InvalidateRect(hwnd,nullptr,FALSE);return;
   }
   if(pet.isEgg()&&y>=100&&y<=400){pet.eggTap();notice=L"알을 톡톡 두드렸어요!";InvalidateRect(hwnd,nullptr,FALSE);return;}
   if(y>=620&&y<=685){
@@ -172,7 +172,7 @@ void act(HWND hwnd,int x,int y) {
   }
   if(y>=685&&y<=730&&x>=240&&x<=480){
     if(pet.wantEvolveButton()){pet.evolve();notice=L"진화가 시작됐어요!";}
-    else if(pet.wantFarewellButton()){pet.startFarewell();notice=L"작별 인사를 시작했어요.";}
+    else if(pet.wantFarewellButton()){if(MessageBoxW(hwnd,L"정말 작별 인사를 할까요?\n작별 후에는 새로운 알이 찾아옵니다.",L"TamaPoke",MB_YESNO|MB_ICONQUESTION|MB_DEFBUTTON2)==IDYES){pet.startFarewell();notice=L"작별 인사를 시작했어요.";}else{pet.declineFarewell();notice=L"조금 더 함께하기로 했어요.";}}
     InvalidateRect(hwnd,nullptr,FALSE);return;
   }
   if(y>=100&&y<=400){pet.caress();notice=L"쓰다듬어 줬어요!";InvalidateRect(hwnd,nullptr,FALSE);}

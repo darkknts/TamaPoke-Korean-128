@@ -1260,9 +1260,15 @@ void onTap(int16_t x, int16_t y) {
     return;
   }
   if (confirmUntil) {        // dialogo "soltar?": SI / NO
+#if defined(BOARD_SPOTPEAR_BALL128)
+    if (timeLeft(confirmUntil) && x >= 76 + UI_DX && x <= 224 + UI_DX && y >= 250 && y <= 314) {
+      pet.release();
+    }
+#else
     if (timeLeft(confirmUntil) && x >= 118 + UI_DX && x <= 218 + UI_DX && y >= 252 && y <= 304) {
       pet.release();
     }
+#endif
     confirmUntil = 0;
     return;
   }
@@ -1758,8 +1764,13 @@ bool render() {
     if (!timeLeft(confirmUntil)) {
       confirmUntil = 0;
     } else {
+#if defined(BOARD_SPOTPEAR_BALL128)
+      gfx->fillRoundRect(48 + UI_DX, 150, 370, 190, 18, UI_WHITE);
+      gfx->drawRoundRect(48 + UI_DX, 150, 370, 190, 18, UI_INK);
+#else
       gfx->fillRoundRect(94 + UI_DX, 168, 278, 152, 16, UI_WHITE);
       gfx->drawRoundRect(94 + UI_DX, 168, 278, 152, 16, UI_INK);
+#endif
       // 48 y no 28: el buffer se dimensiono cuando toda cadena era de un byte
       // por caracter. Con una fila UTF-8, "%s 놓아줄까요?" mas el nombre pasa
       // de 28 y snprintf corta a mitad de una secuencia de 3 bytes, que la
@@ -1767,6 +1778,21 @@ bool render() {
       char q[48];
       snprintf(q, sizeof(q), T(S_RELEASE_FMT), dexName(pet.speciesId));
       gfx->setTextColor(UI_INK);
+#if defined(BOARD_SPOTPEAR_BALL128)
+      setSize(3);
+      int qSize = textW(q, 3) <= 330 ? 3 : 2;
+      setSize(qSize);
+      setCur(centerX(q, qSize), 190);
+      printT(q);
+      gfx->fillRoundRect(76 + UI_DX, 250, 148, 64, 14, UI_BAR_OK);
+      gfx->setTextColor(UI_WHITE);
+      setSize(3);
+      setCur(76 + UI_DX + (148 - textW(T(S_YES), 3)) / 2, 271);
+      printT(T(S_YES));
+      gfx->fillRoundRect(256 + UI_DX, 250, 148, 64, 14, UI_BAR_BAD);
+      setCur(256 + UI_DX + (148 - textW(T(S_NO), 3)) / 2, 271);
+      printT(T(S_NO));
+#else
       setSize(2);
       setCur(centerX(q, 2), 196);
       printT(q);
@@ -1777,6 +1803,7 @@ bool render() {
       gfx->fillRoundRect(248 + UI_DX, 252, 100, 52, 12, UI_BAR_BAD);
       setCur(248 + UI_DX + (100 - textW(T(S_NO), 2)) / 2, 270);
       printT(T(S_NO));
+#endif
     }
   }
 
@@ -2402,6 +2429,21 @@ void drawCelebration() {
     l2 = buf;
   }
   if (!l1) return;
+#if defined(BOARD_SPOTPEAR_BALL128)
+  gfx->fillRoundRect(42 + UI_DX, 140, 396, 116, 18, UI_BAR_WARN);
+  gfx->drawRoundRect(42 + UI_DX, 140, 396, 116, 18, UI_INK);
+  gfx->setTextColor(UI_INK);
+  setSize(4);
+  int titleSize = textW(l1, 4) <= 340 ? 4 : 3;
+  setSize(titleSize);
+  setCur(centerX(l1, titleSize), 164);
+  printT(l1);
+  setSize(3);
+  int detailSize = textW(l2, 3) <= 340 ? 3 : 2;
+  setSize(detailSize);
+  setCur(centerX(l2, detailSize), 210);
+  printT(l2);
+#else
   gfx->fillRoundRect(73 + UI_DX, 150, 320, 96, 16, UI_BAR_WARN);
   gfx->drawRoundRect(73 + UI_DX, 150, 320, 96, 16, UI_INK);
   gfx->setTextColor(UI_INK);
@@ -2411,6 +2453,7 @@ void drawCelebration() {
   setSize(2);
   setCur(centerX(l2, 2), 212);
   printT(l2);
+#endif
 }
 
 // medallas en la ficha: badge con etiqueta, color si conseguida

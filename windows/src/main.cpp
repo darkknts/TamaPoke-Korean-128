@@ -6,6 +6,7 @@
 #include "Arduino.h"
 #include "pet.h"
 #include "dex.h"
+#include "species.h"
 
 namespace {
 constexpr wchar_t kClassName[] = L"TamaPokeDesktopWindow";
@@ -59,18 +60,31 @@ void drawPet(HDC dc) {
   HBRUSH inner=CreateSolidBrush(RGB(43,50,66));HPEN no=CreatePen(PS_NULL,0,RGB(43,50,66));
   ob=SelectObject(dc,inner);op=SelectObject(dc,no);Ellipse(dc,224,106,496,378);
   SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(inner);DeleteObject(no);
-  HBRUSH body=CreateSolidBrush(accent);HPEN outline=CreatePen(PS_SOLID,3,RGB(75,62,53));
-  ob=SelectObject(dc,body);op=SelectObject(dc,outline);
-  if(pet.isEgg()) Ellipse(dc,300,185,420,315); else Ellipse(dc,286,175,434,320);
-  SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(body);DeleteObject(outline);
-  if(pet.isEgg()) {
-    text(dc,L"?",RECT{320,205,400,285},52,RGB(110,85,55),true);
+  const char* const* sprite=nullptr;
+  if(pet.isEgg()) sprite=SPR_EGG;
+  else {
+    int id=pet.speciesId;
+    if(id>=1&&id<=3)sprite=SPECIES[SP_BULBASAUR+(id-1)].sprite;
+    else if(id>=4&&id<=6)sprite=SPECIES[SP_CHARMANDER+(id-4)].sprite;
+    else if(id>=7&&id<=9)sprite=SPECIES[SP_SQUIRTLE+(id-7)].sprite;
+  }
+  if(sprite) {
+    const int scale=5, sx=280, sy=155;
+    for(int row=0;row<32;row++) for(int col=0;col<32;col++) {
+      uint16_t color=spriteColor(sprite[row][col]);
+      if(color) {
+        HBRUSH px=CreateSolidBrush(rgb565(color));
+        RECT pr{sx+col*scale,sy+row*scale,sx+(col+1)*scale,sy+(row+1)*scale};
+        FillRect(dc,&pr,px);DeleteObject(px);
+      }
+    }
   } else {
-    HBRUSH eye=CreateSolidBrush(RGB(35,38,46)); ob=SelectObject(dc,eye);
+    HBRUSH body=CreateSolidBrush(accent);HPEN outline=CreatePen(PS_SOLID,3,RGB(75,62,53));
+    ob=SelectObject(dc,body);op=SelectObject(dc,outline);Ellipse(dc,286,175,434,320);
+    SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(body);DeleteObject(outline);
+    HBRUSH eye=CreateSolidBrush(RGB(35,38,46));ob=SelectObject(dc,eye);
     Ellipse(dc,326,220,340,239);Ellipse(dc,382,220,396,239);
     SelectObject(dc,ob);DeleteObject(eye);
-    HPEN smile=CreatePen(PS_SOLID,3,RGB(90,57,45));op=SelectObject(dc,smile);
-    Arc(dc,345,240,380,270,345,252,380,252);SelectObject(dc,op);DeleteObject(smile);
   }
   if(pet.showHeart()) text(dc,L"♥",RECT{410,145,470,205},36,RGB(255,130,150),true);
   if(pet.eating()) text(dc,L"냠!",RECT{250,145,310,190},22,RGB(255,226,150),true);
@@ -165,7 +179,7 @@ void act(HWND hwnd,int x,int y) {
 }
 LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
   switch(msg){
-    case WM_CREATE:{pet.begin();std::srand((unsigned)std::time(nullptr));time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
+    case WM_CREATE:{std::srand((unsigned)std::time(nullptr));pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
     case WM_TIMER:{pet.update(millis());time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
     case WM_LBUTTONUP:act(hwnd,LOWORD(lp),HIWORD(lp));return 0;
     case WM_PAINT:paint(hwnd);return 0;

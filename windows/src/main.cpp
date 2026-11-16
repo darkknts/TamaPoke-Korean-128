@@ -39,7 +39,7 @@ void loadDesktopSprites() {
   }
   for(const auto& e:entries){
     if(p+e.size>b.size())return;
-    if(e.name.rfind("mons/p",0)==0&&e.name.size()==14&&e.name.substr(11)==".bin"){
+    if(e.name.rfind("mons/p",0)==0&&e.name.size()==13&&e.name.substr(9)==".bin"){
       int dex=std::atoi(e.name.substr(6,3).c_str());
       if(dex>=1&&dex<=151&&e.size>=7&&memcmp(b.data()+p,"TPK2",4)==0){
         size_t q=p;uint8_t acts=b[q+4];uint16_t colors=read16(b,q+5);q+=7;
@@ -192,11 +192,11 @@ void drawStats(HDC dc) {
   text(dc,L"훈련은 아래 버튼에서 진행할 수 있습니다.",RECT{100,590,620,630},15,RGB(120,100,80));
   button(dc,240,650,240,58,L"힘 훈련하기");
 }
-void drawMore(HDC dc) {
+int gameSecondsLeft(){DWORD elapsed=GetTickCount()-gameStarted;return elapsed>=15000?0:(int)((15000-elapsed+999)/1000);}\nvoid drawMore(HDC dc) {
   text(dc,L"더보기",RECT{100,105,620,150},27,RGB(76,60,47),true);
   text(dc,L"미니게임 · 설정 · 포켓몬 이름",RECT{100,155,620,190},16,RGB(120,100,80));
   if(gameActive) {
-    text(dc,L"타이밍 캐치  ·  남은 시간 "+std::to_wstring((15-(GetTickCount()-gameStarted)/1000)>0?15-(GetTickCount()-gameStarted)/1000:0)+L"초",RECT{90,215,630,255},20,RGB(76,60,47),true);
+    text(dc,L"타이밍 캐치  ·  남은 시간 "+std::to_wstring(gameSecondsLeft())+L"초",RECT{90,215,630,255},20,RGB(76,60,47),true);
     text(dc,L"점수 "+std::to_wstring(gameScore),RECT{90,265,630,300},18,RGB(88,71,56),true);
     HBRUSH b=CreateSolidBrush(RGB(237,166,75)); HPEN p=CreatePen(PS_SOLID,3,RGB(160,110,55));
     auto ob=SelectObject(dc,b);auto op=SelectObject(dc,p);Ellipse(dc,targetX-30,targetY-30,targetX+30,targetY+30);

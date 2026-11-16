@@ -92,4 +92,27 @@ size_t Preferences::getString(const char*k,char*b,size_t n){
   size_t z=std::min(n-1,i->second.size());memcpy(b,i->second.data(),z);b[z]=0;return strlen(b);
 }
 
-void sfxPlay(uint8_t) {}
+static bool pcSound = true;
+static bool pcSoundLoaded = false;
+void audioBegin() {
+  if (pcSoundLoaded) return;
+  Preferences p; p.begin("tamapoke", false);
+  pcSound = p.getBool("pcSound", true);
+  p.end(); pcSoundLoaded = true;
+}
+void audioSetEnabled(bool on) {
+  audioBegin(); pcSound = on;
+  Preferences p; p.begin("tamapoke", false); p.putBool("pcSound", on); p.end();
+}
+bool audioEnabled() { audioBegin(); return pcSound; }
+void audioSetVolume(uint8_t) {}
+uint8_t audioVolume() { return 0; }
+void audioSetSleeping(bool) {}
+bool audioBusy() { return false; }
+void audioSetIdle(bool) {}
+void sfxPlay(uint8_t id) {
+  audioBegin();
+  if (!pcSound) return;
+  static const DWORD tones[] = {880,660,740,990,1046,1174,1318,330,784,988};
+  if (id < sizeof(tones)/sizeof(tones[0])) Beep(tones[id], 65);
+}

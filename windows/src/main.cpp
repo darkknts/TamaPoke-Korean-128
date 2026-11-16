@@ -4,6 +4,9 @@
 #include <ctime>
 #include <string>
 #include <cstdlib>
+#include <fstream>
+#include <vector>
+#include <filesystem>
 #include "audio.h"
 #include "Arduino.h"
 #include "pet.h"
@@ -18,6 +21,48 @@ int page=0;
 int dexPage=0;
 bool gameActive=false; DWORD gameStarted=0; int gameScore=0; int targetX=360,targetY=330;
 time_t lastClockSync=0;
+struct DesktopSprite { int w=0,h=0; std::vector<uint16_t> pixels; };
+std::vector<DesktopSprite> desktopSprites(152);
+uint16_t read16(const std::vector<unsigned char>& b,size_t p){return (uint16_t)(b[p]|(b[p+1]<<8));}
+uint32_t read32(const std::vector<unsigned char>& b,size_t p){return (uint32_t)b[p]|((uint32_t)b[p+1]<<8)|((uint32_t)b[p+2]<<16)|((uint32_t)b[p+3]<<24);}
+void loadDesktopSprites() {
+  wchar_t exe[MAX_PATH]{}; GetModuleFileNameW(nullptr,exe,MAX_PATH);
+  std::filesystem::path packPath(exe); packPath=packPath.parent_path()/L"sprites.pak";
+  std::ifstream in(packPath,std::ios::binary); if(!in)return;
+  std::vector<unsigned char> b((std::istreambuf_iterator<char>(in)),{});
+  if(b.size()<6||memcmp(b.data(),"TPAK",4)!=0)return;
+  uint16_t count=read16(b,4); size_t p=6;
+  struct Entry{std::string name;uint32_t size;};std::vector<Entry> entries;entries.reserve(count);
+  for(uint16_t i=0;i<count;i++){
+    if(p>=b.size())return;uint8_t n=b[p++];if(p+n+4>b.size())return;
+    std::string name((char*)b.data()+p,n);p+=n;uint32_t size=read32(b,p);p+=4;entries.push_back({name,size});
+  }
+  for(const auto& e:entries){
+    if(p+e.size>b.size())return;
+    if(e.name.rfind("mons/p",0)==0&&e.name.size()==14&&e.name.substr(11)==".bin"){
+      int dex=std::atoi(e.name.substr(6,3).c_str());
+      if(dex>=1&&dex<=151&&e.size>=7&&memcmp(b.data()+p,"TPK2",4)==0){
+        size_t q=p;uint8_t acts=b[q+4];uint16_t colors=read16(b,q+5);q+=7;
+        if(q+(size_t)colors*2<=p+e.size){
+          std::vector<uint16_t> pal(colors);for(uint16_t k=0;k<colors;k++)pal[k]=read16(b,q+k*2);q+=(size_t)colors*2;
+          for(uint8_t a=0;a<acts&&q+4<=p+e.size;a++){
+            uint8_t id=b[q],w=b[q+1],h=b[q+2],frames=b[q+3];q+=4;
+            if(!w||!h||!frames||q+(size_t)frames*2+(size_t)w*h*frames>p+e.size)break;
+            q+=(size_t)frames*2;
+            size_t frameBytes=(size_t)w*h;
+            if(id==0){
+              DesktopSprite sp;sp.w=w;sp.h=h;sp.pixels.resize(frameBytes);
+              for(size_t z=0;z<frameBytes;z++){uint8_t ix=b[q+z];sp.pixels[z]=(ix==255||ix>=pal.size())?0:pal[ix];}
+              desktopSprites[dex]=std::move(sp);break;
+            }
+            q+=frameBytes*frames;
+          }
+        }
+      }
+    }
+    p+=e.size;
+  }
+}
 std::wstring notice=L"반가워요! 타마포크를 시작해 보세요.";
 
 COLORREF rgb565(uint16_t c) {
@@ -72,7 +117,20 @@ void drawPet(HDC dc) {
   SelectObject(dc,ob);SelectObject(dc,op);DeleteObject(inner);DeleteObject(no);
   const char* const* sprite=nullptr;
   if(pet.isEgg()) sprite=SPR_EGG;
-  else {
+  else if(pet.speciesId>=1&&pet.speciesId<=151&&desktopSprites[pet.speciesId].w>0) {
+    const auto& sp=desktopSprites[pet.speciesId];
+    const int scale=std::max(1,std::min(220/sp.w,220/sp.h));
+    const int dw=sp.w*scale,dh=sp.h*scale,sx=360-dw/2,sy=245-dh/2;
+    for(int row=0;row<sp.h;row++)for(int col=0;col<sp.w;col++){
+      uint16_t color=sp.pixels[(size_t)row*sp.w+col];if(!color)continue;
+      HBRUSH px=CreateSolidBrush(rgb565(color));
+      RECT pr{sx+col*scale,sy+row*scale,sx+(col+1)*scale,sy+(row+1)*scale};
+      FillRect(dc,&pr,px);DeleteObject(px);
+    }
+    if(pet.showHeart()) text(dc,L"♥",RECT{410,145,470,205},36,RGB(255,130,150),true);
+    if(pet.eating()) text(dc,L"냠!",RECT{250,145,310,190},22,RGB(255,226,150),true);
+    return;
+  } else {
     int id=pet.speciesId;
     if(id>=1&&id<=3)sprite=SPECIES[SP_BULBASAUR+(id-1)].sprite;
     else if(id>=4&&id<=6)sprite=SPECIES[SP_CHARMANDER+(id-4)].sprite;
@@ -249,7 +307,7 @@ void act(HWND hwnd,int x,int y) {
 }
 LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
   switch(msg){
-    case WM_CREATE:{std::srand((unsigned)std::time(nullptr));audioBegin();pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
+    case WM_CREATE:{std::srand((unsigned)std::time(nullptr));audioBegin();loadDesktopSprites();pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
     case WM_TIMER:{pet.update(millis());if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
     case WM_LBUTTONUP:act(hwnd,LOWORD(lp),HIWORD(lp));return 0;
     case WM_PAINT:paint(hwnd);return 0;

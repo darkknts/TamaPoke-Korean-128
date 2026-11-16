@@ -21,6 +21,10 @@
 namespace {
 constexpr wchar_t kClassName[] = L"TamaPokeDesktopWindow";
 constexpr int W=720, H=860;
+constexpr wchar_t kMiniClassName[] = L"TamaPokeMiniPetWindow";
+constexpr COLORREF kMiniTransparent = RGB(255,0,255);
+HWND miniHwnd=nullptr;
+bool miniMode=false;
 Pet pet;
 int page=0;
 int dexPage=0;
@@ -294,6 +298,64 @@ void drawStats(HDC dc) {
   button(dc,240,650,240,58,L"힘 훈련하기");
 }
 int gameSecondsLeft(){DWORD elapsed=GetTickCount()-gameStarted;return elapsed>=15000?0:(int)((15000-elapsed+999)/1000);}
+std::wstring miniBubbleText() {
+  if(pet.isEgg()) return L"톡톡! 부화시켜 주세요.";
+  if(pet.sleeping) return L"Zzz... 잘 자요!";
+  if(pet.fullness<25) return L"배고파요... 먹이 주세요!";
+  if(pet.hygiene<25) return L"씻고 싶어요!";
+  if(pet.energy<25) return L"졸려요...";
+  if(pet.joy<25) return L"같이 놀아요!";
+  if(pet.showHeart()) return L"좋아요! 행복해요 ♥";
+  return L"오늘도 함께 놀아요!";
+}
+void drawMini(HWND hwnd) {
+  PAINTSTRUCT ps{}; HDC dc=BeginPaint(hwnd,&ps);
+  RECT rc{}; GetClientRect(hwnd,&rc);
+  HBRUSH transparent=CreateSolidBrush(kMiniTransparent); FillRect(dc,&rc,transparent); DeleteObject(transparent);
+  fillRound(dc,RECT{7,7,173,53},RGB(255,250,240),RGB(205,170,125),14);
+  text(dc,miniBubbleText(),RECT{12,10,168,50},13,RGB(76,60,47),true);
+  if(!pet.isEgg()&&pet.speciesId>=1&&pet.speciesId<=151) {
+    int action=pet.sleeping?3:(pet.eating()?4:(pet.showHeart()?9:(pet.energy<20?10:0)));
+    drawDesktopSprite(dc,pet.speciesId,RECT{35,58,145,170},action,GetTickCount());
+  } else {
+    text(dc,L"🥚",RECT{35,65,145,165},54,RGB(120,90,55),true);
+  }
+  EndPaint(hwnd,&ps);
+}
+void placeMini(HWND hwnd) {
+  RECT work{}; SystemParametersInfoW(SPI_GETWORKAREA,0,&work,0);
+  const int width=180,height=185;
+  SetWindowPos(hwnd,HWND_TOPMOST,work.right-width-18,work.bottom-height-8,width,height,SWP_NOACTIVATE|SWP_SHOWWINDOW);
+}
+void showMini() {
+  if(!miniHwnd) return;
+  miniMode=true; placeMini(miniHwnd); InvalidateRect(miniHwnd,nullptr,FALSE);
+}
+void restoreMain(HWND owner) {
+  miniMode=false; if(miniHwnd) ShowWindow(miniHwnd,SW_HIDE);
+  ShowWindow(owner,SW_RESTORE); SetForegroundWindow(owner);
+}
+LRESULT CALLBACK miniProc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
+  switch(msg) {
+    case WM_PAINT: drawMini(hwnd); return 0;
+    case WM_TIMER: InvalidateRect(hwnd,nullptr,FALSE); return 0;
+    case WM_LBUTTONDBLCLK: restoreMain(GetWindow(hwnd,GW_OWNER)); return 0;
+    case WM_NCHITTEST: return HTCAPTION;
+    case WM_RBUTTONUP: {
+      HMENU menu=CreatePopupMenu();
+      AppendMenuW(menu,MF_STRING,1,L"TamaPoke 열기");
+      AppendMenuW(menu,MF_STRING,2,L"미니 모드 종료");
+      POINT pt{GET_X_LPARAM(lp),GET_Y_LPARAM(lp)};
+      SetForegroundWindow(hwnd); int cmd=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,pt.x,pt.y,0,hwnd,nullptr);
+      DestroyMenu(menu);
+      if(cmd==1) restoreMain(GetWindow(hwnd,GW_OWNER));
+      else if(cmd==2) { miniMode=false; ShowWindow(hwnd,SW_HIDE); }
+      return 0;
+    }
+    case WM_ERASEBKGND: return 1;
+  }
+  return DefWindowProcW(hwnd,msg,wp,lp);
+}
 void drawMore(HDC dc) {
   text(dc,L"더보기",RECT{100,105,620,150},27,RGB(76,60,47),true);
   text(dc,L"미니게임 · 설정 · 포켓몬 이름",RECT{100,155,620,190},16,RGB(120,100,80));
@@ -310,6 +372,7 @@ void drawMore(HDC dc) {
     button(dc,180,395,360,58,audioEnabled()?L"효과음: 켜짐":L"효과음: 꺼짐");
     text(dc,L"15초 동안 움직이는 표적을 클릭해 점수를 얻으세요.",RECT{90,485,630,530},15,RGB(120,100,80));
     text(dc,L"효과음 설정은 다음 실행에도 유지됩니다.",RECT{90,535,630,575},14,RGB(120,100,80));
+    button(dc,180,605,360,54,L"미니 펫 모드 시작",true);
   }
 }
 void drawDex(HDC dc) {
@@ -391,6 +454,7 @@ void act(HWND hwnd,int x,int y) {
     if(y>=225&&y<=300) {gameActive=true;gameScore=0;gameStarted=GetTickCount();targetX=360;targetY=350;notice=L"표적을 클릭해 점수를 올려보세요!";InvalidateRect(hwnd,nullptr,FALSE);return;}
     if(y>=305&&y<=380) {renamePet(hwnd);InvalidateRect(hwnd,nullptr,FALSE);return;}
     if(y>=385&&y<=465) {audioSetEnabled(!audioEnabled());notice=audioEnabled()?L"효과음을 켰어요.":L"효과음을 껐어요.";InvalidateRect(hwnd,nullptr,FALSE);return;}
+    if(y>=590&&y<=675) {showMini();notice=L"미니 펫이 화면 위에 나타났어요. 더블클릭하면 게임으로 돌아옵니다.";InvalidateRect(hwnd,nullptr,FALSE);return;}
     return;
   }
   if(page==2&&y>=640&&y<=710){if(x<360&&dexPage>0)dexPage--;else if(x>430&&dexPage<6)dexPage++;InvalidateRect(hwnd,nullptr,FALSE);return;}
@@ -423,7 +487,8 @@ void act(HWND hwnd,int x,int y) {
 LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
   switch(msg){
     case WM_CREATE:{std::srand((unsigned)std::time(nullptr));audioBegin();loadDesktopSprites();pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
-    case WM_TIMER:{pet.update(millis());if(GetTickCount()>=transientActionUntil)transientAction=0;if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);return 0;}
+    case WM_SIZE: if(wp==SIZE_MINIMIZED) showMini(); else if(wp==SIZE_RESTORED&&miniHwnd) {miniMode=false;ShowWindow(miniHwnd,SW_HIDE);} return 0;
+    case WM_TIMER:{pet.update(millis());if(GetTickCount()>=transientActionUntil)transientAction=0;if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);if(miniHwnd&&IsWindowVisible(miniHwnd))InvalidateRect(miniHwnd,nullptr,FALSE);return 0;}
     case WM_LBUTTONUP:act(hwnd,LOWORD(lp),HIWORD(lp));return 0;
     case WM_PAINT:paint(hwnd);return 0;
     case WM_ERASEBKGND:return 1;
@@ -436,10 +501,19 @@ int WINAPI wWinMain(HINSTANCE instance,HINSTANCE,PWSTR,int show){
   WNDCLASSW wc{};wc.lpfnWndProc=proc;wc.hInstance=instance;wc.lpszClassName=kClassName;
   wc.hCursor=LoadCursor(nullptr,IDC_HAND);wc.hbrBackground=(HBRUSH)(COLOR_WINDOW+1);
   if(!RegisterClassW(&wc))return 1;
+  WNDCLASSW mwc{};mwc.lpfnWndProc=miniProc;mwc.hInstance=instance;mwc.lpszClassName=kMiniClassName;
+  mwc.hCursor=LoadCursor(nullptr,IDC_HAND);mwc.hbrBackground=CreateSolidBrush(kMiniTransparent);mwc.style=CS_DBLCLKS;
+  if(!RegisterClassW(&mwc))return 1;
   RECT r{0,0,W,H};AdjustWindowRect(&r,WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,FALSE);
   HWND hwnd=CreateWindowExW(0,kClassName,L"TamaPoke",WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX,
     CW_USEDEFAULT,CW_USEDEFAULT,r.right-r.left,r.bottom-r.top,nullptr,nullptr,instance,nullptr);
-  if(!hwnd)return 1;ShowWindow(hwnd,show);UpdateWindow(hwnd);
+  if(!hwnd)return 1;
+  miniHwnd=CreateWindowExW(WS_EX_LAYERED|WS_EX_TOOLWINDOW|WS_EX_TOPMOST|WS_EX_NOACTIVATE,kMiniClassName,L"TamaPoke Mini",
+    WS_POPUP,0,0,180,185,hwnd,nullptr,instance,nullptr);
+  if(!miniHwnd)return 1;
+  SetLayeredWindowAttributes(miniHwnd,kMiniTransparent,0,LWA_COLORKEY);
+  SetTimer(miniHwnd,2,250,nullptr);ShowWindow(miniHwnd,SW_HIDE);
+  ShowWindow(hwnd,show);UpdateWindow(hwnd);
   MSG msg{};while(GetMessageW(&msg,nullptr,0,0)>0){TranslateMessage(&msg);DispatchMessageW(&msg);}
   return (int)msg.wParam;
 }

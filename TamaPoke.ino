@@ -1220,10 +1220,18 @@ void onTap(int16_t x, int16_t y) {
   if (pet.ceremony) return;  // durante la despedida no hay botones
   if (cardOpen) {
     if (cardPage == 0 && y < 84) openKeyboard();  // tocar el nombre = renombrar
+#if defined(BOARD_SPOTPEAR_BALL128)
+    else if (cardPage == 1 && y >= 374 && y <= 422 && x >= 76 + UI_DX && x <= 404 + UI_DX) {
+      cardOpen = false;
+      startSack();
+    }
+#else
     else if (cardPage == 1 && y >= 300 && y <= 340 && x >= 96 + UI_DX && x <= 370 + UI_DX) {
       cardOpen = false;            // boton ENTRENAR FUERZA
       startSack();
-    } else {
+    }
+#endif
+    else {
       cardOpen = false;
     }
     return;

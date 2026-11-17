@@ -3,7 +3,9 @@ package com.tamapoke.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -144,17 +147,53 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(5.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(if (pet!!.shiny) "✨ SPECIAL PARTNER ✨" else "MY PARTNER", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.ExtraBold)
-                    Text("도감 번호 ${pet!!.speciesId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PokeInk)
-                    PetSprite(speciesId = pet!!.speciesId, shiny = pet!!.shiny, modifier = Modifier.size(126.dp))
-                    Surface(color = Color.White, shape = RoundedCornerShape(50)) {
-                        Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                            Text("MY PARTNER", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
+                            Text("도감 번호 ${pet!!.speciesId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PokeInk)
+                        }
+                        Surface(color = Color.White, shape = RoundedCornerShape(50)) {
+                            Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                        }
                     }
-                    Text(if (pet!!.sleeping) "포근하게 잠들어 있어요" else "오늘도 즐거운 하루를 보내요!", style = MaterialTheme.typography.bodySmall, color = Color(0xFF756982))
+                    Box(
+                        modifier = Modifier.fillMaxWidth().height(174.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color(0xFFE4F3FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Surface(
+                            modifier = Modifier.align(Alignment.TopStart).padding(start = 22.dp, top = 22.dp).size(34.dp),
+                            color = Color(0xBFFFFFFF), shape = RoundedCornerShape(50)
+                        ) {}
+                        Surface(
+                            modifier = Modifier.align(Alignment.TopEnd).padding(end = 34.dp, top = 35.dp).size(22.dp),
+                            color = Color(0xBFFFFFFF), shape = RoundedCornerShape(50)
+                        ) {}
+                        Text("✦", modifier = Modifier.align(Alignment.CenterStart).padding(start = 55.dp), color = Color(0xFFFFC86A), style = MaterialTheme.typography.titleLarge)
+                        Text("✧", modifier = Modifier.align(Alignment.CenterEnd).padding(end = 52.dp), color = Color(0xFFFFC86A), style = MaterialTheme.typography.headlineSmall)
+                        Surface(
+                            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(42.dp),
+                            color = Color(0xFFDDF1E2),
+                            shape = RoundedCornerShape(topStart = 70.dp, topEnd = 70.dp)
+                        ) {}
+                        PetSprite(speciesId = pet!!.speciesId, shiny = pet!!.shiny, modifier = Modifier.size(138.dp))
+                    }
+                    Text(
+                        if (pet!!.sleeping) "포근하게 잠들어 있어요" else "오늘도 즐거운 하루를 보내요!",
+                        modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF655777),
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
                 }
             }
 

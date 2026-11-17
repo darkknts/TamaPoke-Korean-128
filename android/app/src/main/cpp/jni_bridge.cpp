@@ -38,15 +38,18 @@ extern "C"
 JNIEXPORT jstring JNICALL
 Java_com_tamapoke_android_PetNative_nativeGetState(JNIEnv* env, jobject) {
     if (!g_pet) return env->NewStringUTF("{}");
-    char json[720];
+    char json[1024];
     const int biome = (g_pet->speciesId >= 1 && g_pet->speciesId <= DEX_COUNT)
         ? DEX_TBL[g_pet->speciesId].biome : 0;
+    const uint32_t nextLevelMinutes = g_pet->level() >= 999
+        ? 0 : MINUTES_PER_LEVEL - (g_pet->ageMinutes % MINUTES_PER_LEVEL);
     std::snprintf(json, sizeof(json),
-        "{\"egg\":%s,\"speciesId\":%d,\"biome\":%d,\"level\":%u,\"fullness\":%u,\"joy\":%u,\"energy\":%u,\"hygiene\":%u,\"poops\":%u,\"weight\":%u,\"ageMinutes\":%u,\"canEvolve\":%s,\"sleeping\":%s,\"shiny\":%s,\"starterPick\":%s}",
+        "{\"egg\":%s,\"speciesId\":%d,\"biome\":%d,\"level\":%u,\"fullness\":%u,\"joy\":%u,\"energy\":%u,\"hygiene\":%u,\"poops\":%u,\"weight\":%u,\"ageMinutes\":%u,\"canEvolve\":%s,\"sleeping\":%s,\"shiny\":%s,\"starterPick\":%s,\"atk\":%u,\"def\":%u,\"speed\":%u,\"bond\":%u,\"streak\":%u,\"medals\":%u,\"registeredCount\":%u,\"nextLevelMinutes\":%u}",
         g_pet->isEgg() ? "true" : "false", g_pet->speciesId, biome, g_pet->level(),
         g_pet->fullness, g_pet->joy, g_pet->energy, g_pet->hygiene, g_pet->poops, g_pet->weight, g_pet->ageMinutes,
         g_pet->canEvolveNow() ? "true" : "false", g_pet->sleeping ? "true" : "false", g_pet->shiny ? "true" : "false",
-        g_pet->awaitingStarter() ? "true" : "false");
+        g_pet->awaitingStarter() ? "true" : "false", g_pet->atkStat(), g_pet->defStat(), g_pet->speStat(),
+        g_pet->bond, g_pet->streak, g_pet->medals, g_pet->registeredCount(), nextLevelMinutes);
     return env->NewStringUTF(json);
 }
 

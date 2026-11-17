@@ -182,8 +182,31 @@ class TestSketchSanity(unittest.TestCase):
                                 f'TamaPoke.ino:{lineno}: literal no ASCII: {chunk!r}')
 
     def test_las_llaves_estan_equilibradas(self):
-        self.assertEqual(self.ino.count('{'), self.ino.count('}'),
-                         'llaves descompensadas en TamaPoke.ino')
+        # Cuenta una sola rama de cada bloque condicional: las ramas #if/#else
+        # son alternativas y pueden contener aperturas equivalentes.
+        active = True
+        branches = []
+        selected = []
+        for line in self.ino.splitlines():
+            directive = re.match(r'\s*#\s*(if|ifdef|ifndef|elif|else|endif)\b', line)
+            if directive:
+                kind = directive.group(1)
+                if kind in ('if', 'ifdef', 'ifndef'):
+                    branches.append((active, True))
+                    active = active
+                elif kind in ('elif', 'else') and branches:
+                    parent, first = branches[-1]
+                    active = parent and first
+                    branches[-1] = (parent, False)
+                elif kind == 'endif' and branches:
+                    parent, _ = branches.pop()
+                    active = parent
+                continue
+            if active:
+                selected.append(line)
+        source = '\\n'.join(selected)
+        self.assertEqual(source.count('{'), source.count('}'),
+                         'llaves descompensadas en TamaPoke.ino (rama condicional)')
 
 
 

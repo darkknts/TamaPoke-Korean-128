@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -84,11 +85,15 @@ class MainActivity : ComponentActivity() {
 private fun PetHome(engineStatus: String, initialState: PetState?) {
     var pet by remember { mutableStateOf(initialState) }
     var status by remember { mutableStateOf(engineStatus) }
+    var spriteAction by remember { mutableIntStateOf(0) }
+    var spriteActionToken by remember { mutableIntStateOf(0) }
 
-    fun performPetAction(action: () -> Unit) {
+    fun performPetAction(animationId: Int, action: () -> Unit) {
         runCatching {
             action()
             pet = PetNative.state()
+            spriteAction = animationId
+            spriteActionToken++
         }.onFailure {
             status = "돌보기 동작 오류: ${it.message ?: "다시 시도해 주세요"}"
         }
@@ -210,7 +215,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             },
                             shape = RoundedCornerShape(topStart = 70.dp, topEnd = 70.dp)
                         ) {}
-                        PetSprite(speciesId = pet!!.speciesId, shiny = pet!!.shiny, modifier = Modifier.size(138.dp))
+                        PetSprite(speciesId = pet!!.speciesId, shiny = pet!!.shiny, actionId = spriteAction, actionToken = spriteActionToken, modifier = Modifier.size(138.dp))
                     }
                     Text(
                         if (pet!!.sleeping) "포근하게 잠들어 있어요" else "오늘도 즐거운 하루를 보내요!",
@@ -254,17 +259,17 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Text("매일매일 교감해요", style = MaterialTheme.typography.labelSmall, color = Color(0xFF857991))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton("🍓  먹이 주기", Modifier.weight(1f)) { performPetAction { PetNative.feed() } }
-                        ActionButton("🎾  놀아 주기", Modifier.weight(1f)) { performPetAction { PetNative.play() } }
+                        ActionButton("🍓  먹이 주기", Modifier.weight(1f)) { performPetAction(4) { PetNative.feed() } }
+                        ActionButton("🎾  놀아 주기", Modifier.weight(1f)) { performPetAction(8) { PetNative.play() } }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton("🧹  청소하기", Modifier.weight(1f)) { performPetAction { PetNative.clean() } }
-                        ActionButton("💗  쓰다듬기", Modifier.weight(1f)) { performPetAction { PetNative.caress() } }
+                        ActionButton("🧹  청소하기", Modifier.weight(1f)) { performPetAction(9) { PetNative.clean() } }
+                        ActionButton("💗  쓰다듬기", Modifier.weight(1f)) { performPetAction(7) { PetNative.caress() } }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton(if (pet!!.sleeping) "☀  깨우기" else "🌙  재우기", Modifier.weight(1f)) { performPetAction { PetNative.toggleSleep() } }
+                        ActionButton(if (pet!!.sleeping) "☀  깨우기" else "🌙  재우기", Modifier.weight(1f)) { performPetAction(if (pet!!.sleeping) 0 else 3) { PetNative.toggleSleep() } }
                         if (pet!!.canEvolve) {
-                            ActionButton("✨  진화하기", Modifier.weight(1f)) { performPetAction { PetNative.evolve() } }
+                            ActionButton("✨  진화하기", Modifier.weight(1f)) { performPetAction(7) { PetNative.evolve() } }
                         } else {
                             Surface(modifier = Modifier.weight(1f).height(44.dp), color = PokeMint, shape = RoundedCornerShape(14.dp)) {
                                 BoxCenterText("건강하게 성장 중", Color(0xFF47775A))

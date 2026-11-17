@@ -9,9 +9,9 @@ Android application for the TamaPoke virtual-pet game.
 - Local device persistence through the Android Preferences adapter, with periodic engine flushes.
 - Persistent Android settings for optional sound effects and haptic feedback.
 - ZIP backup export and restore for the C++ engine save file, with save reload after restore.
-- Opt-in mini-pet overlay displayed below the status bar over other apps through a special-use foreground service.
+- Two Android home-screen mini-pet widgets: compact 1×1 sprite/level and detailed 2×2 sprite/care meters. Tap either widget to open the game.
 - Important care notifications for critical hunger, energy, hygiene and happiness states, with a six-hour repeat cooldown.
-- Mini-pet settings toggle, overlay permission flow, notification permission request and stop action from the foreground notification.
+- Periodic widget refresh scheduled with WorkManager (15-minute minimum interval; Android may defer execution under battery/background limits).
 - Real-time pet status refresh and care actions (feed, play, clean, pet, sleep, evolve).
 - Starter selection (Bulbasaur, Charmander, Squirtle).
 - TPK2 sprite loading for all 151 species and shiny variants when available.
@@ -21,7 +21,9 @@ Android application for the TamaPoke virtual-pet game.
 - Growth report with level progress, battle stats, bond, streak, medals and collection count.
 - Medal collection screen for all eight engine achievements, including level milestones, berry discovery, care streak, bond, final evolution and fitness.
 - Berry-catching mini-game with three lanes, a 20-second round and score rewards connected to the C++ engine.
-- Two Android home-screen mini-pet widgets: compact 1×1 sprite/level and detailed 2×2 sprite/care meters. Tap either widget to open the game.
+- Both widget sizes render from one synchronized native-engine snapshot; refresh is skipped when neither widget is installed.
+- Offline elapsed-time progression is applied by the shared C++ engine when it synchronizes the saved clock (up to 14 days); care stats have a minimum floor and evolution remains a user-triggered action.
+- Widget sprite selection follows the current species and shiny state, so a completed evolution is reflected on the next widget refresh.
 
 ## Development sequence
 

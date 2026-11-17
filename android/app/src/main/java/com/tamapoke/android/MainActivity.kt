@@ -1,7 +1,6 @@
 package com.tamapoke.android
 
 import android.os.Bundle
-import android.net.Uri
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream

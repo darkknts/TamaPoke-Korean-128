@@ -1,23 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <application
         android:allowBackup="true"
         android:label="TamaPoke"
         android:supportsRtl="true"
         android:theme="@android:style/Theme.Material.Light.NoActionBar">
-        <service
-            android:name=".MiniPetService"
-            android:enabled="true"
-            android:exported="false"
-            android:foregroundServiceType="specialUse">
-            <property
-                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Displays the user's opted-in mini pet overlay and important care alerts." />
-        </service>
+        <receiver android:name=".MiniPetWidget1x1Provider" android:exported="true" android:label="TamaPoke 미니펫 1×1" android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/mini_pet_widget_1x1_info" />
+        </receiver>
+        <receiver android:name=".MiniPetWidget2x2Provider" android:exported="true" android:label="TamaPoke 미니펫 2×2" android:permission="android.permission.BIND_APPWIDGET">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/mini_pet_widget_2x2_info" />
+        </receiver>
         <activity
             android:name=".MainActivity"
             android:exported="true">

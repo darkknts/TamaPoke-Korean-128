@@ -40,6 +40,7 @@ class MiniPetService : Service() {
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        runCatching { PetNative.initialize(filesDir.absolutePath); PetNative.update() }
         startForeground(NOTIFICATION_ID, buildForegroundNotification())
         if (Settings.canDrawOverlays(this)) attachOverlay()
         handler.post(refreshTask)

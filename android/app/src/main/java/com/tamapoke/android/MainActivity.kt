@@ -74,12 +74,12 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text("TamaPoke", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-            Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.bodyMedium)
+        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+            Text("TamaPoke", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.bodySmall)
         }
 
         Card(
@@ -87,9 +87,9 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(18.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
                     when {
@@ -108,17 +108,17 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         pet!!.egg -> "알을 터치해 부화시켜 보세요"
                         else -> "도감 번호 ${pet!!.speciesId}"
                     },
-                    style = MaterialTheme.typography.headlineSmall
+                    style = MaterialTheme.typography.titleLarge
                 )
                 if (pet != null && !pet!!.egg && !pet!!.starterPick) {
                     PetSprite(
                         speciesId = pet!!.speciesId,
                         shiny = pet!!.shiny,
-                        modifier = Modifier.size(176.dp)
+                        modifier = Modifier.size(104.dp)
                     )
                 }
                 if (pet != null && !pet!!.starterPick) {
-                    Text("레벨 ${pet!!.level}", style = MaterialTheme.typography.titleLarge)
+                    Text("레벨 ${pet!!.level}", style = MaterialTheme.typography.titleMedium)
                 }
                 if (pet?.starterPick == true) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -131,28 +131,30 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Text("알 톡톡 터치")
                     }
                 } else if (pet != null) {
-                    Text(if (pet!!.sleeping) "Zzz… 쉬는 중" else "오늘도 건강하게 돌봐 주세요")
+                    Text(if (pet!!.sleeping) "Zzz… 쉬는 중" else "오늘도 건강하게 돌봐 주세요", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
 
         if (pet != null && !pet!!.egg && !pet!!.starterPick) {
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("포켓몬 상태", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("포켓몬 상태", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                     StatBar("포만도", pet!!.fullness)
                     StatBar("행복도", pet!!.joy)
                     StatBar("에너지", pet!!.energy)
                     StatBar("위생", pet!!.hygiene)
-                    Text("몸무게 ${pet!!.weight} / 100", style = MaterialTheme.typography.bodySmall)
-                    Text("배설물 ${pet!!.poops} / 3", style = MaterialTheme.typography.bodySmall)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("몸무게 ${pet!!.weight} / 100", style = MaterialTheme.typography.labelSmall)
+                        Text("배설물 ${pet!!.poops} / 3", style = MaterialTheme.typography.labelSmall)
+                    }
                 }
             }
 
             Card(modifier = Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("돌보기", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                         ActionButton("먹이 주기", Modifier.weight(1f)) { PetNative.feed() }
                         ActionButton("놀아 주기", Modifier.weight(1f)) { PetNative.play() }
                     }
@@ -168,8 +170,12 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             }
         }
 
-        Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("게임 데이터는 기기 내부에 저장됩니다.", style = MaterialTheme.typography.labelSmall)
+        Text(
+            if (status.contains("오류")) status else "자동 저장 · 기기 내부 저장",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1
+        )
     }
 }
 
@@ -185,10 +191,10 @@ private inline fun choose(dex: Int, refresh: () -> Unit) {
 
 @Composable
 private fun StatBar(label: String, value: Int) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.bodyMedium)
-            Text("$value%", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+            Text(label, style = MaterialTheme.typography.labelMedium)
+            Text("$value%", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
         }
         LinearProgressIndicator(
             progress = { value.coerceIn(0, 100) / 100f },
@@ -199,7 +205,12 @@ private fun StatBar(label: String, value: Int) {
 
 @Composable
 private fun ActionButton(label: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
-    Button(onClick = { runCatching(onClick) }, modifier = modifier, enabled = enabled) {
-        Text(label)
+    Button(
+        onClick = { runCatching(onClick) },
+        modifier = modifier.height(38.dp),
+        enabled = enabled,
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 6.dp, vertical = 2.dp)
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
     }
 }

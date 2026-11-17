@@ -234,42 +234,62 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val compactLayout = maxWidth < 360.dp
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 6.dp else 10.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compactLayout) 7.dp else 10.dp)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Text("TamaPoke", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color(0xFF49375F))
-                Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.labelMedium, color = Color(0xFF766B80))
+        if (compactLayout) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                        Text("TamaPoke", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color(0xFF49375F))
+                        Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.labelSmall, color = Color(0xFF766B80))
+                    }
+                    Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
+                        Text("● 성장 중", modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
+                    }
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    OutlinedButton(modifier = Modifier.weight(1f), onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 2.dp)) { Text("설정", style = MaterialTheme.typography.labelSmall) }
+                    OutlinedButton(modifier = Modifier.weight(1f), onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 2.dp)) { Text("성장", style = MaterialTheme.typography.labelSmall) }
+                    OutlinedButton(
+                        modifier = Modifier.weight(1f),
+                        onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); showDex = true },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 2.dp)
+                    ) { Text("도감", style = MaterialTheme.typography.labelSmall) }
+                }
             }
-            Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
-                Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                OutlinedButton(
-                    onClick = { showSettings = true },
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 5.dp)
-                ) { Text("설정", style = MaterialTheme.typography.labelMedium) }
-                OutlinedButton(
-                    onClick = { showGrowth = true },
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)
-                ) { Text("성장", style = MaterialTheme.typography.labelMedium) }
-                OutlinedButton(
-                    onClick = {
-                        dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
-                        showDex = true
-                    },
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)
-                ) { Text("도감", style = MaterialTheme.typography.labelMedium) }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+                    Text("TamaPoke", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color(0xFF49375F))
+                    Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.labelMedium, color = Color(0xFF766B80))
+                }
+                Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
+                    Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    OutlinedButton(onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 5.dp)) { Text("설정", style = MaterialTheme.typography.labelMedium) }
+                    OutlinedButton(onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)) { Text("성장", style = MaterialTheme.typography.labelMedium) }
+                    OutlinedButton(
+                        onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); showDex = true },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)
+                    ) { Text("도감", style = MaterialTheme.typography.labelMedium) }
+                }
             }
         }
 
@@ -374,7 +394,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 8.dp else 12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Row(
@@ -391,7 +411,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         }
                     }
                     Box(
-                        modifier = Modifier.fillMaxWidth().height(174.dp)
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 132.dp else 174.dp)
                             .clip(RoundedCornerShape(24.dp))
                             .background(
                                 Brush.verticalGradient(habitatGradient(pet!!.biome))
@@ -419,7 +439,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             actionId = if (pet!!.sleeping) 3 else spriteAction,
                             actionToken = spriteActionToken,
                             loopAction = pet!!.sleeping,
-                            modifier = Modifier.size(138.dp)
+                            modifier = Modifier.size(if (compactLayout) 108.dp else 138.dp)
                         )
                     }
                     Text(
@@ -458,7 +478,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.padding(if (compactLayout) 8.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 6.dp else 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         OutlinedButton(
@@ -494,6 +514,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             color = if (status.contains("오류")) MaterialTheme.colorScheme.error else Color(0xFF8B8191),
             maxLines = 1
         )
+        }
     }
 }
 

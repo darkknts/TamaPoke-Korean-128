@@ -22,7 +22,7 @@ Android application for the TamaPoke virtual-pet game.
 2. Complete sprite animations and species/biome habitat presentation.
 3. Expand the Pokédex with detail pages and collection records.
 4. Connect growth, evolution and battle-stat presentation.
-5. Expand mini-games with timing and memory challenges; balance score rewards.
+5. Balance all three mini-games and verify repeated-play reward limits.
 6. Add rewards, medals, streaks and daily participation screens.
 7. Verify backup/restore, sound settings, notifications and power behavior.
 8. Run integrated tests and create the release APK.

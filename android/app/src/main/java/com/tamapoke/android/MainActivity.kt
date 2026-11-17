@@ -333,6 +333,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             }
         } else if (showSettings) {
             SettingsScreen(
+                compact = compactLayout,
                 soundEnabled = soundEnabled,
                 hapticsEnabled = hapticsEnabled,
                 backupMessage = backupMessage,
@@ -708,6 +709,7 @@ private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
 }
 @Composable
 private fun SettingsScreen(
+    compact: Boolean,
     soundEnabled: Boolean,
     hapticsEnabled: Boolean,
     backupMessage: String,
@@ -719,13 +721,13 @@ private fun SettingsScreen(
     onHapticsChange: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("게임 설정", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
             OutlinedButton(onClick = onBack) { Text("돌아가기") }
         }
         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
-            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.fillMaxWidth().padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 9.dp else 14.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) { Text("효과음", color = PokeInk, fontWeight = FontWeight.Bold); Text("돌봄과 게임 동작의 짧은 알림음", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall) }
                     androidx.compose.material3.Switch(checked = soundEnabled, onCheckedChange = onSoundChange)
@@ -737,7 +739,7 @@ private fun SettingsScreen(
             }
         }
         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
-            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
                         Text("홈 화면 미니펫 위젯", color = PokeInk, fontWeight = FontWeight.Bold)
@@ -749,9 +751,16 @@ private fun SettingsScreen(
             }
         }
         Text("저장 데이터 백업", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            OutlinedButton(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("백업 내보내기") }
-            OutlinedButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("백업 복원") }
+        if (compact) {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = onBackup, modifier = Modifier.fillMaxWidth()) { Text("백업 내보내기") }
+                OutlinedButton(onClick = onRestore, modifier = Modifier.fillMaxWidth()) { Text("백업 복원") }
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("백업 내보내기") }
+                OutlinedButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("백업 복원") }
+            }
         }
         if (backupMessage.isNotBlank()) Text(backupMessage, color = PokePurple, style = MaterialTheme.typography.bodySmall)
         Text("백업 파일은 ZIP 형식입니다. 복원하면 현재 기기의 저장 데이터가 백업 시점의 데이터로 교체됩니다.", color = Color(0xFF9A7650), style = MaterialTheme.typography.bodySmall)

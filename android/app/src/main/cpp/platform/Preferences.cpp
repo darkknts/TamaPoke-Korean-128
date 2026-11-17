@@ -17,7 +17,7 @@ bool Preferences::persist() const {
  auto path=filePath(), tmp=path+".tmp"; std::ofstream out(tmp,std::ios::binary|std::ios::trunc); if(!out)return false;
  uint32_t count=values_.size(); out.write(reinterpret_cast<const char*>(&count),sizeof(count));
  for(const auto& x:values_){ uint16_t ks=x.first.size(); uint32_t vs=x.second.size(); out.write(reinterpret_cast<const char*>(&ks),sizeof(ks)); out.write(x.first.data(),ks); out.write(reinterpret_cast<const char*>(&vs),sizeof(vs)); if(vs)out.write(reinterpret_cast<const char*>(x.second.data()),vs); }
- out.close(); if(!out)return false; std::remove(path.c_str()); return std::rename(tmp.c_str(),path.c_str())==0;
+ out.close(); if(!out)return false; return std::rename(tmp.c_str(),path.c_str())==0;
 }
 bool Preferences::begin(const char* n,bool r){ns_=n?n:"default";ro_=r;open_=load();return open_;}
 void Preferences::end(){open_=false;values_.clear();}

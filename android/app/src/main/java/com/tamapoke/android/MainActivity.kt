@@ -586,7 +586,7 @@ private fun MemoryGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
             Text("카드 짝 맞추기", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
             OutlinedButton(onClick = onBack) { Text("나가기") }
         }
-        Text("같은 열매 카드 4쌍을 찾아보세요. 시도 횟수 $turns회", color = PokePurple, fontWeight = FontWeight.Bold)
+        Text("같은 열매 카드 4쌍을 찾아보세요. 시도 횟수 ${turns}회", color = PokePurple, fontWeight = FontWeight.Bold)
         for (row in 0..1) {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
                 for (col in 0..3) {
@@ -605,7 +605,7 @@ private fun MemoryGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
             Card(colors = CardDefaults.cardColors(containerColor = PokeMint), modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("모든 짝을 찾았어요!", color = PokeInk, fontWeight = FontWeight.Bold)
-                    Text("시도 $turns회 · 훈련 점수 ${(24 - turns).coerceAtLeast(0)}점", color = Color(0xFF47775A), style = MaterialTheme.typography.bodySmall)
+                    Text("시도 ${turns}회 · 훈련 점수 ${(24 - turns).coerceAtLeast(0)}점", color = Color(0xFF47775A), style = MaterialTheme.typography.bodySmall)
                 }
             }
             Button(onClick = { order = (0..7).shuffled(); opened = emptyList(); matched = emptySet(); turns = 0; finished = false; sent = false }, modifier = Modifier.fillMaxWidth()) { Text("다시 도전하기") }

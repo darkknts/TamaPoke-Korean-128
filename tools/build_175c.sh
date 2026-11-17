@@ -37,6 +37,9 @@ fi
 mkdir -p "$OUT"
 BUILD="$(mktemp -d "${TMPDIR:-/tmp}/tamapoke-175c.XXXXXX")"
 trap 'rm -rf "$BUILD"' EXIT
+SKETCH="$BUILD/TamaPoke"
+mkdir -p "$SKETCH"
+cp -a "$ROOT"/*.ino "$ROOT"/*.h "$ROOT"/*.hpp "$ROOT"/*.cpp "$ROOT"/boards "$SKETCH/"
 
 # The ESP32 core's first prebuild hook copies a sketch-root partitions.csv into
 # the build folder. Point that hook at the 1.75C table instead, so the table is
@@ -47,7 +50,7 @@ arduino-cli compile --warnings=all \
   --build-property "compiler.cpp.extra_flags=-DBOARD_AMOLED_175C=1 ${EXTRA}" \
   --build-property "recipe.hooks.prebuild.1.pattern=cp -f \"${PARTS}\" \"{build.path}/partitions.csv\"" \
   --output-dir "$OUT" \
-  "$ROOT"
+  "$SKETCH"
 
 # Check the table that went into the image really is the 1.75C one.
 if ! diff -q <(grep -v '^#' "$PARTS" | tr -d ' \r' | grep -v '^$') \

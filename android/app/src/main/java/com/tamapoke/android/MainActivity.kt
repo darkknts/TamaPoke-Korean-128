@@ -1,8 +1,14 @@
 package com.tamapoke.android
 
 import android.os.Bundle
+import android.net.Uri
+import java.util.zip.ZipEntry
+import java.util.zip.ZipInputStream
+import java.util.zip.ZipOutputStream
 import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -131,6 +137,52 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     val context = LocalContext.current
     var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
     var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
+    var backupMessage by remember { mutableStateOf("") }
+    val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
+        if (uri != null) {
+            backupMessage = runCatching {
+                val saveFile = java.io.File(context.filesDir, "tamapoke_tamapoke.prefs")
+                check(saveFile.exists()) { "저장 데이터가 아직 없습니다." }
+                context.contentResolver.openOutputStream(uri)?.use { output ->
+                    ZipOutputStream(output).use { zip ->
+                        zip.putNextEntry(ZipEntry("tamapoke_tamapoke.prefs"))
+                        saveFile.inputStream().use { it.copyTo(zip) }
+                        zip.closeEntry()
+                    }
+                } ?: error("백업 파일을 만들 수 없습니다.")
+                "백업 파일을 저장했습니다."
+            }.getOrElse { "백업 실패: ${it.message}" }
+        }
+    }
+    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            backupMessage = runCatching {
+                var restored = false
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    ZipInputStream(input).use { zip ->
+                        var entry = zip.nextEntry
+                        while (entry != null) {
+                            if (entry.name == "tamapoke_tamapoke.prefs") {
+                                val target = java.io.File(context.filesDir, "tamapoke_tamapoke.prefs")
+                                val temp = java.io.File(context.filesDir, "tamapoke_restore.tmp")
+                                temp.outputStream().use { output -> zip.copyTo(output) }
+                                check(temp.length() in 1..(2L * 1024 * 1024)) { "백업 파일 크기가 올바르지 않습니다." }
+                                check(temp.renameTo(target) || temp.copyTo(target, overwrite = true).exists()) { "저장 파일을 교체하지 못했습니다." }
+                                restored = true
+                                break
+                            }
+                            zip.closeEntry()
+                            entry = zip.nextEntry
+                        }
+                    }
+                } ?: error("백업 파일을 읽을 수 없습니다.")
+                check(restored) { "TamaPoke 백업 파일을 찾을 수 없습니다." }
+                PetNative.initialize(context.filesDir.absolutePath)
+                pet = PetNative.state()
+                "백업 데이터를 복원했습니다."
+            }.getOrElse { "복원 실패: ${it.message}" }
+        }
+    }
 
     fun performPetAction(animationId: Int, action: () -> Unit) {
         runCatching {
@@ -227,6 +279,9 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             SettingsScreen(
                 soundEnabled = soundEnabled,
                 hapticsEnabled = hapticsEnabled,
+                backupMessage = backupMessage,
+                onBackup = { backupLauncher.launch("tamapoke-backup.zip") },
+                onRestore = { restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
                 onSoundChange = {
                     soundEnabled = it
                     context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).edit().putBoolean("sound_enabled", it).apply()
@@ -592,6 +647,9 @@ private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
 private fun SettingsScreen(
     soundEnabled: Boolean,
     hapticsEnabled: Boolean,
+    backupMessage: String,
+    onBackup: () -> Unit,
+    onRestore: () -> Unit,
     onSoundChange: (Boolean) -> Unit,
     onHapticsChange: (Boolean) -> Unit,
     onBack: () -> Unit
@@ -613,8 +671,13 @@ private fun SettingsScreen(
                 }
             }
         }
-        Text("게임 데이터는 기기 내부에 자동 저장됩니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
-        Text("앱 삭제 또는 기기 초기화 시 저장 데이터가 사라질 수 있습니다. 백업·복원은 다음 단계에서 추가합니다.", color = Color(0xFF9A7650), style = MaterialTheme.typography.bodySmall)
+        Text("저장 데이터 백업", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onBackup, modifier = Modifier.weight(1f)) { Text("백업 내보내기") }
+            OutlinedButton(onClick = onRestore, modifier = Modifier.weight(1f)) { Text("백업 복원") }
+        }
+        if (backupMessage.isNotBlank()) Text(backupMessage, color = PokePurple, style = MaterialTheme.typography.bodySmall)
+        Text("백업 파일은 ZIP 형식입니다. 복원하면 현재 기기의 저장 데이터가 백업 시점의 데이터로 교체됩니다.", color = Color(0xFF9A7650), style = MaterialTheme.typography.bodySmall)
     }
 }
 @Composable

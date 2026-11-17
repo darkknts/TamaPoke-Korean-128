@@ -89,6 +89,9 @@ Java_com_tamapoke_android_PetNative_nativeGetDexState(JNIEnv* env, jobject) {
 }
 
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeFeed(JNIEnv*, jobject) { if (g_pet) g_pet->feed(); }
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlayResult(JNIEnv*, jobject, jint score) {
+    if (g_pet) g_pet->playResult(static_cast<uint8_t>(score < 0 ? 0 : (score > 255 ? 255 : score)));
+}
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlay(JNIEnv*, jobject) { if (g_pet) g_pet->play(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeClean(JNIEnv*, jobject) { if (g_pet) g_pet->clean(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeCaress(JNIEnv*, jobject) { if (g_pet) g_pet->caress(); }

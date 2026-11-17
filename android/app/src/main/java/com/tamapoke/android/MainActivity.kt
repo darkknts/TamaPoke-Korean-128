@@ -136,7 +136,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     StatBar("행복도", pet!!.joy)
                     StatBar("에너지", pet!!.energy)
                     StatBar("위생", pet!!.hygiene)
-                    Text("몸무게 단계 ${pet!!.poops} / 배설물", style = MaterialTheme.typography.bodySmall)
+                    Text("몸무게 ${pet!!.weight} / 100", style = MaterialTheme.typography.bodySmall)\n                    Text("배설물 ${pet!!.poops} / 3", style = MaterialTheme.typography.bodySmall)
                 }
             }
 
@@ -153,7 +153,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         ActionButton(if (pet!!.sleeping) "깨우기" else "재우기", Modifier.weight(1f)) { PetNative.toggleSleep() }
-                        ActionButton("진화 확인", Modifier.weight(1f), enabled = true) { PetNative.evolve() }
+                        if (pet!!.canEvolve) ActionButton("진화하기", Modifier.weight(1f)) { PetNative.evolve() }
                     }
                 }
             }

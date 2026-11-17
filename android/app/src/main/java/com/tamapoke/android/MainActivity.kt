@@ -109,6 +109,13 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     },
                     style = MaterialTheme.typography.headlineSmall
                 )
+                if (pet != null && !pet!!.egg && !pet!!.starterPick) {
+                    PetSprite(
+                        speciesId = pet!!.speciesId,
+                        shiny = pet!!.shiny,
+                        modifier = Modifier.size(176.dp)
+                    )
+                }
                 if (pet != null && !pet!!.starterPick) {
                     Text("레벨 ${pet!!.level}", style = MaterialTheme.typography.titleLarge)
                 }

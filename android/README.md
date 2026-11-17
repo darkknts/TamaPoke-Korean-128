@@ -14,6 +14,7 @@ Android application for the TamaPoke virtual-pet game.
 - Species habitat backgrounds based on the original six biome classifications.
 - Korean Pokédex screen showing all 151 species, discovery status and shiny registration.
 - Growth report with level progress, battle stats, bond, streak, medals and collection count.
+- Medal collection screen for all eight engine achievements, including level milestones, berry discovery, care streak, bond, final evolution and fitness.
 - Berry-catching mini-game with three lanes, a 20-second round and score rewards connected to the C++ engine.
 
 ## Development sequence

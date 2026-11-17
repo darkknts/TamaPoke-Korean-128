@@ -108,7 +108,7 @@ val generateLauncherIcons by tasks.registering {
     }
 }
 
-sourceSets.getByName("main").res.srcDir(generatedLauncherIcons)
+android.sourceSets.getByName("main").res.srcDir(generatedLauncherIcons)
 tasks.named("preBuild").configure {
     dependsOn(generateLauncherIcons)
 }

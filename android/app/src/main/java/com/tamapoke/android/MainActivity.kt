@@ -408,7 +408,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                            Text("MY PARTNER", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
+                            Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
                             Text("도감 번호 ${pet!!.speciesId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PokeInk)
                         }
                         Surface(color = Color.White, shape = RoundedCornerShape(50)) {

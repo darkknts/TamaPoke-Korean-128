@@ -136,7 +136,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     StatBar("행복도", pet!!.joy)
                     StatBar("에너지", pet!!.energy)
                     StatBar("위생", pet!!.hygiene)
-                    Text("몸무게 ${pet!!.weight} / 100", style = MaterialTheme.typography.bodySmall)\n                    Text("배설물 ${pet!!.poops} / 3", style = MaterialTheme.typography.bodySmall)
+                    Text("몸무게 ${pet!!.weight} / 100", style = MaterialTheme.typography.bodySmall)
+                    Text("배설물 ${pet!!.poops} / 3", style = MaterialTheme.typography.bodySmall)
                 }
             }
 

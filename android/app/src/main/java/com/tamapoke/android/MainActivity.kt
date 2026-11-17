@@ -391,7 +391,7 @@ private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
             OutlinedButton(onClick = onBack) { Text("나가기") }
         }
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("남은 시간  $remaining초", color = PokePurple, fontWeight = FontWeight.Bold)
+            Text("남은 시간  ${remaining}초", color = PokePurple, fontWeight = FontWeight.Bold)
             Text("점수  $score  ·  놓침 $misses", color = PokeInk, fontWeight = FontWeight.Bold)
         }
         LinearProgressIndicator(progress = { remaining / 20f }, modifier = Modifier.fillMaxWidth(), color = PokePurple, trackColor = PokeLavender)
@@ -413,7 +413,7 @@ private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeMint), shape = RoundedCornerShape(18.dp)) {
                 Column(Modifier.fillMaxWidth().padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("게임 종료!", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
-                    Text("$score개 획득 · 속도 훈련과 행복도 보상이 적용됐어요", style = MaterialTheme.typography.bodySmall, color = Color(0xFF47775A))
+                    Text("${score}개 획득 · 속도 훈련과 행복도 보상이 적용됐어요", style = MaterialTheme.typography.bodySmall, color = Color(0xFF47775A))
                 }
             }
             Button(onClick = {

@@ -9,6 +9,9 @@ Android application for the TamaPoke virtual-pet game.
 - Local device persistence through the Android Preferences adapter, with periodic engine flushes.
 - Persistent Android settings for optional sound effects and haptic feedback.
 - ZIP backup export and restore for the C++ engine save file, with save reload after restore.
+- Opt-in mini-pet overlay displayed below the status bar over other apps through a special-use foreground service.
+- Important care notifications for critical hunger, energy, hygiene and happiness states, with a six-hour repeat cooldown.
+- Mini-pet settings toggle, overlay permission flow, notification permission request and stop action from the foreground notification.
 - Real-time pet status refresh and care actions (feed, play, clean, pet, sleep, evolve).
 - Starter selection (Bulbasaur, Charmander, Squirtle).
 - TPK2 sprite loading for all 151 species and shiny variants when available.
@@ -27,7 +30,7 @@ Android application for the TamaPoke virtual-pet game.
 4. Connect growth, evolution and battle-stat presentation.
 5. Balance all three mini-games and verify repeated-play reward limits.
 6. Add rewards, medals, streaks and daily participation screens.
-7. Verify ZIP backup/restore on multiple devices, sound and haptic settings, notifications and background lifecycle behavior.
+7. Verify ZIP backup/restore on multiple devices, sound and haptic settings, mini-pet overlay permissions, important care notifications and background lifecycle behavior.
 8. Run integrated tests and create the release APK.
 
 ## APK build policy

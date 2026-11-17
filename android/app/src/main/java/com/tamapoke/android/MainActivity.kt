@@ -6,12 +6,14 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -33,6 +35,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -42,6 +45,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 private val PokePurple = Color(0xFF8A63C7)
 private val PokeInk = Color(0xFF40354D)
@@ -116,6 +120,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var spriteActionToken by remember { mutableIntStateOf(0) }
     var showDex by remember { mutableStateOf(false) }
     var showGrowth by remember { mutableStateOf(false) }
+    var showGame by remember { mutableStateOf(false) }
     var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
 
     fun performPetAction(animationId: Int, action: () -> Unit) {
@@ -175,7 +180,17 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             }
         }
 
-        if (showDex) {
+        if (showGame) {
+            BerryCatchGame(
+                onBack = { showGame = false },
+                onResult = { score ->
+                    runCatching {
+                        PetNative.playResult(score)
+                        pet = PetNative.state()
+                    }.onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
+                }
+            )
+        } else if (showDex) {
             DexScreen(entries = dexEntries, onBack = { showDex = false })
         } else if (showGrowth && pet != null && !pet!!.egg && !pet!!.starterPick) {
             GrowthScreen(pet = pet!!, onBack = { showGrowth = false })
@@ -298,7 +313,10 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text("매일매일 교감해요", style = MaterialTheme.typography.labelSmall, color = Color(0xFF857991))
+                        OutlinedButton(
+                            onClick = { showGame = true },
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 4.dp)
+                        ) { Text("🍓 미니게임", style = MaterialTheme.typography.labelSmall) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         ActionButton("🍓  먹이 주기", Modifier.weight(1f)) { performPetAction(4) { PetNative.feed() } }
@@ -331,6 +349,79 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     }
 }
 
+@Composable
+private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
+    var playing by remember { mutableStateOf(true) }
+    var remaining by remember { mutableIntStateOf(20) }
+    var score by remember { mutableIntStateOf(0) }
+    var misses by remember { mutableIntStateOf(0) }
+    var basketLane by remember { mutableIntStateOf(1) }
+    var berryLane by remember { mutableIntStateOf(Random.nextInt(3)) }
+    var berryProgress by remember { mutableFloatStateOf(0f) }
+    var resultSent by remember { mutableStateOf(false) }
+
+    LaunchedEffect(playing) {
+        if (!playing) return@LaunchedEffect
+        var ticks = 0
+        while (playing && remaining > 0) {
+            delay(100)
+            ticks++
+            berryProgress += 0.05f
+            if (berryProgress >= 0.9f) {
+                if (berryLane == basketLane) score++ else misses++
+                berryProgress = 0f
+                berryLane = Random.nextInt(3)
+            }
+            if (ticks % 10 == 0) remaining--
+        }
+        if (remaining <= 0 && !resultSent) {
+            playing = false
+            resultSent = true
+            onResult(score)
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Text("열매 받기", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = PokeInk)
+                Text("바구니를 움직여 떨어지는 열매를 받아요", style = MaterialTheme.typography.labelSmall, color = Color(0xFF766B80))
+            }
+            OutlinedButton(onClick = onBack) { Text("나가기") }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("남은 시간  $remaining초", color = PokePurple, fontWeight = FontWeight.Bold)
+            Text("점수  $score  ·  놓침 $misses", color = PokeInk, fontWeight = FontWeight.Bold)
+        }
+        LinearProgressIndicator(progress = { remaining / 20f }, modifier = Modifier.fillMaxWidth(), color = PokePurple, trackColor = PokeLavender)
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxWidth().height(280.dp).clip(RoundedCornerShape(22.dp)).background(Color(0xFFEAF6FF))
+        ) {
+            val laneWidth = maxWidth / 3
+            repeat(2) { lane ->
+                Box(Modifier.offset(x = laneWidth * (lane + 1).toFloat()).fillMaxHeight().width(1.dp).background(Color(0xFFD5E6F3)))
+            }
+            Text("🍓", modifier = Modifier.offset(x = laneWidth * berryLane.toFloat() + laneWidth / 2 - 16.dp, y = maxHeight * berryProgress), style = MaterialTheme.typography.headlineMedium)
+            Text("🧺", modifier = Modifier.align(Alignment.BottomStart).offset(x = laneWidth * basketLane.toFloat() + laneWidth / 2 - 22.dp, y = (-8).dp), style = MaterialTheme.typography.headlineLarge)
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+            Button(onClick = { basketLane = (basketLane - 1).coerceAtLeast(0) }, enabled = playing, modifier = Modifier.weight(1f)) { Text("◀ 왼쪽") }
+            Button(onClick = { basketLane = (basketLane + 1).coerceAtMost(2) }, enabled = playing, modifier = Modifier.weight(1f)) { Text("오른쪽 ▶") }
+        }
+        if (!playing && remaining == 0) {
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeMint), shape = RoundedCornerShape(18.dp)) {
+                Column(Modifier.fillMaxWidth().padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                    Text("게임 종료!", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
+                    Text("$score개 획득 · 속도 훈련과 행복도 보상이 적용됐어요", style = MaterialTheme.typography.bodySmall, color = Color(0xFF47775A))
+                }
+            }
+            Button(onClick = {
+                remaining = 20; score = 0; misses = 0; basketLane = 1
+                berryLane = Random.nextInt(3); berryProgress = 0f; resultSent = false; playing = true
+            }, modifier = Modifier.fillMaxWidth()) { Text("다시 도전하기") }
+        }
+    }
+}
 @Composable
 private fun GrowthScreen(pet: PetState, onBack: () -> Unit) {
     val progress = if (pet.level >= 999) 1f else (60 - pet.nextLevelMinutes).coerceIn(0, 60) / 60f

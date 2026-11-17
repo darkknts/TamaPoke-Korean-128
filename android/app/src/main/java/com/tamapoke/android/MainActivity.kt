@@ -115,6 +115,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var spriteAction by remember { mutableIntStateOf(0) }
     var spriteActionToken by remember { mutableIntStateOf(0) }
     var showDex by remember { mutableStateOf(false) }
+    var showGrowth by remember { mutableStateOf(false) }
     var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
 
     fun performPetAction(animationId: Int, action: () -> Unit) {
@@ -159,17 +160,25 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
                 Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
             }
-            OutlinedButton(
-                onClick = {
-                    dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
-                    showDex = true
-                },
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 5.dp)
-            ) { Text("도감", style = MaterialTheme.typography.labelMedium) }
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                OutlinedButton(
+                    onClick = { showGrowth = true },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)
+                ) { Text("성장", style = MaterialTheme.typography.labelMedium) }
+                OutlinedButton(
+                    onClick = {
+                        dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
+                        showDex = true
+                    },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)
+                ) { Text("도감", style = MaterialTheme.typography.labelMedium) }
+            }
         }
 
         if (showDex) {
             DexScreen(entries = dexEntries, onBack = { showDex = false })
+        } else if (showGrowth && pet != null && !pet!!.egg && !pet!!.starterPick) {
+            GrowthScreen(pet = pet!!, onBack = { showGrowth = false })
         } else if (pet == null) {
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeLavender)) {
                 Text("포켓몬 정보를 불러오는 중입니다", modifier = Modifier.padding(20.dp))
@@ -322,6 +331,54 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     }
 }
 
+@Composable
+private fun GrowthScreen(pet: PetState, onBack: () -> Unit) {
+    val progress = if (pet.level >= 999) 1f else (60 - pet.nextLevelMinutes).coerceIn(0, 60) / 60f
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+            Column {
+                Text("성장 리포트", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = PokeInk)
+                Text("도감 번호 ${pet.speciesId} · Lv. ${pet.level}", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(onClick = onBack) { Text("돌아가기") }
+        }
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F8FF)), shape = RoundedCornerShape(20.dp)) {
+            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text("다음 레벨까지", color = PokeInk, fontWeight = FontWeight.Bold)
+                    Text(if (pet.level >= 999) "최고 레벨" else "${pet.nextLevelMinutes}분 남음", color = PokePurple, fontWeight = FontWeight.Bold)
+                }
+                LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth(), color = PokePurple, trackColor = PokeLavender)
+                Text("성장은 실제 경과 시간에 따라 진행됩니다.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF766B80))
+            }
+        }
+        Text("전투 능력치", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            GrowthStat("공격", pet.atk, Modifier.weight(1f))
+            GrowthStat("방어", pet.defense, Modifier.weight(1f))
+            GrowthStat("속도", pet.speed, Modifier.weight(1f))
+        }
+        Text("교감 기록", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            InfoChip("💗 친밀도", "${pet.bond} / 100", Modifier.weight(1f))
+            InfoChip("🔥 연속 돌봄", "${pet.streak}일", Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            InfoChip("🏅 메달", "${Integer.bitCount(pet.medals)} / 8", Modifier.weight(1f))
+            InfoChip("📖 도감 등록", "${pet.registeredCount} / 151", Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier) {
+    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {
+        Column(Modifier.fillMaxWidth().padding(vertical = 13.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = Color(0xFF766B80))
+            Text(value.toString(), style = MaterialTheme.typography.headlineSmall, color = PokePurple, fontWeight = FontWeight.ExtraBold)
+        }
+    }
+}
 @Composable
 private fun DexScreen(entries: List<DexEntry>, onBack: () -> Unit) {
     val registeredCount = entries.count { it.registered }

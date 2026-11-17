@@ -12,6 +12,7 @@ data class DexEntry(
 data class PetState(
     val egg: Boolean,
     val speciesId: Int,
+    val biome: Int,
     val level: Int,
     val fullness: Int,
     val joy: Int,
@@ -51,6 +52,7 @@ object PetNative {
         return PetState(
             egg = json.optBoolean("egg"),
             speciesId = json.optInt("speciesId", -1),
+            biome = json.optInt("biome", 0),
             level = json.optInt("level", 1),
             fullness = json.optInt("fullness", 0),
             joy = json.optInt("joy", 0),

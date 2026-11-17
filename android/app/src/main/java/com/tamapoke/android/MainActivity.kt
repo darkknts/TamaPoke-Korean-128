@@ -174,8 +174,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     StatTile("🫧", "위생", pet!!.hygiene, Modifier.weight(1f))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    InfoChip("⚖ 몸무게", "${pet!!.weight} / 100")
-                    InfoChip("🧹 배설물", "${pet!!.poops} / 3")
+                    InfoChip("⚖ 몸무게", "${pet!!.weight} / 100", Modifier.weight(1f))
+                    InfoChip("🧹 배설물", "${pet!!.poops} / 3", Modifier.weight(1f))
                 }
             }
 

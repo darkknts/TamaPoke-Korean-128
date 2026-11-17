@@ -10,7 +10,7 @@ data class PetState(
     val joy: Int,
     val energy: Int,
     val hygiene: Int,
-    val poops: Int,
+    val poops: Int,\n    val weight: Int,\n    val ageMinutes: Int,\n    val canEvolve: Boolean,
     val sleeping: Boolean,
     val shiny: Boolean,
     val starterPick: Boolean
@@ -45,7 +45,7 @@ object PetNative {
             joy = json.optInt("joy", 0),
             energy = json.optInt("energy", 0),
             hygiene = json.optInt("hygiene", 0),
-            poops = json.optInt("poops", 0),
+            poops = json.optInt("poops", 0),\n            weight = json.optInt("weight", 0),\n            ageMinutes = json.optInt("ageMinutes", 0),\n            canEvolve = json.optBoolean("canEvolve"),
             sleeping = json.optBoolean("sleeping"),
             shiny = json.optBoolean("shiny"),
             starterPick = json.optBoolean("starterPick")

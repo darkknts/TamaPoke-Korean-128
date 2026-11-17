@@ -1,12 +1,6 @@
 name: Android Build
 
 on:
-  push:
-    branches:
-      - feature/android-app
-  pull_request:
-    branches:
-      - feature/android-app
   workflow_dispatch:
 
 jobs:

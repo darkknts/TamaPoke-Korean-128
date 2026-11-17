@@ -27,6 +27,7 @@ constexpr COLORREF kMiniTransparent = RGB(255,0,255);
 HWND miniHwnd=nullptr;
 HWND mainHwnd=nullptr;
 bool miniMode=false;
+bool mainTaskbarHiddenForMini=false;
 Pet pet;
 int page=0;
 int dexPage=0;
@@ -487,13 +488,31 @@ void placeMini(HWND hwnd) {
   const int width=180,height=185;
   SetWindowPos(hwnd,HWND_TOPMOST,work.right-width-18,work.bottom-height-8,width,height,SWP_NOACTIVATE|SWP_SHOWWINDOW);
 }
+void setMainTaskbarHidden(bool hidden) {
+  if(!mainHwnd) return;
+  LONG_PTR style=GetWindowLongPtrW(mainHwnd,GWL_EXSTYLE);
+  if(hidden) style|=WS_EX_TOOLWINDOW;
+  else style&=~(LONG_PTR)WS_EX_TOOLWINDOW;
+  SetWindowLongPtrW(mainHwnd,GWL_EXSTYLE,style);
+  SetWindowPos(mainHwnd,nullptr,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE|SWP_FRAMECHANGED);
+  mainTaskbarHiddenForMini=hidden;
+}
+void stopMini() {
+  miniMode=false;
+  if(miniHwnd) ShowWindow(miniHwnd,SW_HIDE);
+  if(mainTaskbarHiddenForMini) setMainTaskbarHidden(false);
+}
 void showMini() {
   if(!miniHwnd) return;
-  miniMode=true; placeMini(miniHwnd); InvalidateRect(miniHwnd,nullptr,FALSE);
+  miniMode=true;
+  setMainTaskbarHidden(true);
+  placeMini(miniHwnd);
+  InvalidateRect(miniHwnd,nullptr,FALSE);
 }
 void restoreMain(HWND owner) {
-  miniMode=false; if(miniHwnd) ShowWindow(miniHwnd,SW_HIDE);
-  ShowWindow(owner,SW_RESTORE); SetForegroundWindow(owner);
+  stopMini();
+  ShowWindow(owner,SW_RESTORE);
+  SetForegroundWindow(owner);
 }
 LRESULT CALLBACK miniProc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
   switch(msg) {
@@ -510,7 +529,7 @@ LRESULT CALLBACK miniProc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp) {
       SetForegroundWindow(hwnd); int cmd=TrackPopupMenu(menu,TPM_RETURNCMD|TPM_RIGHTBUTTON,pt.x,pt.y,0,hwnd,nullptr);
       DestroyMenu(menu);
       if(cmd==1) restoreMain(mainHwnd);
-      else if(cmd==2) { miniMode=false; ShowWindow(hwnd,SW_HIDE); }
+      else if(cmd==2) { stopMini(); ShowWindow(mainHwnd,SW_RESTORE); SetForegroundWindow(mainHwnd); }
       return 0;
     }
     case WM_ERASEBKGND: return 1;
@@ -615,7 +634,17 @@ void act(HWND hwnd,int x,int y) {
     if(y>=225&&y<=300) {gameActive=true;gameScore=0;gameStarted=GetTickCount();targetX=360;targetY=350;notice=L"표적을 클릭해 점수를 올려보세요!";InvalidateRect(hwnd,nullptr,FALSE);return;}
     if(y>=305&&y<=380) {renamePet(hwnd);InvalidateRect(hwnd,nullptr,FALSE);return;}
     if(y>=385&&y<=465) {audioSetEnabled(!audioEnabled());notice=audioEnabled()?L"효과음을 켰어요.":L"효과음을 껐어요.";InvalidateRect(hwnd,nullptr,FALSE);return;}
-    if(y>=590&&y<=675) {showMini();notice=L"미니 펫이 화면 위에 나타났어요. 더블클릭하면 게임으로 돌아옵니다.";InvalidateRect(hwnd,nullptr,FALSE);return;}
+    if(y>=590&&y<=675) {
+      if(miniMode) {
+        stopMini();
+        notice=L"미니 펫 모드를 종료했어요.";
+      } else {
+        showMini();
+        notice=L"미니 펫이 계속 표시됩니다. 더블클릭하면 돌아오고, 다시 시작 버튼으로 종료할 수 있어요.";
+      }
+      InvalidateRect(hwnd,nullptr,FALSE);
+      return;
+    }
     return;
   }
   if(page==2&&y>=640&&y<=710){if(x<360&&dexPage>0)dexPage--;else if(x>430&&dexPage<6)dexPage++;InvalidateRect(hwnd,nullptr,FALSE);return;}
@@ -648,7 +677,11 @@ void act(HWND hwnd,int x,int y) {
 LRESULT CALLBACK proc(HWND hwnd,UINT msg,WPARAM wp,LPARAM lp){
   switch(msg){
     case WM_CREATE:{std::srand((unsigned)std::time(nullptr));audioBegin();loadDesktopSprites();pet.begin();time_t now=std::time(nullptr);pet.syncClock((uint32_t)now);lastClockSync=now;SetTimer(hwnd,1,250,nullptr);return 0;}
-    case WM_SIZE: if(wp==SIZE_MINIMIZED) showMini(); else if(wp==SIZE_RESTORED&&miniHwnd) {miniMode=false;ShowWindow(miniHwnd,SW_HIDE);} return 0;
+    case WM_SIZE:
+      if(wp==SIZE_MINIMIZED) showMini();
+      else if(wp==SIZE_RESTORED&&miniHwnd&&!miniMode) ShowWindow(miniHwnd,SW_HIDE);
+      else if(wp==SIZE_RESTORED&&miniMode) stopMini();
+      return 0;
     case WM_TIMER:{pet.update(millis());if(GetTickCount()>=transientActionUntil)transientAction=0;if(gameActive&&GetTickCount()-gameStarted>=15000){gameActive=false;pet.playResult((uint8_t)(gameScore>255?255:gameScore));notice=L"미니게임 종료! 획득 점수: "+std::to_wstring(gameScore);page=3;}time_t now=std::time(nullptr);if(now-lastClockSync>=60){pet.setClock((uint32_t)now);lastClockSync=now;}if(pet.savePending())pet.flushSave();InvalidateRect(hwnd,nullptr,FALSE);if(miniHwnd&&IsWindowVisible(miniHwnd))InvalidateRect(miniHwnd,nullptr,FALSE);return 0;}
     case WM_LBUTTONUP:act(hwnd,LOWORD(lp),HIWORD(lp));return 0;
     case WM_PAINT:paint(hwnd);return 0;

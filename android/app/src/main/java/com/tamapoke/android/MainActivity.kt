@@ -122,6 +122,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var spriteActionToken by remember { mutableIntStateOf(0) }
     var showDex by remember { mutableStateOf(false) }
     var showGrowth by remember { mutableStateOf(false) }
+    var showAchievements by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
     var gameMode by remember { mutableStateOf("menu") }
     var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
@@ -211,10 +212,12 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     onBack = { showGame = false }
                 )
             }
+        } else if (showAchievements && pet != null && !pet!!.egg && !pet!!.starterPick) {
+            AchievementScreen(pet = pet!!, onBack = { showAchievements = false })
         } else if (showDex) {
             DexScreen(entries = dexEntries, onBack = { showDex = false })
         } else if (showGrowth && pet != null && !pet!!.egg && !pet!!.starterPick) {
-            GrowthScreen(pet = pet!!, onBack = { showGrowth = false })
+            GrowthScreen(pet = pet!!, onBack = { showGrowth = false }, onAchievements = { showAchievements = true })
         } else if (pet == null) {
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeLavender)) {
                 Text("포켓몬 정보를 불러오는 중입니다", modifier = Modifier.padding(20.dp))
@@ -559,7 +562,7 @@ private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
     }
 }
 @Composable
-private fun GrowthScreen(pet: PetState, onBack: () -> Unit) {
+private fun GrowthScreen(pet: PetState, onBack: () -> Unit, onAchievements: () -> Unit) {
     val progress = if (pet.level >= 999) 1f else (60 - pet.nextLevelMinutes).coerceIn(0, 60) / 60f
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -585,6 +588,7 @@ private fun GrowthScreen(pet: PetState, onBack: () -> Unit) {
             GrowthStat("방어", pet.defense, Modifier.weight(1f))
             GrowthStat("속도", pet.speed, Modifier.weight(1f))
         }
+        OutlinedButton(onClick = onAchievements, modifier = Modifier.fillMaxWidth()) { Text("🏅 메달 및 업적 확인") }
         Text("교감 기록", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             InfoChip("💗 친밀도", "${pet.bond} / 100", Modifier.weight(1f))
@@ -597,6 +601,42 @@ private fun GrowthScreen(pet: PetState, onBack: () -> Unit) {
     }
 }
 
+@Composable
+private fun AchievementScreen(pet: PetState, onBack: () -> Unit) {
+    val medals = listOf(
+        Triple(1, "🌱 첫 성장", "레벨 10 달성"),
+        Triple(2, "🌿 꾸준한 성장", "레벨 25 달성"),
+        Triple(4, "🌳 베테랑", "레벨 50 달성"),
+        Triple(8, "🍓 취향 발견", "좋아하는 열매 발견"),
+        Triple(16, "🔥 7일 연속 돌봄", "돌봄 연속 기록 7일 달성"),
+        Triple(32, "💗 최고의 유대", "친밀도 100 달성"),
+        Triple(64, "✨ 최종 진화", "최종 진화 단계 도달"),
+        Triple(128, "💪 건강한 몸", "레벨 5 이상 · 체중 0 · 돌봄 실수 없음")
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column {
+                Text("메달 컬렉션", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+                Text("${Integer.bitCount(pet.medals)} / 8 획득", color = PokePurple, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(onClick = onBack) { Text("돌아가기") }
+        }
+        LinearProgressIndicator(progress = { Integer.bitCount(pet.medals) / 8f }, modifier = Modifier.fillMaxWidth(), color = PokePurple, trackColor = PokeLavender)
+        medals.forEach { medal ->
+            val earned = (pet.medals and medal.first) != 0
+            Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (earned) Color(0xFFFFF6DF) else Color(0xFFF3F1F6)), shape = RoundedCornerShape(15.dp)) {
+                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(if (earned) medal.second.substringBefore(" ") else "🔒", style = MaterialTheme.typography.headlineSmall)
+                    Column(Modifier.weight(1f)) {
+                        Text(if (earned) medal.second.substringAfter(" ") else medal.second.substringAfter(" "), color = PokeInk, fontWeight = FontWeight.Bold)
+                        Text(medal.third, color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
+                    }
+                    Text(if (earned) "획득" else "미획득", color = if (earned) Color(0xFF9A6B1C) else Color(0xFF918A99), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
 @Composable
 private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier) {
     Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp), elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)) {

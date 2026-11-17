@@ -362,11 +362,11 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 onBack = { showSettings = false }
             )
         } else if (showAchievements && pet != null && !pet!!.egg && !pet!!.starterPick) {
-            AchievementScreen(pet = pet!!, onBack = { showAchievements = false })
+            AchievementScreen(pet = pet!!, compact = compactLayout, onBack = { showAchievements = false })
         } else if (showDex) {
             DexScreen(entries = dexEntries, compact = compactLayout, onBack = { showDex = false })
         } else if (showGrowth && pet != null && !pet!!.egg && !pet!!.starterPick) {
-            GrowthScreen(pet = pet!!, onBack = { showGrowth = false }, onAchievements = { showAchievements = true })
+            GrowthScreen(pet = pet!!, compact = compactLayout, onBack = { showGrowth = false }, onAchievements = { showAchievements = true })
         } else if (pet == null) {
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeLavender)) {
                 Text("포켓몬 정보를 불러오는 중입니다", modifier = Modifier.padding(20.dp))
@@ -771,18 +771,18 @@ private fun SettingsScreen(
     }
 }
 @Composable
-private fun GrowthScreen(pet: PetState, onBack: () -> Unit, onAchievements: () -> Unit) {
+private fun GrowthScreen(pet: PetState, compact: Boolean, onBack: () -> Unit, onAchievements: () -> Unit) {
     val progress = if (pet.level >= 999) 1f else (60 - pet.nextLevelMinutes).coerceIn(0, 60) / 60f
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Column {
+            Column(Modifier.weight(1f)) {
                 Text("성장 리포트", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = PokeInk)
                 Text("도감 번호 ${pet.speciesId} · Lv. ${pet.level}", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
             }
             OutlinedButton(onClick = onBack) { Text("돌아가기") }
         }
         Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F8FF)), shape = RoundedCornerShape(20.dp)) {
-            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth().padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text("다음 레벨까지", color = PokeInk, fontWeight = FontWeight.Bold)
                     Text(if (pet.level >= 999) "최고 레벨" else "${pet.nextLevelMinutes}분 남음", color = PokePurple, fontWeight = FontWeight.Bold)
@@ -811,7 +811,7 @@ private fun GrowthScreen(pet: PetState, onBack: () -> Unit, onAchievements: () -
 }
 
 @Composable
-private fun AchievementScreen(pet: PetState, onBack: () -> Unit) {
+private fun AchievementScreen(pet: PetState, compact: Boolean, onBack: () -> Unit) {
     val medals = listOf(
         Triple(1, "🌱 첫 성장", "레벨 10 달성"),
         Triple(2, "🌿 꾸준한 성장", "레벨 25 달성"),
@@ -822,7 +822,7 @@ private fun AchievementScreen(pet: PetState, onBack: () -> Unit) {
         Triple(64, "✨ 최종 진화", "최종 진화 단계 도달"),
         Triple(128, "💪 건강한 몸", "레벨 5 이상 · 체중 0 · 돌봄 실수 없음")
     )
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column {
                 Text("메달 컬렉션", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
@@ -834,7 +834,7 @@ private fun AchievementScreen(pet: PetState, onBack: () -> Unit) {
         medals.forEach { medal ->
             val earned = (pet.medals and medal.first) != 0
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = if (earned) Color(0xFFFFF6DF) else Color(0xFFF3F1F6)), shape = RoundedCornerShape(15.dp)) {
-                Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(Modifier.fillMaxWidth().padding(if (compact) 8.dp else 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(if (earned) medal.second.substringBefore(" ") else "🔒", style = MaterialTheme.typography.headlineSmall)
                     Column(Modifier.weight(1f)) {
                         Text(if (earned) medal.second.substringAfter(" ") else medal.second.substringAfter(" "), color = PokeInk, fontWeight = FontWeight.Bold)

@@ -359,7 +359,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         } else if (showAchievements && pet != null && !pet!!.egg && !pet!!.starterPick) {
             AchievementScreen(pet = pet!!, onBack = { showAchievements = false })
         } else if (showDex) {
-            DexScreen(entries = dexEntries, onBack = { showDex = false })
+            DexScreen(entries = dexEntries, compact = compactLayout, onBack = { showDex = false })
         } else if (showGrowth && pet != null && !pet!!.egg && !pet!!.starterPick) {
             GrowthScreen(pet = pet!!, onBack = { showGrowth = false }, onAchievements = { showAchievements = true })
         } else if (pet == null) {
@@ -843,9 +843,9 @@ private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier)
     }
 }
 @Composable
-private fun DexScreen(entries: List<DexEntry>, onBack: () -> Unit) {
+private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onBack: () -> Unit) {
     val registeredCount = entries.count { it.registered }
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -863,8 +863,9 @@ private fun DexScreen(entries: List<DexEntry>, onBack: () -> Unit) {
             color = PokePurple,
             trackColor = PokeLavender
         )
-        entries.chunked(3).forEach { rowEntries ->
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+        val columnCount = if (compact) 2 else 3
+        entries.chunked(columnCount).forEach { rowEntries ->
+            Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 7.dp), modifier = Modifier.fillMaxWidth()) {
                 rowEntries.forEach { entry ->
                     Card(
                         modifier = Modifier.weight(1f),
@@ -875,7 +876,7 @@ private fun DexScreen(entries: List<DexEntry>, onBack: () -> Unit) {
                         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
                     ) {
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp, horizontal = 4.dp),
+                            modifier = Modifier.fillMaxWidth().padding(vertical = if (compact) 7.dp else 9.dp, horizontal = 4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
@@ -899,7 +900,7 @@ private fun DexScreen(entries: List<DexEntry>, onBack: () -> Unit) {
                         }
                     }
                 }
-                repeat(3 - rowEntries.size) { Spacer(Modifier.weight(1f)) }
+                repeat(columnCount - rowEntries.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }

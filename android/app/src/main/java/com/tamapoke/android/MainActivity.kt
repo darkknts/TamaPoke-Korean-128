@@ -185,6 +185,9 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                     check(total <= 2 * 1024 * 1024) { "백업 파일이 너무 큽니다." }
                                     bytes.write(buffer, 0, read)
                                 }
+                                // Finish the ZIP entry before accepting its contents so the
+                                // ZIP CRC is checked by ZipInputStream.
+                                zip.closeEntry()
                                 val data = bytes.toByteArray()
                                 check(data.isNotEmpty()) { "백업 파일이 비어 있습니다." }
                                 val parsed = java.nio.ByteBuffer.wrap(data).order(java.nio.ByteOrder.LITTLE_ENDIAN)
@@ -201,20 +204,24 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                     parsed.position(parsed.position() + valueSize)
                                 }
                                 check(!parsed.hasRemaining()) { "저장 데이터 뒤에 알 수 없는 내용이 있습니다." }
-                                temp.outputStream().use { it.write(data) }
                                 try {
-                                    java.nio.file.Files.move(
-                                        temp.toPath(), target.toPath(),
-                                        java.nio.file.StandardCopyOption.ATOMIC_MOVE,
-                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
-                                    )
-                                } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
-                                    java.nio.file.Files.move(
-                                        temp.toPath(), target.toPath(),
-                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
-                                    )
+                                    temp.outputStream().use { it.write(data) }
+                                    try {
+                                        java.nio.file.Files.move(
+                                            temp.toPath(), target.toPath(),
+                                            java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                                        )
+                                    } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+                                        java.nio.file.Files.move(
+                                            temp.toPath(), target.toPath(),
+                                            java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                                        )
+                                    }
+                                    restored = true
+                                } finally {
+                                    if (temp.exists()) temp.delete()
                                 }
-                                restored = true
                                 break
                             }
                             zip.closeEntry()

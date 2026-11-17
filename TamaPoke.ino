@@ -1156,6 +1156,8 @@ void onSwipeV(int dir) {
 }
 
 // deslizar: dir +1 = hacia la derecha
+#define GAL_PAGE_SIZE 16
+
 void onSwipe(int dir) {
   if (pet.awaitingStarter()) return;  // bloqueado durante la eleccion de inicial
   if (gameOpen || kbOpen || clockOpen) return;
@@ -2796,7 +2798,6 @@ void keyboardTap(int16_t x, int16_t y) {
 #define GAL_CELL 80
 #define GAL_COLS 4
 #define GAL_ROWS 4
-#define GAL_PAGE_SIZE 16
 #endif
 
 // dibuja una miniatura centrada en su celda; sil=true la pinta en tinta

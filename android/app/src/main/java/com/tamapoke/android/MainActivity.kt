@@ -175,9 +175,45 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             if (entry.name == "tamapoke_tamapoke.prefs") {
                                 val target = java.io.File(context.filesDir, "tamapoke_tamapoke.prefs")
                                 val temp = java.io.File(context.filesDir, "tamapoke_restore.tmp")
-                                temp.outputStream().use { output -> zip.copyTo(output) }
-                                check(temp.length() in 1..(2L * 1024 * 1024)) { "백업 파일 크기가 올바르지 않습니다." }
-                                check(temp.renameTo(target) || temp.copyTo(target, overwrite = true).exists()) { "저장 파일을 교체하지 못했습니다." }
+                                val bytes = java.io.ByteArrayOutputStream()
+                                val buffer = ByteArray(8192)
+                                var total = 0
+                                while (true) {
+                                    val read = zip.read(buffer)
+                                    if (read < 0) break
+                                    total += read
+                                    check(total <= 2 * 1024 * 1024) { "백업 파일이 너무 큽니다." }
+                                    bytes.write(buffer, 0, read)
+                                }
+                                val data = bytes.toByteArray()
+                                check(data.isNotEmpty()) { "백업 파일이 비어 있습니다." }
+                                val parsed = java.nio.ByteBuffer.wrap(data).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+                                check(parsed.remaining() >= 4) { "저장 데이터 헤더가 손상되었습니다." }
+                                val count = parsed.int
+                                check(count in 0..4096) { "저장 데이터 항목 수가 올바르지 않습니다." }
+                                repeat(count) {
+                                    check(parsed.remaining() >= 2) { "저장 데이터 키가 손상되었습니다." }
+                                    val keySize = parsed.short.toInt() and 0xffff
+                                    check(keySize in 1..1024 && parsed.remaining() >= keySize + 4) { "저장 데이터 키 길이가 올바르지 않습니다." }
+                                    parsed.position(parsed.position() + keySize)
+                                    val valueSize = parsed.int
+                                    check(valueSize in 0..1_048_576 && parsed.remaining() >= valueSize) { "저장 데이터 값 길이가 올바르지 않습니다." }
+                                    parsed.position(parsed.position() + valueSize)
+                                }
+                                check(!parsed.hasRemaining()) { "저장 데이터 뒤에 알 수 없는 내용이 있습니다." }
+                                temp.outputStream().use { it.write(data) }
+                                try {
+                                    java.nio.file.Files.move(
+                                        temp.toPath(), target.toPath(),
+                                        java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                                    )
+                                } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+                                    java.nio.file.Files.move(
+                                        temp.toPath(), target.toPath(),
+                                        java.nio.file.StandardCopyOption.REPLACE_EXISTING
+                                    )
+                                }
                                 restored = true
                                 break
                             }

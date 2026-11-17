@@ -23,7 +23,7 @@ android {
     }
 
     sourceSets {
-        getByName("main").assets.srcDir(rootProject.file("tools/sdcard/mons"))
+        getByName("main").assets.srcDir(rootProject.file("../tools/sdcard/mons"))
     }
 
     buildFeatures {

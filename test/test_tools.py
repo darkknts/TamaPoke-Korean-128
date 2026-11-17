@@ -195,8 +195,8 @@ class TestSketchSanity(unittest.TestCase):
                     branches.append((active, True))
                     active = active
                 elif kind in ('elif', 'else') and branches:
-                    parent, first = branches[-1]
-                    active = parent and first
+                    parent, _ = branches[-1]
+                    active = False
                     branches[-1] = (parent, False)
                 elif kind == 'endif' and branches:
                     parent, _ = branches.pop()

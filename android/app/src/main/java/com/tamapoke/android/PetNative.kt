@@ -24,7 +24,15 @@ data class PetState(
     val canEvolve: Boolean,
     val sleeping: Boolean,
     val shiny: Boolean,
-    val starterPick: Boolean
+    val starterPick: Boolean,
+    val atk: Int,
+    val defense: Int,
+    val speed: Int,
+    val bond: Int,
+    val streak: Int,
+    val medals: Int,
+    val registeredCount: Int,
+    val nextLevelMinutes: Int
 )
 
 object PetNative {
@@ -64,7 +72,15 @@ object PetNative {
             canEvolve = json.optBoolean("canEvolve"),
             sleeping = json.optBoolean("sleeping"),
             shiny = json.optBoolean("shiny"),
-            starterPick = json.optBoolean("starterPick")
+            starterPick = json.optBoolean("starterPick"),
+            atk = json.optInt("atk"),
+            defense = json.optInt("def"),
+            speed = json.optInt("speed"),
+            bond = json.optInt("bond"),
+            streak = json.optInt("streak"),
+            medals = json.optInt("medals"),
+            registeredCount = json.optInt("registeredCount"),
+            nextLevelMinutes = json.optInt("nextLevelMinutes")
         )
     }
 

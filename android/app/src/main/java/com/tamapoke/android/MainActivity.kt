@@ -85,6 +85,15 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var pet by remember { mutableStateOf(initialState) }
     var status by remember { mutableStateOf(engineStatus) }
 
+    fun performPetAction(action: () -> Unit) {
+        runCatching {
+            action()
+            pet = PetNative.state()
+        }.onFailure {
+            status = "돌보기 동작 오류: ${it.message ?: "다시 시도해 주세요"}"
+        }
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             delay(1_000)
@@ -245,17 +254,17 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Text("매일매일 교감해요", style = MaterialTheme.typography.labelSmall, color = Color(0xFF857991))
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton("🍓  먹이 주기", Modifier.weight(1f)) { PetNative.feed() }
-                        ActionButton("🎾  놀아 주기", Modifier.weight(1f)) { PetNative.play() }
+                        ActionButton("🍓  먹이 주기", Modifier.weight(1f)) { performPetAction { PetNative.feed() } }
+                        ActionButton("🎾  놀아 주기", Modifier.weight(1f)) { performPetAction { PetNative.play() } }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton("🧹  청소하기", Modifier.weight(1f)) { PetNative.clean() }
-                        ActionButton("💗  쓰다듬기", Modifier.weight(1f)) { PetNative.caress() }
+                        ActionButton("🧹  청소하기", Modifier.weight(1f)) { performPetAction { PetNative.clean() } }
+                        ActionButton("💗  쓰다듬기", Modifier.weight(1f)) { performPetAction { PetNative.caress() } }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton(if (pet!!.sleeping) "☀  깨우기" else "🌙  재우기", Modifier.weight(1f)) { PetNative.toggleSleep() }
+                        ActionButton(if (pet!!.sleeping) "☀  깨우기" else "🌙  재우기", Modifier.weight(1f)) { performPetAction { PetNative.toggleSleep() } }
                         if (pet!!.canEvolve) {
-                            ActionButton("✨  진화하기", Modifier.weight(1f)) { PetNative.evolve() }
+                            ActionButton("✨  진화하기", Modifier.weight(1f)) { performPetAction { PetNative.evolve() } }
                         } else {
                             Surface(modifier = Modifier.weight(1f).height(44.dp), color = PokeMint, shape = RoundedCornerShape(14.dp)) {
                                 BoxCenterText("건강하게 성장 중", Color(0xFF47775A))

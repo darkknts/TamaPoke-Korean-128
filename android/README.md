@@ -44,7 +44,7 @@ Automatic APK builds are paused on the development branch to avoid producing int
 ## Build requirements
 
 - Android Studio with Android SDK Platform 35
-- Android NDK 27.2
+- Android NDK 27.0.12077973 (CI와 동일 버전)
 - CMake 3.22.1
 - JDK 17
 - Gradle 8.9

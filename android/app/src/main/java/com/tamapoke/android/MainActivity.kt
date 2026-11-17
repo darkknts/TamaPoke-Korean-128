@@ -87,6 +87,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var status by remember { mutableStateOf(engineStatus) }
     var spriteAction by remember { mutableIntStateOf(0) }
     var spriteActionToken by remember { mutableIntStateOf(0) }
+    var showDex by remember { mutableStateOf(false) }
+    var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
 
     fun performPetAction(animationId: Int, action: () -> Unit) {
         runCatching {
@@ -130,9 +132,18 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
                 Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
             }
+            OutlinedButton(
+                onClick = {
+                    dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
+                    showDex = true
+                },
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 5.dp)
+            ) { Text("도감", style = MaterialTheme.typography.labelMedium) }
         }
 
-        if (pet == null) {
+        if (showDex) {
+            DexScreen(entries = dexEntries, onBack = { showDex = false })
+        } else if (pet == null) {
             Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeLavender)) {
                 Text("포켓몬 정보를 불러오는 중입니다", modifier = Modifier.padding(20.dp))
             }
@@ -293,6 +304,69 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             color = if (status.contains("오류")) MaterialTheme.colorScheme.error else Color(0xFF8B8191),
             maxLines = 1
         )
+    }
+}
+
+@Composable
+private fun DexScreen(entries: List<DexEntry>, onBack: () -> Unit) {
+    val registeredCount = entries.count { it.registered }
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column {
+                Text("포켓몬 도감", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = PokeInk)
+                Text("$registeredCount / 151종 발견", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(onClick = onBack) { Text("돌아가기") }
+        }
+        LinearProgressIndicator(
+            progress = { registeredCount / 151f },
+            modifier = Modifier.fillMaxWidth(),
+            color = PokePurple,
+            trackColor = PokeLavender
+        )
+        entries.chunked(3).forEach { rowEntries ->
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+                rowEntries.forEach { entry ->
+                    Card(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (entry.registered) Color.White else Color(0xFFF3F0F5)
+                        ),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp, horizontal = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("#%03d".format(entry.id), style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
+                            Text(
+                                if (entry.registered) entry.name else "???",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (entry.registered) PokeInk else Color(0xFF9B93A1),
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1
+                            )
+                            Text(
+                                when {
+                                    entry.shiny -> "✨ 이로치"
+                                    entry.registered -> "발견 완료"
+                                    else -> "미발견"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (entry.shiny) Color(0xFFB58A32) else Color(0xFF8B8191)
+                            )
+                        }
+                    }
+                }
+                repeat(3 - rowEntries.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
     }
 }
 

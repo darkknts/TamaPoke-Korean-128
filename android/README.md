@@ -21,6 +21,7 @@ Android application for the TamaPoke virtual-pet game.
 - Growth report with level progress, battle stats, bond, streak, medals and collection count.
 - Medal collection screen for all eight engine achievements, including level milestones, berry discovery, care streak, bond, final evolution and fitness.
 - Berry-catching mini-game with three lanes, a 20-second round and score rewards connected to the C++ engine.
+- Two Android home-screen mini-pet widgets: compact 1×1 sprite/level and detailed 2×2 sprite/care meters. Tap either widget to open the game.
 
 ## Development sequence
 
@@ -30,8 +31,9 @@ Android application for the TamaPoke virtual-pet game.
 4. Connect growth, evolution and battle-stat presentation.
 5. Balance all three mini-games and verify repeated-play reward limits.
 6. Add rewards, medals, streaks and daily participation screens.
-7. Verify ZIP backup/restore on multiple devices, sound and haptic settings, mini-pet overlay permissions, important care notifications and background lifecycle behavior.
-8. Run integrated tests and create the release APK.
+7. Implement and verify 1×1 and 2×2 mini-pet home screen widgets using the current species sprite and live care values.
+8. Verify ZIP backup/restore on multiple devices, sound and haptic settings, widget refresh and background lifecycle behavior.
+9. Run integrated tests and create the release APK.
 
 ## APK build policy
 

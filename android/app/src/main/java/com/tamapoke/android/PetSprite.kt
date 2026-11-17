@@ -23,7 +23,7 @@ import java.io.DataInputStream
 import java.io.InputStream
 
 private data class SpriteFrame(val bitmap: Bitmap, val durationMs: Int)
-private data class PokemonSprite(val frames: List<SpriteFrame>)
+private data class PokemonSprite(val actions: Map<Int, List<SpriteFrame>>)
 
 private fun readU8(input: DataInputStream): Int = input.readUnsignedByte()
 
@@ -66,7 +66,7 @@ private fun parseTpk2(raw: InputStream): PokemonSprite? {
         (0xff shl 24) or (r shl 16) or (g shl 8) or b
     }
 
-    var idleFrames: List<SpriteFrame>? = null
+    val actions = linkedMapOf<Int, List<SpriteFrame>>()
     var fallbackFrames: List<SpriteFrame>? = null
 
     repeat(actionCount) {
@@ -94,18 +94,21 @@ private fun parseTpk2(raw: InputStream): PokemonSprite? {
         }
         if (frames.isNotEmpty()) {
             if (fallbackFrames == null) fallbackFrames = frames
-            if (actionId == 0) idleFrames = frames
+            actions[actionId] = frames
         }
     }
 
-    val selected = idleFrames ?: fallbackFrames ?: return null
-    return PokemonSprite(selected)
+    if (actions[0] == null && fallbackFrames != null) actions[0] = fallbackFrames!!
+    if (actions.isEmpty()) return null
+    return PokemonSprite(actions)
 }
 
 @Composable
 fun PetSprite(
     speciesId: Int,
     shiny: Boolean,
+    actionId: Int = 0,
+    actionToken: Int = 0,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -113,18 +116,32 @@ fun PetSprite(
         loadPokemonSprite(context, speciesId, shiny)
     }
     var frameIndex by remember(sprite) { mutableIntStateOf(0) }
+    var visibleAction by remember(sprite) { mutableIntStateOf(0) }
 
-    LaunchedEffect(sprite) {
+    LaunchedEffect(sprite, actionId, actionToken) {
         frameIndex = 0
-        val frames = sprite?.frames ?: return@LaunchedEffect
-        while (frames.size > 1) {
-            delay(frames[frameIndex].durationMs.toLong())
-            frameIndex = (frameIndex + 1) % frames.size
+        visibleAction = actionId
+        val idle = sprite?.actions?.get(0) ?: return@LaunchedEffect
+        val requested = sprite.actions[actionId] ?: idle
+
+        if (actionId != 0 && requested !== idle && requested.size > 1) {
+            requested.forEachIndexed { index, frame ->
+                frameIndex = index
+                delay(frame.durationMs.toLong())
+            }
+            visibleAction = 0
+            frameIndex = 0
+        }
+
+        while (idle.size > 1) {
+            val frame = idle[frameIndex.coerceIn(idle.indices)]
+            delay(frame.durationMs.toLong())
+            frameIndex = (frameIndex + 1) % idle.size
         }
     }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        val frames = sprite?.frames
+        val frames = sprite?.actions?.get(visibleAction) ?: sprite?.actions?.get(0)
         if (!frames.isNullOrEmpty()) {
             Image(
                 bitmap = frames[frameIndex.coerceIn(frames.indices)].bitmap.asImageBitmap(),

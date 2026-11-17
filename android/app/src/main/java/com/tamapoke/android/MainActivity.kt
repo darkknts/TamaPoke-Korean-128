@@ -123,6 +123,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showDex by remember { mutableStateOf(false) }
     var showGrowth by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
+    var gameMode by remember { mutableStateOf("menu") }
     var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
 
     fun performPetAction(animationId: Int, action: () -> Unit) {
@@ -183,15 +184,33 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         }
 
         if (showGame) {
-            BerryCatchGame(
-                onBack = { showGame = false },
-                onResult = { score ->
-                    runCatching {
-                        PetNative.playResult(score)
-                        pet = PetNative.state()
-                    }.onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
-                }
-            )
+            when (gameMode) {
+                "berry" -> BerryCatchGame(
+                    onBack = { gameMode = "menu" },
+                    onResult = { score ->
+                        runCatching { PetNative.playResult(score); pet = PetNative.state() }
+                            .onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
+                    }
+                )
+                "timing" -> TimingGame(
+                    onBack = { gameMode = "menu" },
+                    onResult = { score ->
+                        runCatching { PetNative.playResult(score); pet = PetNative.state() }
+                            .onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
+                    }
+                )
+                "memory" -> MemoryGame(
+                    onBack = { gameMode = "menu" },
+                    onResult = { score ->
+                        runCatching { PetNative.playResult(score); pet = PetNative.state() }
+                            .onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
+                    }
+                )
+                else -> MiniGameMenu(
+                    onSelect = { gameMode = it },
+                    onBack = { showGame = false }
+                )
+            }
         } else if (showDex) {
             DexScreen(entries = dexEntries, onBack = { showDex = false })
         } else if (showGrowth && pet != null && !pet!!.egg && !pet!!.starterPick) {
@@ -351,6 +370,121 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     }
 }
 
+@Composable
+private fun MiniGameMenu(onSelect: (String) -> Unit, onBack: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("미니게임 놀이터", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+            OutlinedButton(onClick = onBack) { Text("닫기") }
+        }
+        Text("게임을 완료하면 점수에 따라 포켓몬 훈련 보상을 받아요.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
+        Button(onClick = { onSelect("berry") }, modifier = Modifier.fillMaxWidth()) { Text("🍓 열매 받기  ·  좌우 이동") }
+        Button(onClick = { onSelect("timing") }, modifier = Modifier.fillMaxWidth()) { Text("⏱ 타이밍 맞추기  ·  정확한 순간에 누르기") }
+        Button(onClick = { onSelect("memory") }, modifier = Modifier.fillMaxWidth()) { Text("🧠 카드 짝 맞추기  ·  기억력 도전") }
+    }
+}
+
+@Composable
+private fun TimingGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
+    var round by remember { mutableIntStateOf(1) }
+    var phase by remember { mutableFloatStateOf(0f) }
+    var direction by remember { mutableFloatStateOf(1f) }
+    var score by remember { mutableIntStateOf(0) }
+    var finished by remember { mutableStateOf(false) }
+    var sent by remember { mutableStateOf(false) }
+    LaunchedEffect(finished) {
+        while (!finished) {
+            delay(24)
+            phase += direction * 0.018f
+            if (phase >= 1f) { phase = 1f; direction = -1f }
+            if (phase <= 0f) { phase = 0f; direction = 1f }
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("타이밍 맞추기", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+            OutlinedButton(onClick = onBack) { Text("나가기") }
+        }
+        Text(if (finished) "도전 완료" else "$round / 10 라운드 · 초록 구간에 맞춰 누르세요", color = PokePurple, fontWeight = FontWeight.Bold)
+        BoxWithConstraints(Modifier.fillMaxWidth().height(54.dp).clip(RoundedCornerShape(18.dp)).background(Color(0xFFEDE8F5))) {
+            val targetStart = maxWidth * 0.42f
+            Box(Modifier.offset(x = targetStart).width(maxWidth * 0.16f).fillMaxHeight().background(Color(0xFFBFE8CD)))
+            Box(Modifier.offset(x = maxWidth * phase - 5.dp).width(10.dp).fillMaxHeight().padding(vertical = 5.dp).background(PokePurple, RoundedCornerShape(8.dp)))
+        }
+        Button(onClick = {
+            if (!finished) {
+                if (phase in 0.42f..0.58f) score += 2 else if (phase in 0.34f..0.66f) score += 1
+                if (round >= 10) { finished = true; if (!sent) { sent = true; onResult(score) } }
+                else round++
+            }
+        }, enabled = !finished, modifier = Modifier.fillMaxWidth().height(54.dp)) { Text("지금 누르기") }
+        if (finished) {
+            Card(colors = CardDefaults.cardColors(containerColor = PokeMint), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("최종 점수  $score / 20", color = PokeInk, fontWeight = FontWeight.Bold)
+                    Text("점수에 따라 속도 훈련 보상이 반영됐어요.", color = Color(0xFF47775A), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("미니게임으로") }
+        }
+    }
+}
+
+@Composable
+private fun MemoryGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
+    val icons = listOf("🍓", "🍋", "🍇", "🍎", "🍓", "🍋", "🍇", "🍎")
+    var order by remember { mutableStateOf((0..7).shuffled()) }
+    var opened by remember { mutableStateOf(emptyList<Int>()) }
+    var matched by remember { mutableStateOf(emptySet<Int>()) }
+    var turns by remember { mutableIntStateOf(0) }
+    var finished by remember { mutableStateOf(false) }
+    var sent by remember { mutableStateOf(false) }
+    var lock by remember { mutableStateOf(false) }
+    LaunchedEffect(opened, matched) {
+        if (opened.size == 2) {
+            lock = true
+            delay(650)
+            val a = opened[0]; val b = opened[1]
+            if (icons[order[a]] == icons[order[b]]) matched = matched + a + b
+            opened = emptyList()
+            lock = false
+            if (matched.size == 8) {
+                finished = true
+                if (!sent) { sent = true; onResult((24 - turns).coerceAtLeast(0)) }
+            }
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("카드 짝 맞추기", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+            OutlinedButton(onClick = onBack) { Text("나가기") }
+        }
+        Text("같은 열매 카드 4쌍을 찾아보세요. 시도 횟수 $turns회", color = PokePurple, fontWeight = FontWeight.Bold)
+        for (row in 0..1) {
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+                for (col in 0..3) {
+                    val index = row * 4 + col
+                    val visible = index in opened || index in matched
+                    Button(
+                        onClick = { if (!lock && !finished && !visible && opened.size < 2) { opened = opened + index; if (opened.size == 1) turns++ } },
+                        enabled = !lock && !finished && !visible,
+                        modifier = Modifier.weight(1f).height(76.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) { Text(if (visible) icons[order[index]] else "❔", style = MaterialTheme.typography.headlineSmall) }
+                }
+            }
+        }
+        if (finished) {
+            Card(colors = CardDefaults.cardColors(containerColor = PokeMint), modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("모든 짝을 찾았어요!", color = PokeInk, fontWeight = FontWeight.Bold)
+                    Text("시도 $turns회 · 훈련 점수 ${(24 - turns).coerceAtLeast(0)}점", color = Color(0xFF47775A), style = MaterialTheme.typography.bodySmall)
+                }
+            }
+            Button(onClick = { order = (0..7).shuffled(); opened = emptyList(); matched = emptySet(); turns = 0; finished = false; sent = false }, modifier = Modifier.fillMaxWidth()) { Text("다시 도전하기") }
+        }
+    }
+}
 @Composable
 private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
     var playing by remember { mutableStateOf(true) }

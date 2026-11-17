@@ -172,6 +172,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             }.getOrElse { "백업 실패: ${it.message}" }
         }
     }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             backupMessage = runCatching {
@@ -314,8 +315,10 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     miniPetEnabled = enabled
                     context.getSharedPreferences(MiniPetService.PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(MiniPetService.KEY_ENABLED, enabled).apply()
                     if (enabled) {
-                        if (Settings.canDrawOverlays(context)) MiniPetService.start(context)
-                        else {
+                        if (Settings.canDrawOverlays(context)) {
+                            if (android.os.Build.VERSION.SDK_INT >= 33) notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                            MiniPetService.start(context)
+                        } else {
                             val permissionIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.packageName))
                             permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                             context.startActivity(permissionIntent)

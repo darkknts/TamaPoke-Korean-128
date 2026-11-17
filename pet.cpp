@@ -541,6 +541,7 @@ void Pet::caress() {
   heartUntil = millis() + HEART_MS;
   addBond(1);
   registerCare();
+  save();
 }
 
 void Pet::eggTap() {

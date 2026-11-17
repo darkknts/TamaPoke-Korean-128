@@ -247,8 +247,8 @@ private fun StatTile(emoji: String, label: String, value: Int, modifier: Modifie
 }
 
 @Composable
-private fun InfoChip(label: String, value: String) {
-    Surface(modifier = Modifier.weight(1f), color = Color(0xFFF5F0F8), shape = RoundedCornerShape(12.dp)) {
+private fun InfoChip(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(modifier = modifier, color = Color(0xFFF5F0F8), shape = RoundedCornerShape(12.dp)) {
         Row(Modifier.padding(horizontal = 11.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFF746980))
             Text(value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PokeInk)

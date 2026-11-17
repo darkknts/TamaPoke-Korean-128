@@ -215,7 +215,14 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             },
                             shape = RoundedCornerShape(topStart = 70.dp, topEnd = 70.dp)
                         ) {}
-                        PetSprite(speciesId = pet!!.speciesId, shiny = pet!!.shiny, actionId = spriteAction, actionToken = spriteActionToken, modifier = Modifier.size(138.dp))
+                        PetSprite(
+                            speciesId = pet!!.speciesId,
+                            shiny = pet!!.shiny,
+                            actionId = if (pet!!.sleeping) 3 else spriteAction,
+                            actionToken = spriteActionToken,
+                            loopAction = pet!!.sleeping,
+                            modifier = Modifier.size(138.dp)
+                        )
                     }
                     Text(
                         if (pet!!.sleeping) "포근하게 잠들어 있어요" else "오늘도 즐거운 하루를 보내요!",

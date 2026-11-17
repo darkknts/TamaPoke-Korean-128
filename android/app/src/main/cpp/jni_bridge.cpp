@@ -3,9 +3,11 @@
 #include <cstdlib>
 #include <ctime>
 #include <memory>
+#include <string>
 
 #include "Arduino.h"
 #include "pet.h"
+#include "dex.h"
 #include "Preferences.h"
 
 namespace {
@@ -58,6 +60,27 @@ Java_com_tamapoke_android_PetNative_nativeUpdate(JNIEnv*, jobject, jlong nowEpoc
         g_lastClockMinute = minute;
     }
     g_pet->flushSave();
+}
+
+extern "C"
+JNIEXPORT jstring JNICALL
+Java_com_tamapoke_android_PetNative_nativeGetDexState(JNIEnv* env, jobject) {
+    if (!g_pet) return env->NewStringUTF("[]");
+    std::string json;
+    json.reserve(12000);
+    json += "[";
+    for (int dex = 1; dex <= DEX_COUNT; ++dex) {
+        if (dex > 1) json += ",";
+        char item[192];
+        const char* name = DEX_NAME_KO[dex] ? DEX_NAME_KO[dex] : DEX_TBL[dex].name;
+        std::snprintf(item, sizeof(item),
+            "{\\"id\\":%d,\\"name\\":\\"%s\\",\\"registered\\":%s,\\"shiny\\":%s}",
+            dex, name, g_pet->isRegistered(dex) ? "true" : "false",
+            g_pet->isShinyRegistered(dex) ? "true" : "false");
+        json += item;
+    }
+    json += "]";
+    return env->NewStringUTF(json.c_str());
 }
 
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeFeed(JNIEnv*, jobject) { if (g_pet) g_pet->feed(); }

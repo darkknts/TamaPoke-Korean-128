@@ -36,6 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -166,7 +167,16 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     Box(
                         modifier = Modifier.fillMaxWidth().height(174.dp)
                             .clip(RoundedCornerShape(24.dp))
-                            .background(Color(0xFFE4F3FF)),
+                            .background(
+                                Brush.verticalGradient(
+                                    when (pet!!.speciesId) {
+                                        1 -> listOf(Color(0xFFE8F7E8), Color(0xFFD9F0E4))
+                                        4 -> listOf(Color(0xFFFFEAD8), Color(0xFFFFDCCB))
+                                        7 -> listOf(Color(0xFFE4F3FF), Color(0xFFD8EAFB))
+                                        else -> listOf(Color(0xFFF0EAFE), Color(0xFFE5E0F8))
+                                    }
+                                )
+                            ),
                         contentAlignment = Alignment.Center
                     ) {
                         Surface(
@@ -177,11 +187,16 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             modifier = Modifier.align(Alignment.TopEnd).padding(end = 34.dp, top = 35.dp).size(22.dp),
                             color = Color(0xBFFFFFFF), shape = RoundedCornerShape(50)
                         ) {}
-                        Text("✦", modifier = Modifier.align(Alignment.CenterStart).padding(start = 55.dp), color = Color(0xFFFFC86A), style = MaterialTheme.typography.titleLarge)
-                        Text("✧", modifier = Modifier.align(Alignment.CenterEnd).padding(end = 52.dp), color = Color(0xFFFFC86A), style = MaterialTheme.typography.headlineSmall)
+                        Text("✦", modifier = Modifier.align(Alignment.CenterStart).padding(start = 55.dp), color = when (pet!!.speciesId) { 1 -> Color(0xFF72AD78); 4 -> Color(0xFFF0A45B); 7 -> Color(0xFF73B7D9); else -> Color(0xFFB29ADE) }, style = MaterialTheme.typography.titleLarge)
+                        Text("✧", modifier = Modifier.align(Alignment.CenterEnd).padding(end = 52.dp), color = when (pet!!.speciesId) { 1 -> Color(0xFF72AD78); 4 -> Color(0xFFF0A45B); 7 -> Color(0xFF73B7D9); else -> Color(0xFFB29ADE) }, style = MaterialTheme.typography.headlineSmall)
                         Surface(
                             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(42.dp),
-                            color = Color(0xFFDDF1E2),
+                            color = when (pet!!.speciesId) {
+                                1 -> Color(0xFFCDE8C8)
+                                4 -> Color(0xFFF4D2B4)
+                                7 -> Color(0xFFB9E2E8)
+                                else -> Color(0xFFD9D0EE)
+                            },
                             shape = RoundedCornerShape(topStart = 70.dp, topEnd = 70.dp)
                         ) {}
                         PetSprite(speciesId = pet!!.speciesId, shiny = pet!!.shiny, modifier = Modifier.size(138.dp))

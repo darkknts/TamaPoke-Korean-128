@@ -6,7 +6,8 @@ Android application for the TamaPoke virtual-pet game.
 
 - Kotlin + Jetpack Compose mobile UI.
 - Shared C++ pet engine connected through JNI.
-- Local device persistence through the Android Preferences adapter.
+- Local device persistence through the Android Preferences adapter, with periodic engine flushes.
+- Persistent Android settings for optional sound effects and haptic feedback.
 - Real-time pet status refresh and care actions (feed, play, clean, pet, sleep, evolve).
 - Starter selection (Bulbasaur, Charmander, Squirtle).
 - TPK2 sprite loading for all 151 species and shiny variants when available.
@@ -25,12 +26,12 @@ Android application for the TamaPoke virtual-pet game.
 4. Connect growth, evolution and battle-stat presentation.
 5. Balance all three mini-games and verify repeated-play reward limits.
 6. Add rewards, medals, streaks and daily participation screens.
-7. Verify backup/restore, sound settings, notifications and power behavior.
+7. Verify Android Auto Backup/restore behavior, sound and haptic settings, notifications and background lifecycle behavior.
 8. Run integrated tests and create the release APK.
 
 ## APK build policy
 
-Automatic APK builds are paused on the development branch to avoid producing intermediate APKs. The Android workflow remains available through `workflow_dispatch`; restore the release build trigger when development is complete.
+Automatic APK builds are paused on the development branch to avoid producing intermediate APKs. Keep the final APK build for the release validation stage; do not treat the firmware CI as Android build verification.
 
 ## Build requirements
 

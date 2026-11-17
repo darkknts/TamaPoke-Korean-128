@@ -188,7 +188,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 } ?: error("백업 파일을 읽을 수 없습니다.")
                 check(restored) { "TamaPoke 백업 파일을 찾을 수 없습니다." }
                 PetNative.initialize(context.filesDir.absolutePath)
-                pet = PetNative.state()
+                pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context)
                 "백업 데이터를 복원했습니다."
             }.getOrElse { "복원 실패: ${it.message}" }
         }
@@ -197,7 +197,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     fun performPetAction(animationId: Int, action: () -> Unit) {
         runCatching {
             action()
-            pet = PetNative.state()
+            pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context)
             if (soundEnabled) SoundFeedback.play(context, 0)
             if (hapticsEnabled) SoundFeedback.vibrate(context)
             spriteAction = animationId
@@ -264,7 +264,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     onResult = { score ->
                         runCatching {
                             PetNative.playResult(score)
-                            pet = PetNative.state()
+                            pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context)
                             if (soundEnabled) SoundFeedback.play(context, 1)
                             if (hapticsEnabled) SoundFeedback.vibrate(context)
                         }
@@ -276,7 +276,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     onResult = { score ->
                         runCatching {
                             PetNative.playResult(score)
-                            pet = PetNative.state()
+                            pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context)
                             if (soundEnabled) SoundFeedback.play(context, 1)
                             if (hapticsEnabled) SoundFeedback.vibrate(context)
                         }
@@ -286,7 +286,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 "memory" -> MemoryGame(
                     onBack = { gameMode = "menu" },
                     onResult = { score ->
-                        runCatching { PetNative.playResult(score); pet = PetNative.state() }
+                        runCatching { PetNative.playResult(score); pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context) }
                             .onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
                     }
                 )
@@ -336,9 +336,9 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     Text("첫 번째 파트너를 선택해 주세요", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("함께 모험을 시작할 포켓몬", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        StarterButton("이상해씨", 1) { choose(1) { pet = PetNative.state() } }
-                        StarterButton("파이리", 4) { choose(4) { pet = PetNative.state() } }
-                        StarterButton("꼬부기", 7) { choose(7) { pet = PetNative.state() } }
+                        StarterButton("이상해씨", 1) { choose(1) { pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context) } }
+                        StarterButton("파이리", 4) { choose(4) { pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context) } }
+                        StarterButton("꼬부기", 7) { choose(7) { pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context) } }
                     }
                 }
             }
@@ -347,7 +347,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 Column(Modifier.fillMaxWidth().padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("새로운 생명이 기다리고 있어요", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text("포켓몬 알", style = MaterialTheme.typography.headlineSmall)
-                    Button(onClick = { runCatching { PetNative.eggTap(); pet = PetNative.state() } }) { Text("알 톡톡 터치") }
+                    Button(onClick = { runCatching { PetNative.eggTap(); pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context) } }) { Text("알 톡톡 터치") }
                 }
             }
         } else {

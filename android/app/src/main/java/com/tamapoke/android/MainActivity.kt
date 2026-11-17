@@ -1,6 +1,7 @@
 package com.tamapoke.android
 
 import android.os.Bundle
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -123,14 +124,20 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showDex by remember { mutableStateOf(false) }
     var showGrowth by remember { mutableStateOf(false) }
     var showAchievements by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
     var gameMode by remember { mutableStateOf("menu") }
     var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
+    val context = LocalContext.current
+    var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
+    var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
 
     fun performPetAction(animationId: Int, action: () -> Unit) {
         runCatching {
             action()
             pet = PetNative.state()
+            if (soundEnabled) SoundFeedback.play(context, 0)
+            if (hapticsEnabled) SoundFeedback.vibrate(context)
             spriteAction = animationId
             spriteActionToken++
         }.onFailure {
@@ -170,6 +177,10 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                OutlinedButton(
+                    onClick = { showSettings = true },
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 5.dp)
+                ) { Text("설정", style = MaterialTheme.typography.labelMedium) }
                 OutlinedButton(
                     onClick = { showGrowth = true },
                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)
@@ -212,6 +223,22 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     onBack = { showGame = false }
                 )
             }
+        } else if (showSettings) {
+            SettingsScreen(
+                soundEnabled = soundEnabled,
+                hapticsEnabled = hapticsEnabled,
+                onSoundChange = {
+                    soundEnabled = it
+                    context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).edit().putBoolean("sound_enabled", it).apply()
+                    if (it) SoundFeedback.play(context, 1)
+                },
+                onHapticsChange = {
+                    hapticsEnabled = it
+                    context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).edit().putBoolean("haptics_enabled", it).apply()
+                    if (it) SoundFeedback.vibrate(context)
+                },
+                onBack = { showSettings = false }
+            )
         } else if (showAchievements && pet != null && !pet!!.egg && !pet!!.starterPick) {
             AchievementScreen(pet = pet!!, onBack = { showAchievements = false })
         } else if (showDex) {
@@ -559,6 +586,35 @@ private fun BerryCatchGame(onBack: () -> Unit, onResult: (Int) -> Unit) {
                 berryLane = Random.nextInt(3); berryProgress = 0f; resultSent = false; playing = true
             }, modifier = Modifier.fillMaxWidth()) { Text("다시 도전하기") }
         }
+    }
+}
+@Composable
+private fun SettingsScreen(
+    soundEnabled: Boolean,
+    hapticsEnabled: Boolean,
+    onSoundChange: (Boolean) -> Unit,
+    onHapticsChange: (Boolean) -> Unit,
+    onBack: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("게임 설정", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+            OutlinedButton(onClick = onBack) { Text("돌아가기") }
+        }
+        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
+            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("효과음", color = PokeInk, fontWeight = FontWeight.Bold); Text("돌봄과 게임 동작의 짧은 알림음", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall) }
+                    androidx.compose.material3.Switch(checked = soundEnabled, onCheckedChange = onSoundChange)
+                }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("진동 피드백", color = PokeInk, fontWeight = FontWeight.Bold); Text("버튼을 누를 때 가벼운 진동", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall) }
+                    androidx.compose.material3.Switch(checked = hapticsEnabled, onCheckedChange = onHapticsChange)
+                }
+            }
+        }
+        Text("게임 데이터는 기기 내부에 자동 저장됩니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
+        Text("앱 삭제 또는 기기 초기화 시 저장 데이터가 사라질 수 있습니다. 백업·복원은 다음 단계에서 추가합니다.", color = Color(0xFF9A7650), style = MaterialTheme.typography.bodySmall)
     }
 }
 @Composable

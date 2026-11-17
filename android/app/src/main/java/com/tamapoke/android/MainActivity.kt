@@ -213,8 +213,24 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             runCatching {
                 PetNative.update()
                 PetNative.state()
-            }.onSuccess { pet = it }
-                .onFailure { status = "게임 상태 갱신 오류: ${it.message ?: "확인 필요"}" }
+            }.onSuccess { updated ->
+                val previous = pet
+                pet = updated
+                // Refresh home-screen widgets only when a displayed pet value changes.
+                if (
+                    previous == null ||
+                    previous.ageMinutes != updated.ageMinutes ||
+                    previous.speciesId != updated.speciesId ||
+                    previous.egg != updated.egg ||
+                    previous.shiny != updated.shiny ||
+                    previous.fullness != updated.fullness ||
+                    previous.energy != updated.energy ||
+                    previous.hygiene != updated.hygiene ||
+                    previous.joy != updated.joy
+                ) {
+                    MiniPetWidgetRenderer.updateAll(context)
+                }
+            }.onFailure { status = "게임 상태 갱신 오류: ${it.message ?: "확인 필요"}" }
         }
     }
 

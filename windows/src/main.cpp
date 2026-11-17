@@ -552,7 +552,7 @@ void drawMore(HDC dc) {
     button(dc,180,395,360,58,audioEnabled()?L"효과음: 켜짐":L"효과음: 꺼짐");
     text(dc,L"15초 동안 움직이는 표적을 클릭해 점수를 얻으세요.",RECT{90,485,630,530},15,RGB(120,100,80));
     text(dc,L"효과음 설정은 다음 실행에도 유지됩니다.",RECT{90,535,630,575},14,RGB(120,100,80));
-    button(dc,180,605,360,54,L"미니 펫 모드 시작",true);
+    button(dc,180,605,360,54,miniMode?L"미니 펫 모드 종료":L"미니 펫 모드 시작",true);
   }
 }
 void drawDex(HDC dc) {

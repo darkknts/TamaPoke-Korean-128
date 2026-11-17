@@ -118,6 +118,11 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    override fun onDestroy() {
+        SoundFeedback.release()
+        super.onDestroy()
+    }
 }
 
 @Composable
@@ -251,7 +256,12 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 "berry" -> BerryCatchGame(
                     onBack = { gameMode = "menu" },
                     onResult = { score ->
-                        runCatching { PetNative.playResult(score); pet = PetNative.state() }
+                        runCatching {
+                            PetNative.playResult(score)
+                            pet = PetNative.state()
+                            if (soundEnabled) SoundFeedback.play(context, 1)
+                            if (hapticsEnabled) SoundFeedback.vibrate(context)
+                        }
                             .onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
                     }
                 )

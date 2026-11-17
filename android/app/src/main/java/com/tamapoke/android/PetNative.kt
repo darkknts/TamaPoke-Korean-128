@@ -53,10 +53,13 @@ object PetNative {
     external fun nativeEvolve()
     external fun nativeChooseStarter(dex: Int)
 
+    @Synchronized
     fun initialize(filesDir: String) = nativeInit(filesDir, System.currentTimeMillis() / 1000)
+
+    @Synchronized
     fun engineStatus(): String = nativeEngineStatus()
 
-    fun state(): PetState {
+    private fun readState(): PetState {
         val json = JSONObject(nativeGetState())
         return PetState(
             egg = json.optBoolean("egg"),
@@ -85,6 +88,20 @@ object PetNative {
         )
     }
 
+    @Synchronized
+    fun state(): PetState = readState()
+
+    /** Atomically advances the shared native engine and snapshots it for widgets. */
+    @Synchronized
+    fun refreshForWidget(filesDir: String): PetState {
+        if (nativeEngineStatus() != "공통 C++ 엔진 연결 완료") {
+            nativeInit(filesDir, System.currentTimeMillis() / 1000)
+        }
+        nativeUpdate(System.currentTimeMillis() / 1000)
+        return readState()
+    }
+
+    @Synchronized
     fun dexEntries(): List<DexEntry> {
         val array = org.json.JSONArray(nativeGetDexState())
         return List(array.length()) { index ->
@@ -98,14 +115,14 @@ object PetNative {
         }
     }
 
-    fun update() = nativeUpdate(System.currentTimeMillis() / 1000)
-    fun feed() = nativeFeed()
-    fun play() = nativePlay()
-    fun playResult(score: Int) = nativePlayResult(score)
-    fun clean() = nativeClean()
-    fun caress() = nativeCaress()
-    fun eggTap() = nativeEggTap()
-    fun toggleSleep() = nativeToggleSleep()
-    fun evolve() = nativeEvolve()
-    fun chooseStarter(dex: Int) = nativeChooseStarter(dex)
+    @Synchronized fun update() = nativeUpdate(System.currentTimeMillis() / 1000)
+    @Synchronized fun feed() = nativeFeed()
+    @Synchronized fun play() = nativePlay()
+    @Synchronized fun playResult(score: Int) = nativePlayResult(score)
+    @Synchronized fun clean() = nativeClean()
+    @Synchronized fun caress() = nativeCaress()
+    @Synchronized fun eggTap() = nativeEggTap()
+    @Synchronized fun toggleSleep() = nativeToggleSleep()
+    @Synchronized fun evolve() = nativeEvolve()
+    @Synchronized fun chooseStarter(dex: Int) = nativeChooseStarter(dex)
 }

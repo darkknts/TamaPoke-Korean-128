@@ -1,21 +1,39 @@
 # TamaPoke Android
 
-Android application project for the TamaPoke mobile port.
+Android application for the TamaPoke virtual-pet game.
 
-## Current stage
+## Implemented
 
-- Native Android app shell using Kotlin and Jetpack Compose.
-- CMake/NDK shared-library target and JNI boundary.
-- The existing pet engine is not linked yet; its Arduino and Preferences dependencies
-  must first be provided through an Android platform adapter.
-- Mobile mini-pet overlay and important-state notifications are planned for a later
-  stage after the core pet engine and app lifecycle are connected.
+- Kotlin + Jetpack Compose mobile UI.
+- Shared C++ pet engine connected through JNI.
+- Local device persistence through the Android Preferences adapter.
+- Real-time pet status refresh and care actions (feed, play, clean, pet, sleep, evolve).
+- Starter selection (Bulbasaur, Charmander, Squirtle).
+- TPK2 sprite loading for all 151 species and shiny variants when available.
+- Multi-action sprite playback: idle, eat, hop, sleep, pose and nod, with idle fallback when an action is absent.
+- Korean Pokédex screen showing all 151 species, discovery status and shiny registration.
+
+## Development sequence
+
+1. Stabilize core care actions, lifecycle and local save/restore.
+2. Complete sprite animations and species/biome habitat presentation.
+3. Expand the Pokédex with detail pages and collection records.
+4. Connect growth, evolution and battle-stat presentation.
+5. Implement the berry-catching mini-game and additional mini-games.
+6. Add rewards, medals, streaks and daily participation.
+7. Verify backup/restore, sound settings, notifications and power behavior.
+8. Run integrated tests and create the release APK.
+
+## APK build policy
+
+Automatic APK builds are paused on the development branch to avoid producing intermediate APKs. The Android workflow remains available through `workflow_dispatch`; restore the release build trigger when development is complete.
 
 ## Build requirements
 
 - Android Studio with Android SDK Platform 35
-- Android NDK
+- Android NDK 27.2
 - CMake 3.22.1
 - JDK 17
+- Gradle 8.9
 
 Open the `android` directory in Android Studio and sync Gradle.

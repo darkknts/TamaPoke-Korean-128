@@ -49,6 +49,33 @@ private val PokeBackground = Color(0xFFFFFCF8)
 private val PokeLavender = Color(0xFFF4EEFF)
 private val PokeMint = Color(0xFFEAF8F0)
 
+private fun habitatGradient(biome: Int): List<Color> = when (biome) {
+    1 -> listOf(Color(0xFFFFF0D9), Color(0xFFDDF5F2)) // beach
+    2 -> listOf(Color(0xFFE8F5E7), Color(0xFFD5EAD5)) // forest
+    3 -> listOf(Color(0xFFFFE8D9), Color(0xFFFFD6C4)) // volcano
+    4 -> listOf(Color(0xFFF0EAFE), Color(0xFFE0DDF2)) // mountain
+    5 -> listOf(Color(0xFFF0F8FF), Color(0xFFDCEEFF)) // snow
+    else -> listOf(Color(0xFFEAF7E6), Color(0xFFD9F0E4)) // meadow
+}
+
+private fun habitatGround(biome: Int): Color = when (biome) {
+    1 -> Color(0xFFBDE9E5)
+    2 -> Color(0xFFC8E3C3)
+    3 -> Color(0xFFF2C2A8)
+    4 -> Color(0xFFD2CBE8)
+    5 -> Color(0xFFD2E8F8)
+    else -> Color(0xFFCDE8C8)
+}
+
+private fun habitatAccent(biome: Int): Color = when (biome) {
+    1 -> Color(0xFF69B9B5)
+    2 -> Color(0xFF72AD78)
+    3 -> Color(0xFFE99A67)
+    4 -> Color(0xFF9B8BC8)
+    5 -> Color(0xFF73B7D9)
+    else -> Color(0xFF72AD78)
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -195,14 +222,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         modifier = Modifier.fillMaxWidth().height(174.dp)
                             .clip(RoundedCornerShape(24.dp))
                             .background(
-                                Brush.verticalGradient(
-                                    when (pet!!.speciesId) {
-                                        1 -> listOf(Color(0xFFE8F7E8), Color(0xFFD9F0E4))
-                                        4 -> listOf(Color(0xFFFFEAD8), Color(0xFFFFDCCB))
-                                        7 -> listOf(Color(0xFFE4F3FF), Color(0xFFD8EAFB))
-                                        else -> listOf(Color(0xFFF0EAFE), Color(0xFFE5E0F8))
-                                    }
-                                )
+                                Brush.verticalGradient(habitatGradient(pet!!.biome))
                             ),
                         contentAlignment = Alignment.Center
                     ) {
@@ -214,16 +234,11 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             modifier = Modifier.align(Alignment.TopEnd).padding(end = 34.dp, top = 35.dp).size(22.dp),
                             color = Color(0xBFFFFFFF), shape = RoundedCornerShape(50)
                         ) {}
-                        Text("✦", modifier = Modifier.align(Alignment.CenterStart).padding(start = 55.dp), color = when (pet!!.speciesId) { 1 -> Color(0xFF72AD78); 4 -> Color(0xFFF0A45B); 7 -> Color(0xFF73B7D9); else -> Color(0xFFB29ADE) }, style = MaterialTheme.typography.titleLarge)
+                        Text("✦", modifier = Modifier.align(Alignment.CenterStart).padding(start = 55.dp), color = habitatAccent(pet!!.biome), style = MaterialTheme.typography.titleLarge)
                         Text("✧", modifier = Modifier.align(Alignment.CenterEnd).padding(end = 52.dp), color = when (pet!!.speciesId) { 1 -> Color(0xFF72AD78); 4 -> Color(0xFFF0A45B); 7 -> Color(0xFF73B7D9); else -> Color(0xFFB29ADE) }, style = MaterialTheme.typography.headlineSmall)
                         Surface(
                             modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(42.dp),
-                            color = when (pet!!.speciesId) {
-                                1 -> Color(0xFFCDE8C8)
-                                4 -> Color(0xFFF4D2B4)
-                                7 -> Color(0xFFB9E2E8)
-                                else -> Color(0xFFD9D0EE)
-                            },
+                            color = habitatGround(pet!!.biome),
                             shape = RoundedCornerShape(topStart = 70.dp, topEnd = 70.dp)
                         ) {}
                         PetSprite(

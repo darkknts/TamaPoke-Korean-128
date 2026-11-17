@@ -2,6 +2,13 @@ package com.tamapoke.android
 
 import org.json.JSONObject
 
+data class DexEntry(
+    val id: Int,
+    val name: String,
+    val registered: Boolean,
+    val shiny: Boolean
+)
+
 data class PetState(
     val egg: Boolean,
     val speciesId: Int,
@@ -25,6 +32,7 @@ object PetNative {
     external fun nativeInit(filesDir: String, nowEpoch: Long)
     external fun nativeEngineStatus(): String
     external fun nativeGetState(): String
+    external fun nativeGetDexState(): String
     external fun nativeUpdate(nowEpoch: Long)
     external fun nativeFeed()
     external fun nativePlay()
@@ -56,6 +64,19 @@ object PetNative {
             shiny = json.optBoolean("shiny"),
             starterPick = json.optBoolean("starterPick")
         )
+    }
+
+    fun dexEntries(): List<DexEntry> {
+        val array = org.json.JSONArray(nativeGetDexState())
+        return List(array.length()) { index ->
+            val item = array.getJSONObject(index)
+            DexEntry(
+                id = item.optInt("id"),
+                name = item.optString("name"),
+                registered = item.optBoolean("registered"),
+                shiny = item.optBoolean("shiny")
+            )
+        }
     }
 
     fun update() = nativeUpdate(System.currentTimeMillis() / 1000)

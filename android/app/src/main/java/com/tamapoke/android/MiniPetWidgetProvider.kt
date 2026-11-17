@@ -27,7 +27,7 @@ object MiniPetWidgetRenderer {
     fun update(context: Context, manager: AppWidgetManager, ids: IntArray, detailed: Boolean) {
         val views = RemoteViews(context.packageName, if (detailed) R.layout.widget_mini_pet_2x2 else R.layout.widget_mini_pet_1x1)
         runCatching {
-            PetNative.initialize(context.filesDir.absolutePath)
+            if (PetNative.engineStatus() != "공통 C++ 엔진 연결 완료") PetNative.initialize(context.filesDir.absolutePath)
             PetNative.update()
             val pet = PetNative.state()
             val species = if (pet.egg || pet.speciesId !in 1..151) 1 else pet.speciesId

@@ -8,6 +8,7 @@ Android application for the TamaPoke virtual-pet game.
 - Shared C++ pet engine connected through JNI.
 - Local device persistence through the Android Preferences adapter, with periodic engine flushes.
 - Persistent Android settings for optional sound effects and haptic feedback.
+- ZIP backup export and restore for the C++ engine save file, with save reload after restore.
 - Real-time pet status refresh and care actions (feed, play, clean, pet, sleep, evolve).
 - Starter selection (Bulbasaur, Charmander, Squirtle).
 - TPK2 sprite loading for all 151 species and shiny variants when available.
@@ -26,7 +27,7 @@ Android application for the TamaPoke virtual-pet game.
 4. Connect growth, evolution and battle-stat presentation.
 5. Balance all three mini-games and verify repeated-play reward limits.
 6. Add rewards, medals, streaks and daily participation screens.
-7. Verify Android Auto Backup/restore behavior, sound and haptic settings, notifications and background lifecycle behavior.
+7. Verify ZIP backup/restore on multiple devices, sound and haptic settings, notifications and background lifecycle behavior.
 8. Run integrated tests and create the release APK.
 
 ## APK build policy

@@ -109,6 +109,7 @@ fun PetSprite(
     shiny: Boolean,
     actionId: Int = 0,
     actionToken: Int = 0,
+    loopAction: Boolean = false,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -118,19 +119,28 @@ fun PetSprite(
     var frameIndex by remember(sprite) { mutableIntStateOf(0) }
     var visibleAction by remember(sprite) { mutableIntStateOf(0) }
 
-    LaunchedEffect(sprite, actionId, actionToken) {
+    LaunchedEffect(sprite, actionId, actionToken, loopAction) {
         frameIndex = 0
         visibleAction = actionId
         val idle = sprite?.actions?.get(0) ?: return@LaunchedEffect
         val requested = sprite.actions[actionId] ?: idle
 
         if (actionId != 0 && requested !== idle && requested.size > 1) {
-            requested.forEachIndexed { index, frame ->
-                frameIndex = index
-                delay(frame.durationMs.toLong())
+            if (loopAction) {
+                while (true) {
+                    requested.forEachIndexed { index, frame ->
+                        frameIndex = index
+                        delay(frame.durationMs.toLong())
+                    }
+                }
+            } else {
+                requested.forEachIndexed { index, frame ->
+                    frameIndex = index
+                    delay(frame.durationMs.toLong())
+                }
+                visibleAction = 0
+                frameIndex = 0
             }
-            visibleAction = 0
-            frameIndex = 0
         }
 
         while (idle.size > 1) {

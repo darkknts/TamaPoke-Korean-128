@@ -1,9 +1,6 @@
 package com.tamapoke.android
 
 import android.os.Bundle
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -124,12 +121,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        val prefs = getSharedPreferences(MiniPetService.PREFS, android.content.Context.MODE_PRIVATE)
-        if (prefs.getBoolean(MiniPetService.KEY_ENABLED, false)) {
-            if (Settings.canDrawOverlays(this)) {
-                runCatching { MiniPetService.start(this) }
-            }
-        }
+        runCatching { MiniPetWidgetRenderer.updateAll(this) }
     }
 
     override fun onDestroy() {
@@ -154,7 +146,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     val context = LocalContext.current
     var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
     var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
-    var miniPetEnabled by remember { mutableStateOf(context.getSharedPreferences(MiniPetService.PREFS, android.content.Context.MODE_PRIVATE).getBoolean(MiniPetService.KEY_ENABLED, false)) }
+    var miniPetEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("mini_pet_enabled", false)) }
     var backupMessage by remember { mutableStateOf("") }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null) {
@@ -172,7 +164,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             }.getOrElse { "백업 실패: ${it.message}" }
         }
     }
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             backupMessage = runCatching {
@@ -310,20 +301,10 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 hapticsEnabled = hapticsEnabled,
                 backupMessage = backupMessage,
                 miniPetEnabled = miniPetEnabled,
-                miniPetPermissionGranted = Settings.canDrawOverlays(context),
                 onMiniPetChange = { enabled ->
                     miniPetEnabled = enabled
-                    context.getSharedPreferences(MiniPetService.PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(MiniPetService.KEY_ENABLED, enabled).apply()
-                    if (enabled) {
-                        if (Settings.canDrawOverlays(context)) {
-                            if (android.os.Build.VERSION.SDK_INT >= 33) notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                            MiniPetService.start(context)
-                        } else {
-                            val permissionIntent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.packageName))
-                            permissionIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            context.startActivity(permissionIntent)
-                        }
-                    } else MiniPetService.stop(context)
+                    context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).edit().putBoolean("mini_pet_enabled", enabled).apply()
+                    MiniPetWidgetRenderer.updateAll(context)
                 },
                 onBackup = { backupLauncher.launch("tamapoke-backup.zip") },
                 onRestore = { restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
@@ -694,7 +675,6 @@ private fun SettingsScreen(
     hapticsEnabled: Boolean,
     backupMessage: String,
     miniPetEnabled: Boolean,
-    miniPetPermissionGranted: Boolean,
     onMiniPetChange: (Boolean) -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit,
@@ -723,18 +703,12 @@ private fun SettingsScreen(
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) {
-                        Text("미니펫", color = PokeInk, fontWeight = FontWeight.Bold)
-                        Text("다른 앱 위에도 화면 상단에 작은 펫을 표시합니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
+                        Text("홈 화면 미니펫 위젯", color = PokeInk, fontWeight = FontWeight.Bold)
+                        Text("홈 화면에 1×1 또는 2×2 크기로 펫을 배치합니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
                     }
                     androidx.compose.material3.Switch(checked = miniPetEnabled, onCheckedChange = onMiniPetChange)
                 }
-                Text(
-                    if (miniPetPermissionGranted) "화면 위 표시 권한이 허용되어 있습니다."
-                    else "처음 실행할 때 '다른 앱 위에 표시' 권한을 허용해야 합니다.",
-                    color = if (miniPetPermissionGranted) Color(0xFF438A63) else Color(0xFF9A7650),
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text("중요한 돌봄 상태만 알림으로 전달하며, 같은 알림은 6시간 동안 반복하지 않습니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
+                Text("설정을 켠 뒤 홈 화면을 길게 눌러 위젯 메뉴에서 TamaPoke 1×1 또는 2×2를 추가하세요. 위젯을 누르면 게임이 열립니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
             }
         }
         Text("저장 데이터 백업", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)

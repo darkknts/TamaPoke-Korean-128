@@ -22,8 +22,8 @@ import kotlinx.coroutines.delay
 import java.io.DataInputStream
 import java.io.InputStream
 
-private data class SpriteFrame(val bitmap: Bitmap, val durationMs: Int)
-private data class PokemonSprite(val actions: Map<Int, List<SpriteFrame>>)
+internal data class SpriteFrame(val bitmap: Bitmap, val durationMs: Int)
+internal data class PokemonSprite(val actions: Map<Int, List<SpriteFrame>>)
 
 private fun readU8(input: DataInputStream): Int = input.readUnsignedByte()
 
@@ -33,7 +33,7 @@ private fun readU16LE(input: DataInputStream): Int {
     return low or (high shl 8)
 }
 
-private fun loadPokemonSprite(context: Context, speciesId: Int, shiny: Boolean): PokemonSprite? {
+internal fun loadPokemonSprite(context: Context, speciesId: Int, shiny: Boolean): PokemonSprite? {
     if (speciesId !in 1..151) return null
     val prefix = if (shiny) "ps" else "p"
     val fileName = "%s%03d.bin".format(prefix, speciesId)
@@ -45,7 +45,7 @@ private fun loadPokemonSprite(context: Context, speciesId: Int, shiny: Boolean):
     }.getOrNull()
 }
 
-private fun parseTpk2(raw: InputStream): PokemonSprite? {
+internal fun parseTpk2(raw: InputStream): PokemonSprite? {
     val input = DataInputStream(raw)
     val magic = ByteArray(4)
     input.readFully(magic)
@@ -163,4 +163,10 @@ fun PetSprite(
             Text("포켓몬 이미지를 불러오지 못했습니다")
         }
     }
+}
+
+
+internal fun loadPetSpriteBitmap(context: Context, speciesId: Int, shiny: Boolean): Bitmap? {
+    val sprite = loadPokemonSprite(context, speciesId, shiny) ?: return null
+    return (sprite.actions[0] ?: sprite.actions.values.firstOrNull())?.firstOrNull()?.bitmap
 }

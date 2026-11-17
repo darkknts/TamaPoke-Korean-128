@@ -30,6 +30,7 @@ object PetNative {
     external fun nativeEggTap()
     external fun nativeToggleSleep()
     external fun nativeEvolve()
+    external fun nativeChooseStarter(dex: Int)
 
     fun initialize(filesDir: String) = nativeInit(filesDir, System.currentTimeMillis() / 1000)
     fun engineStatus(): String = nativeEngineStatus()
@@ -59,4 +60,5 @@ object PetNative {
     fun eggTap() = nativeEggTap()
     fun toggleSleep() = nativeToggleSleep()
     fun evolve() = nativeEvolve()
+    fun chooseStarter(dex: Int) = nativeChooseStarter(dex)
 }

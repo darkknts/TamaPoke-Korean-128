@@ -23,9 +23,14 @@ class MiniPetWidget2x2Provider : AppWidgetProvider() {
 object MiniPetWidgetRenderer {
     fun updateAll(context: Context) {
         val manager = AppWidgetManager.getInstance(context)
+        val compactIds = manager.getAppWidgetIds(ComponentName(context, MiniPetWidget1x1Provider::class.java))
+        val detailedIds = manager.getAppWidgetIds(ComponentName(context, MiniPetWidget2x2Provider::class.java))
+        if (compactIds.isEmpty() && detailedIds.isEmpty()) return
+
+        // Advance the native engine once, then render both sizes from the same snapshot.
         val pet = PetNative.refreshForWidget(context.filesDir.absolutePath)
-        updateProvider(context, manager, MiniPetWidget1x1Provider::class.java, false, pet)
-        updateProvider(context, manager, MiniPetWidget2x2Provider::class.java, true, pet)
+        if (compactIds.isNotEmpty()) render(context, manager, compactIds, false, pet)
+        if (detailedIds.isNotEmpty()) render(context, manager, detailedIds, true, pet)
     }
 
     private fun updateProvider(

@@ -37,11 +37,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
-private val PokePurple = Color(0xFF7653A6)
-private val PokeInk = Color(0xFF30263D)
-private val PokeBackground = Color(0xFFFFF9FF)
-private val PokeLavender = Color(0xFFF0EAF7)
-private val PokeMint = Color(0xFFE8F4EC)
+private val PokePurple = Color(0xFF8A63C7)
+private val PokeInk = Color(0xFF40354D)
+private val PokeBackground = Color(0xFFFFFCF8)
+private val PokeLavender = Color(0xFFF4EEFF)
+private val PokeMint = Color(0xFFEAF8F0)
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,13 +58,13 @@ class MainActivity : ComponentActivity() {
                 colorScheme = lightColorScheme(
                     primary = PokePurple,
                     onPrimary = Color.White,
-                    secondary = Color(0xFF54856B),
+                    secondary = Color(0xFF62A985),
                     background = PokeBackground,
                     onBackground = PokeInk,
                     surface = Color.White,
                     onSurface = PokeInk,
                     surfaceVariant = PokeLavender,
-                    onSurfaceVariant = Color(0xFF665B70)
+                    onSurfaceVariant = Color(0xFF776A83)
                 )
             ) {
                 Surface(modifier = Modifier.fillMaxSize(), color = PokeBackground) {
@@ -104,11 +104,11 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                Text("TamaPoke", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = PokeInk)
+                Text("TamaPoke", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color(0xFF49375F))
                 Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.labelMedium, color = Color(0xFF766B80))
             }
-            Surface(color = PokeMint, shape = RoundedCornerShape(50)) {
-                Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF47775A), fontWeight = FontWeight.Bold)
+            Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
+                Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
             }
         }
 
@@ -140,23 +140,21 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(26.dp),
-                colors = CardDefaults.cardColors(containerColor = PokeLavender),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F8FF)),
+                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp, vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                        Text(if (pet!!.shiny) "SPECIAL PARTNER ✨" else "MY PARTNER", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.ExtraBold)
-                        Text("도감 번호 ${pet!!.speciesId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PokeInk)
-                        Surface(color = Color.White.copy(alpha = 0.8f), shape = RoundedCornerShape(50)) {
-                            Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
-                        }
-                        Text(if (pet!!.sleeping) "포근하게 잠들어 있어요" else "오늘도 즐거운 하루를 보내요!", style = MaterialTheme.typography.bodySmall, color = Color(0xFF62566D))
-                    }
+                    Text(if (pet!!.shiny) "✨ SPECIAL PARTNER ✨" else "MY PARTNER", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.ExtraBold)
+                    Text("도감 번호 ${pet!!.speciesId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PokeInk)
                     PetSprite(speciesId = pet!!.speciesId, shiny = pet!!.shiny, modifier = Modifier.size(126.dp))
+                    Surface(color = Color.White, shape = RoundedCornerShape(50)) {
+                        Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 14.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+                    }
+                    Text(if (pet!!.sleeping) "포근하게 잠들어 있어요" else "오늘도 즐거운 하루를 보내요!", style = MaterialTheme.typography.bodySmall, color = Color(0xFF756982))
                 }
             }
 
@@ -226,8 +224,8 @@ private fun StatTile(emoji: String, label: String, value: Int, modifier: Modifie
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(17.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFEFF)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -239,8 +237,8 @@ private fun StatTile(emoji: String, label: String, value: Int, modifier: Modifie
             LinearProgressIndicator(
                 progress = { value.coerceIn(0, 100) / 100f },
                 modifier = Modifier.fillMaxWidth(),
-                color = if (value < 30) Color(0xFFD97767) else PokePurple,
-                trackColor = PokeLavender
+                color = if (value < 30) Color(0xFFEE8C7B) else Color(0xFF9A76D5),
+                trackColor = Color(0xFFEDE5F7)
             )
         }
     }
@@ -248,7 +246,7 @@ private fun StatTile(emoji: String, label: String, value: Int, modifier: Modifie
 
 @Composable
 private fun InfoChip(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(modifier = modifier, color = Color(0xFFF5F0F8), shape = RoundedCornerShape(12.dp)) {
+    Surface(modifier = modifier, color = Color(0xFFF2F7FF), shape = RoundedCornerShape(12.dp)) {
         Row(Modifier.padding(horizontal = 11.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFF746980))
             Text(value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PokeInk)
@@ -279,7 +277,8 @@ private fun ActionButton(label: String, modifier: Modifier = Modifier, enabled: 
         onClick = { runCatching(onClick) },
         modifier = modifier.height(44.dp),
         enabled = enabled,
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF936BCB), contentColor = Color.White),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 5.dp, vertical = 3.dp)
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, fontWeight = FontWeight.Bold)

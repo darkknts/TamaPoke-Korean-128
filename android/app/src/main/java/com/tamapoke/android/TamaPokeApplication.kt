@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit
 class TamaPokeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
+        PetCareNotifications.ensureChannel(this)
         val refresh = PeriodicWorkRequestBuilder<MiniPetWidgetRefreshWorker>(
             15, TimeUnit.MINUTES
         ).build()

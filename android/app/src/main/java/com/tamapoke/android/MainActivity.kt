@@ -12,6 +12,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,25 +37,30 @@ class MainActivity : ComponentActivity() {
         window.decorView.systemUiVisibility =
             android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR or
             android.view.View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-
         setContent {
             MaterialTheme(colorScheme = lightColorScheme(
-                primary = PokePurple,
-                background = PokeBackground,
-                surface = Color.White,
-                onSurface = PokeInk
-            )) {
-                SpriteDiagnosticScreen()
-            }
+                primary = PokePurple, background = PokeBackground,
+                surface = Color.White, onSurface = PokeInk
+            )) { NativeDiagnosticScreen() }
         }
     }
 }
 
 @Composable
-private fun SpriteDiagnosticScreen() {
+private fun NativeDiagnosticScreen() {
     val context = LocalContext.current
-    val spriteLoaded = androidx.compose.runtime.remember(context) {
-        loadPokemonSprite(context, 1, false) != null
+    var status by remember { mutableStateOf("C++ 엔진 초기화 중...") }
+    var state by remember { mutableStateOf("") }
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        try {
+            PetNative.initialize(context.filesDir.absolutePath)
+            status = PetNative.engineStatus()
+            val pet = PetNative.state()
+            state = "종족 ID: ${pet.speciesId}, 레벨: ${pet.level}, 알 상태: ${pet.egg}"
+        } catch (error: Throwable) {
+            status = "JNI 초기화 실패: ${error.javaClass.simpleName}"
+            state = error.message ?: "상세 오류 메시지 없음"
+        }
     }
     Surface(modifier = Modifier.fillMaxSize(), color = PokeBackground) {
         Column(
@@ -60,32 +69,12 @@ private fun SpriteDiagnosticScreen() {
             verticalArrangement = Arrangement.Center
         ) {
             Text("TamaPoke", color = PokeInk, fontSize = 30.sp, fontWeight = FontWeight.Medium)
-            Text(
-                "캐릭터 이미지 진단 화면",
-                modifier = Modifier.padding(top = 20.dp),
-                color = PokePurple,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-            PetSprite(
-                speciesId = 1,
-                shiny = false,
-                modifier = Modifier.padding(top = 20.dp),
-                imageSize = 180.dp
-            )
-            Text(
-                if (spriteLoaded) "캐릭터 리소스 로드 성공" else "캐릭터 리소스 로드 실패",
-                modifier = Modifier.padding(top = 16.dp),
-                color = if (spriteLoaded) Color(0xFF34865B) else Color(0xFFB3261E),
-                fontSize = 17.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                "이 화면은 게임 엔진이나 JNI를 사용하지 않습니다.",
-                modifier = Modifier.padding(top = 10.dp),
-                color = PokeInk,
-                fontSize = 14.sp
-            )
+            Text("C++ / JNI 진단 화면", modifier = Modifier.padding(top = 20.dp),
+                color = PokePurple, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text(status, modifier = Modifier.padding(top = 28.dp), color = if (status.contains("완료")) Color(0xFF34865B) else Color(0xFFB3261E), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text(state, modifier = Modifier.padding(top = 16.dp), color = PokeInk, fontSize = 15.sp)
+            Text("캐릭터 UI와 알림 기능은 아직 연결하지 않은 엔진 단독 테스트입니다.",
+                modifier = Modifier.padding(top = 24.dp), color = PokeInk, fontSize = 13.sp)
         }
     }
 }

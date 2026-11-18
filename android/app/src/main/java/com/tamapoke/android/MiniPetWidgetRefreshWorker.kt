@@ -13,7 +13,9 @@ class MiniPetWidgetRefreshWorker(
     params: WorkerParameters
 ) : Worker(appContext, params) {
     override fun doWork(): Result = try {
+        val pet = PetNative.refreshForWidget(applicationContext.filesDir.absolutePath)
         MiniPetWidgetRenderer.updateAll(applicationContext)
+        PetCareNotifications.checkAndNotify(applicationContext, pet)
         Result.success()
     } catch (_: Throwable) {
         Result.retry()

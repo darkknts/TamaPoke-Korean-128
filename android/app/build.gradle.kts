@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -11,8 +12,12 @@ android {
         applicationId = "com.tamapoke.android"
         minSdk = 26
         targetSdk = 28
-        versionCode = 2
-        versionName = "0.1.1-diagnostic"
+        versionCode = 3
+        versionName = "0.1.2-compose-diagnostic"
+    }
+
+    buildFeatures {
+        compose = true
     }
 
     compileOptions {
@@ -26,4 +31,10 @@ android {
 }
 
 dependencies {
+    implementation(platform("androidx.compose:compose-bom:2024.12.01"))
+    implementation("androidx.activity:activity-compose:1.10.0")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+    debugImplementation("androidx.compose.ui:ui-tooling")
 }

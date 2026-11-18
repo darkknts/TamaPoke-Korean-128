@@ -66,9 +66,11 @@ object MiniPetWidgetRenderer {
                 views.setImageViewBitmap(R.id.widget_pet_image, it)
             }
             val needsCare = minOf(pet.fullness, pet.energy, pet.hygiene, pet.joy) < 30
-            if (needsCare) {
-                views.setInt(R.id.widget_pet_image, "setColorFilter", android.graphics.Color.rgb(190, 185, 210))
-            }
+            views.setInt(
+                R.id.widget_pet_image,
+                "setColorFilter",
+                if (needsCare) android.graphics.Color.rgb(190, 185, 210) else android.graphics.Color.WHITE
+            )
             if (!detailed) {
                 val mood = when {
                     pet.egg -> "🥚"

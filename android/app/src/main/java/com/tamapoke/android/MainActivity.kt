@@ -3,7 +3,6 @@ package com.tamapoke.android
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,41 +41,50 @@ class MainActivity : ComponentActivity() {
                 surface = Color.White,
                 onSurface = PokeInk
             )) {
-                ComposeDiagnosticScreen()
+                SpriteDiagnosticScreen()
             }
         }
     }
 }
 
 @Composable
-private fun ComposeDiagnosticScreen() {
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = PokeBackground
-    ) {
+private fun SpriteDiagnosticScreen() {
+    val context = LocalContext.current
+    val spriteLoaded = androidx.compose.runtime.remember(context) {
+        loadPokemonSprite(context, 1, false) != null
+    }
+    Surface(modifier = Modifier.fillMaxSize(), color = PokeBackground) {
         Column(
             modifier = Modifier.fillMaxSize().padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Text("TamaPoke", color = PokeInk, fontSize = 30.sp, fontWeight = FontWeight.Medium)
             Text(
-                text = "TamaPoke",
-                color = PokeInk,
-                fontSize = 30.sp,
-                fontWeight = FontWeight.Medium
-            )
-            Text(
-                text = "Compose UI 진단 화면",
-                modifier = Modifier.padding(top = 28.dp),
+                "캐릭터 이미지 진단 화면",
+                modifier = Modifier.padding(top = 20.dp),
                 color = PokePurple,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold
             )
-            Text(
-                text = "이 화면이 보이면 Jetpack Compose 실행도 정상입니다.",
+            PetSprite(
+                speciesId = 1,
+                shiny = false,
                 modifier = Modifier.padding(top = 20.dp),
+                imageSize = 180.dp
+            )
+            Text(
+                if (spriteLoaded) "캐릭터 리소스 로드 성공" else "캐릭터 리소스 로드 실패",
+                modifier = Modifier.padding(top = 16.dp),
+                color = if (spriteLoaded) Color(0xFF34865B) else Color(0xFFB3261E),
+                fontSize = 17.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                "이 화면은 게임 엔진이나 JNI를 사용하지 않습니다.",
+                modifier = Modifier.padding(top = 10.dp),
                 color = PokeInk,
-                fontSize = 17.sp
+                fontSize = 14.sp
             )
         }
     }

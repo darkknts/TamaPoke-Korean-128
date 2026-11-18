@@ -10,6 +10,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -141,6 +142,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var spriteAction by remember { mutableIntStateOf(0) }
     var spriteActionToken by remember { mutableIntStateOf(0) }
     var showDex by remember { mutableStateOf(false) }
+    var selectedDexEntry by remember { mutableStateOf<DexEntry?>(null) }
     var showGrowth by remember { mutableStateOf(false) }
     var showAchievements by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -303,7 +305,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("설정", maxLines = 1) }
                 OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("성장", maxLines = 1) }
-                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); showDex = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("도감", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); selectedDexEntry = null; showDex = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("도감", maxLines = 1) }
             }
         }
 
@@ -372,7 +374,21 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         } else if (showAchievements && pet != null && !pet!!.egg && !pet!!.starterPick) {
             AchievementScreen(pet = pet!!, compact = compactLayout, onBack = { showAchievements = false })
         } else if (showDex) {
-            DexScreen(entries = dexEntries, compact = compactLayout, onBack = { showDex = false })
+            val selected = selectedDexEntry
+            if (selected == null) {
+                DexScreen(
+                    entries = dexEntries,
+                    compact = compactLayout,
+                    onSelect = { selectedDexEntry = it },
+                    onBack = { showDex = false }
+                )
+            } else {
+                DexDetailScreen(
+                    entry = selected,
+                    compact = compactLayout,
+                    onBack = { selectedDexEntry = null }
+                )
+            }
         } else if (showGrowth && pet != null && !pet!!.egg && !pet!!.starterPick) {
             GrowthScreen(pet = pet!!, compact = compactLayout, onBack = { showGrowth = false }, onAchievements = { showAchievements = true })
         } else if (pet == null) {
@@ -850,7 +866,7 @@ private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier)
     }
 }
 @Composable
-private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onBack: () -> Unit) {
+private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onSelect: (DexEntry) -> Unit, onBack: () -> Unit) {
     val registeredCount = entries.count { it.registered }
     Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)) {
         Row(
@@ -875,7 +891,7 @@ private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onBack: () -> U
             Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 7.dp), modifier = Modifier.fillMaxWidth()) {
                 rowEntries.forEach { entry ->
                     Card(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).clickable { onSelect(entry) },
                         shape = RoundedCornerShape(14.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = if (entry.registered) Color.White else Color(0xFFF3F0F5)
@@ -922,6 +938,103 @@ private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onBack: () -> U
                 repeat(columnCount - rowEntries.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+    }
+}
+
+
+@Composable
+private fun DexDetailScreen(entry: DexEntry, compact: Boolean, onBack: () -> Unit) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 10.dp else 14.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text("포켓몬 상세", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = PokeInk)
+                Text("도감 번호 #${"%03d".format(entry.id)}", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+            }
+            OutlinedButton(onClick = onBack) { Text("도감으로") }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFF2F8FF)),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = if (compact) 18.dp else 26.dp, horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                if (entry.registered) {
+                    PetSprite(
+                        speciesId = entry.id,
+                        shiny = entry.shiny,
+                        modifier = Modifier.size(if (compact) 156.dp else 190.dp),
+                        imageSize = if (compact) 148.dp else 180.dp
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.size(if (compact) 156.dp else 190.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("?", style = MaterialTheme.typography.displayLarge, color = Color(0xFFB8AFBE), fontWeight = FontWeight.Bold)
+                    }
+                }
+                Text(
+                    if (entry.registered) entry.name else "???",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = if (entry.registered) PokeInk else Color(0xFF9B93A1),
+                    fontWeight = FontWeight.ExtraBold
+                )
+                Surface(
+                    color = if (entry.registered) Color(0xFFE5F7EC) else Color(0xFFF0EDF2),
+                    shape = RoundedCornerShape(50)
+                ) {
+                    Text(
+                        if (entry.registered) "발견 완료" else "아직 발견하지 못했어요",
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (entry.registered) Color(0xFF438A63) else Color(0xFF8B8191),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                if (entry.shiny) {
+                    Text("✨ 이로치 포켓몬 발견!", color = Color(0xFFB58A32), fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text("발견 기록", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("일반 포켓몬", color = Color(0xFF766B80), style = MaterialTheme.typography.bodyMedium)
+                    Text(if (entry.registered) "등록됨" else "미등록", color = PokeInk, fontWeight = FontWeight.Bold)
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("이로치", color = Color(0xFF766B80), style = MaterialTheme.typography.bodyMedium)
+                    Text(if (entry.shiny) "발견 완료" else "미발견", color = if (entry.shiny) Color(0xFFB58A32) else PokeInk, fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+        Text(
+            "현재 저장된 도감 기록을 기준으로 표시합니다.",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color(0xFF8B8191)
+        )
     }
 }
 

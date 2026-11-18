@@ -4,24 +4,41 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@android:color/transparent"
-    android:padding="2dp">
+    android:padding="1dp">
+
     <ImageView
         android:id="@+id/widget_pet_image"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_gravity="center"
+        android:paddingBottom="13dp"
         android:scaleType="fitCenter"
         android:contentDescription="현재 키우는 펫" />
+
     <TextView
         android:id="@+id/widget_level"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
         android:background="@drawable/widget_pet_chip"
+        android:gravity="center"
+        android:minWidth="42dp"
         android:text="Lv.1"
-        android:textColor="#40354D"
+        android:textColor="#49375F"
         android:textSize="10sp"
         android:textStyle="bold"
-        android:paddingHorizontal="7dp"
+        android:paddingHorizontal="8dp"
         android:paddingVertical="3dp" />
+
+    <TextView
+        android:id="@+id/widget_mood"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="top|end"
+        android:background="@drawable/widget_pet_chip"
+        android:gravity="center"
+        android:text="☺"
+        android:textColor="#6E548B"
+        android:textSize="13sp"
+        android:textStyle="bold" />
 </FrameLayout>

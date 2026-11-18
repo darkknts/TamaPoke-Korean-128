@@ -67,7 +67,6 @@ object MiniPetWidgetRenderer {
                 // Always render the original palette. Tinting the full bitmap
                 // made low-care pets appear as a pale/white silhouette.
                 views.setImageViewBitmap(R.id.widget_pet_image, sprite)
-                views.setInt(R.id.widget_pet_image, "setColorFilter", android.graphics.Color.TRANSPARENT)
             } else {
                 views.setImageViewResource(R.id.widget_pet_image, android.R.color.transparent)
             }

@@ -83,7 +83,11 @@ object MiniPetWidgetRenderer {
                 views.setTextViewText(R.id.widget_mood, mood)
             }
             if (detailed) {
-                views.setTextViewText(R.id.widget_pet_name, if (pet.egg) "알" else pet.nickname.ifBlank { "파트너" })
+                val partnerName = if (pet.egg) "알" else {
+                    runCatching { PetNative.dexEntries().firstOrNull { it.id == pet.speciesId }?.name }
+                        .getOrNull()?.takeIf { it.isNotBlank() } ?: "파트너"
+                }
+                views.setTextViewText(R.id.widget_pet_name, partnerName)
                 views.setTextViewText(R.id.widget_pet_level, if (pet.egg) "부화 대기" else "Lv. ${pet.level}")
                 views.setTextViewText(R.id.widget_hunger, "🍓 배고픔  ${pet.fullness}%")
                 views.setTextViewText(R.id.widget_energy, "⚡ 에너지  ${pet.energy}%")

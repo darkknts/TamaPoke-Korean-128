@@ -65,12 +65,6 @@ object MiniPetWidgetRenderer {
             loadPetSpriteBitmap(context, species, pet.shiny)?.let {
                 views.setImageViewBitmap(R.id.widget_pet_image, it)
             }
-            val needsCare = minOf(pet.fullness, pet.energy, pet.hygiene, pet.joy) < 30
-            // Do not apply a white tint in the healthy state: it washes out
-            // the sprite. Only tint when a care stat is critically low.
-            if (needsCare) {
-                views.setInt(R.id.widget_pet_image, "setColorFilter", android.graphics.Color.rgb(190, 185, 210))
-            }
             if (!detailed) {
                 val mood = when {
                     pet.egg -> "🥚"

@@ -92,6 +92,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Android 13+ requires runtime consent before care notifications can appear.
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 9001)
+        }
+
         // Keep the status bar visually consistent with the light app surface
         // and use dark system icons so notification indicators remain visible.
         window.statusBarColor = android.graphics.Color.rgb(255, 252, 248)

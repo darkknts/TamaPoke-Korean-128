@@ -146,7 +146,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     val context = LocalContext.current
     var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
     var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
-    var miniPetEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("mini_pet_enabled", false)) }
     var backupMessage by remember { mutableStateOf("") }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
         if (uri != null) {
@@ -287,52 +286,20 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 .padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 6.dp else 10.dp),
             verticalArrangement = Arrangement.spacedBy(if (compactLayout) 7.dp else 10.dp)
         ) {
-        if (compactLayout) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                        Text("TamaPoke", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color(0xFF49375F))
-                        Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.labelSmall, color = Color(0xFF766B80))
-                    }
-                    Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
-                        Text("● 성장 중", modifier = Modifier.padding(horizontal = 7.dp, vertical = 5.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
-                    }
-                }
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                    OutlinedButton(modifier = Modifier.weight(1f), onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 2.dp)) { Text("설정", style = MaterialTheme.typography.labelSmall) }
-                    OutlinedButton(modifier = Modifier.weight(1f), onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 2.dp)) { Text("성장", style = MaterialTheme.typography.labelSmall) }
-                    OutlinedButton(
-                        modifier = Modifier.weight(1f),
-                        onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); showDex = true },
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 2.dp)
-                    ) { Text("도감", style = MaterialTheme.typography.labelSmall) }
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                 Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-                    Text("TamaPoke", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color(0xFF49375F))
+                    Text("TamaPoke", style = if (compactLayout) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.ExtraBold, color = Color(0xFF49375F))
                     Text("나만의 포켓몬 키우기", style = MaterialTheme.typography.labelMedium, color = Color(0xFF766B80))
                 }
                 Surface(color = Color(0xFFE5F7EC), shape = RoundedCornerShape(50)) {
-                    Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 11.dp, vertical = 7.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
+                    Text("● 함께 성장 중", modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp), style = MaterialTheme.typography.labelSmall, color = Color(0xFF438A63), fontWeight = FontWeight.Bold)
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    OutlinedButton(onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 5.dp)) { Text("설정", style = MaterialTheme.typography.labelMedium) }
-                    OutlinedButton(onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)) { Text("성장", style = MaterialTheme.typography.labelMedium) }
-                    OutlinedButton(
-                        onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); showDex = true },
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 5.dp)
-                    ) { Text("도감", style = MaterialTheme.typography.labelMedium) }
-                }
+            }
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("설정", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("성장", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); showDex = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("도감", maxLines = 1) }
             }
         }
 
@@ -384,12 +351,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 soundEnabled = soundEnabled,
                 hapticsEnabled = hapticsEnabled,
                 backupMessage = backupMessage,
-                miniPetEnabled = miniPetEnabled,
-                onMiniPetChange = { enabled ->
-                    miniPetEnabled = enabled
-                    context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).edit().putBoolean("mini_pet_enabled", enabled).apply()
-                    MiniPetWidgetRenderer.updateAll(context)
-                },
                 onBackup = { backupLauncher.launch("tamapoke-backup.zip") },
                 onRestore = { restoreLauncher.launch(arrayOf("application/zip", "application/octet-stream")) },
                 onSoundChange = {
@@ -760,8 +721,6 @@ private fun SettingsScreen(
     soundEnabled: Boolean,
     hapticsEnabled: Boolean,
     backupMessage: String,
-    miniPetEnabled: Boolean,
-    onMiniPetChange: (Boolean) -> Unit,
     onBackup: () -> Unit,
     onRestore: () -> Unit,
     onSoundChange: (Boolean) -> Unit,
@@ -783,18 +742,6 @@ private fun SettingsScreen(
                     Column(Modifier.weight(1f)) { Text("진동 피드백", color = PokeInk, fontWeight = FontWeight.Bold); Text("버튼을 누를 때 가벼운 진동", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall) }
                     androidx.compose.material3.Switch(checked = hapticsEnabled, onCheckedChange = onHapticsChange)
                 }
-            }
-        }
-        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
-            Column(Modifier.fillMaxWidth().padding(if (compact) 10.dp else 14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                    Column(Modifier.weight(1f)) {
-                        Text("홈 화면 미니펫 위젯", color = PokeInk, fontWeight = FontWeight.Bold)
-                        Text("홈 화면에 1×1 또는 2×2 크기로 펫을 배치합니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
-                    }
-                    androidx.compose.material3.Switch(checked = miniPetEnabled, onCheckedChange = onMiniPetChange)
-                }
-                Text("설정을 켠 뒤 홈 화면을 길게 눌러 위젯 메뉴에서 TamaPoke 1×1 또는 2×2를 추가하세요. 위젯을 누르면 게임이 열립니다.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
             }
         }
         Text("저장 데이터 백업", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
@@ -944,6 +891,18 @@ private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onBack: () -> U
                                 fontWeight = FontWeight.Bold,
                                 maxLines = 1
                             )
+                            if (entry.registered) {
+                                PetSprite(
+                                    speciesId = entry.id,
+                                    shiny = entry.shiny,
+                                    modifier = Modifier.size(if (compact) 58.dp else 66.dp),
+                                    imageSize = if (compact) 56.dp else 64.dp
+                                )
+                            } else {
+                                Box(Modifier.size(if (compact) 58.dp else 66.dp), contentAlignment = Alignment.Center) {
+                                    Text("?", color = Color(0xFFB8AFBE), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                                }
+                            }
                             Text(
                                 when {
                                     entry.shiny -> "✨ 이로치"

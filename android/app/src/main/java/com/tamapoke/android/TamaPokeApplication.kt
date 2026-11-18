@@ -9,15 +9,20 @@ import java.util.concurrent.TimeUnit
 class TamaPokeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        PetCareNotifications.ensureChannel(this)
-        val refresh = PeriodicWorkRequestBuilder<MiniPetWidgetRefreshWorker>(
-            15, TimeUnit.MINUTES
-        ).build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            WORK_NAME,
-            ExistingPeriodicWorkPolicy.UPDATE,
-            refresh
-        )
+
+        // Background reminders must never prevent the main game from opening.
+        // Keep all optional notification/WorkManager setup isolated from startup.
+        runCatching { PetCareNotifications.ensureChannel(this) }
+        runCatching {
+            val refresh = PeriodicWorkRequestBuilder<MiniPetWidgetRefreshWorker>(
+                15, TimeUnit.MINUTES
+            ).build()
+            WorkManager.getInstance(this).enqueueUniquePeriodicWork(
+                WORK_NAME,
+                ExistingPeriodicWorkPolicy.KEEP,
+                refresh
+            )
+        }
     }
 
     private companion object {

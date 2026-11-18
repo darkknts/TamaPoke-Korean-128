@@ -12,8 +12,8 @@ android {
         applicationId = "com.tamapoke.android"
         minSdk = 26
         targetSdk = 28
-        versionCode = 3
-        versionName = "0.1.2-compose-diagnostic"
+        versionCode = 4
+        versionName = "0.1.3-sprite-diagnostic"
     }
 
     sourceSets {

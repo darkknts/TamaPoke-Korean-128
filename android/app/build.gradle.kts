@@ -16,6 +16,10 @@ android {
         versionName = "0.1.2-compose-diagnostic"
     }
 
+    sourceSets {
+        getByName("main").assets.srcDir(rootProject.file("../tools/sdcard/mons"))
+    }
+
     buildFeatures {
         compose = true
     }

@@ -146,6 +146,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showGrowth by remember { mutableStateOf(false) }
     var showAchievements by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
+    var showManual by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
     var gameMode by remember { mutableStateOf("menu") }
     var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
@@ -306,6 +307,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("설정", maxLines = 1) }
                 OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("성장", maxLines = 1) }
                 OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); selectedDexEntry = null; showDex = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("도감", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showManual = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("매뉴얼", maxLines = 1) }
             }
         }
 
@@ -351,6 +353,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     onBack = { showGame = false }
                 )
             }
+        } else if (showManual) {
+            GameManualScreen(compact = compactLayout, onBack = { showManual = false })
         } else if (showSettings) {
             SettingsScreen(
                 compact = compactLayout,
@@ -735,6 +739,55 @@ private fun BerryCatchGame(compact: Boolean, onBack: () -> Unit, onResult: (Int)
         }
     }
 }
+@Composable
+private fun GameManualScreen(compact: Boolean, onBack: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text("TamaPoke 매뉴얼", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+                Text("게임 이용 안내", style = MaterialTheme.typography.labelSmall, color = Color(0xFF766B80))
+            }
+            OutlinedButton(onClick = onBack) { Text("돌아가기") }
+        }
+        Text("처음 시작하기", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+        ManualCard("첫 포켓몬 선택", "처음 게임을 시작하면 이상해씨, 파이리, 꼬부기 중 한 마리를 선택합니다. 이후 새 포켓몬은 알을 통해 만날 수 있습니다.")
+        ManualCard("알 부화", "알을 세 번 터치하면 부화합니다. 기다리면 자동으로 부화할 수도 있습니다.")
+        Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+        ManualCard("먹이 주기", "먹이 주기 버튼에서 열매 또는 사탕을 선택해 포만도를 관리합니다. 포켓몬마다 선호하는 열매가 있으며, 좋아하는 열매를 발견하면 추가 효과를 얻습니다.")
+        ManualCard("놀아 주기", "놀이를 통해 행복도를 높일 수 있습니다. 놀이와 미니게임은 에너지를 사용하므로 상태를 확인해 주세요.")
+        ManualCard("청소하기", "화면에 생긴 배설물을 치워 위생을 관리합니다.")
+        ManualCard("쓰다듬기", "포켓몬을 쓰다듬어 행복도와 유대감을 높입니다.")
+        ManualCard("수면", "재우기/깨우기로 휴식 상태를 전환합니다. 잠자는 동안 에너지가 회복되고 돌봄 수치 감소가 느려집니다.")
+        Text("성장과 진화", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+        ManualCard("레벨", "포켓몬은 실제 경과 시간에 따라 성장합니다. 성장 화면에서 다음 레벨까지 남은 시간을 확인할 수 있습니다.")
+        ManualCard("진화", "진화 가능 레벨에 도달하고 네 가지 돌봄 수치 중 가장 낮은 값이 40 이상이어야 합니다. 돌봄 실수는 필요한 진화 레벨을 높일 수 있습니다. 조건을 충족해도 자동 진화하지 않으며, 홈 화면에 표시되는 진화하기 버튼을 직접 눌러야 합니다.")
+        Text("미니게임", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+        ManualCard("열매 받기", "20초 동안 진행합니다. 왼쪽/오른쪽 버튼으로 바구니를 세 개 레인 사이에서 움직여 떨어지는 열매를 받으세요. 받은 개수가 점수로 반영됩니다.")
+        ManualCard("타이밍 맞추기", "총 10라운드입니다. 움직이는 표시가 초록색 구간에 들어왔을 때 '지금 누르기'를 누르세요. 정확도에 따라 점수가 달라집니다.")
+        ManualCard("카드 짝 맞추기", "열매 카드 8장에 숨겨진 같은 그림 4쌍을 찾으세요. 카드를 두 장씩 열어 짝을 맞추며, 시도 횟수에 따라 훈련 점수가 정해집니다.")
+        Text("도감과 기록", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+        ManualCard("도감", "도감에서 151종의 발견 여부를 확인할 수 있습니다. 발견한 포켓몬을 선택하면 상세 정보와 이로치 발견 여부를 확인할 수 있습니다.")
+        ManualCard("성장 리포트와 메달", "성장 화면에서 전투 능력치, 친밀도, 연속 돌봄, 메달 및 도감 등록 수를 확인할 수 있습니다. 메달 화면에서 8종의 업적 달성 여부를 볼 수 있습니다.")
+        Text("작별과 새 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+        ManualCard("작별", "최종 진화형으로 게임 시간 3일 이상 함께 지내면 작별을 선택할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알의 희귀도와 이로치 확률에 보너스가 적용됩니다.")
+        ManualCard("방출과 도주", "방출은 사용자가 직접 선택하는 작별 방식입니다. 돌봄 수치가 모두 0인 상태가 일정 시간 지속되면 도주할 수 있으며, 도주 후 새 알은 일반 등급으로 제한됩니다.")
+        Text("설정과 저장 데이터", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+        ManualCard("효과음과 진동", "설정 화면에서 효과음과 진동 피드백을 각각 켜거나 끌 수 있습니다.")
+        ManualCard("백업과 복원", "설정 화면에서 저장 데이터를 ZIP 파일로 내보내거나 복원할 수 있습니다. 복원하면 현재 기기의 저장 데이터가 백업 시점의 데이터로 교체되므로, 필요한 경우 먼저 백업해 주세요.")
+        Text("안내 내용은 현재 Android 앱에 구현된 기능을 기준으로 작성되었습니다.", style = MaterialTheme.typography.bodySmall, color = Color(0xFF8B8191))
+    }
+}
+
+@Composable
+private fun ManualCard(title: String, description: String) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp)) {
+        Column(Modifier.fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(title, style = MaterialTheme.typography.titleSmall, color = PokeInk, fontWeight = FontWeight.Bold)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = Color(0xFF766B80))
+        }
+    }
+}
+
 @Composable
 private fun SettingsScreen(
     compact: Boolean,

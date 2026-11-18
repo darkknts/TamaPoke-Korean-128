@@ -110,7 +110,8 @@ fun PetSprite(
     actionId: Int = 0,
     actionToken: Int = 0,
     loopAction: Boolean = false,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    imageSize: androidx.compose.ui.unit.Dp = 160.dp
 ) {
     val context = LocalContext.current
     val sprite = remember(context, speciesId, shiny) {
@@ -156,7 +157,7 @@ fun PetSprite(
             Image(
                 bitmap = frames[frameIndex.coerceIn(frames.indices)].bitmap.asImageBitmap(),
                 contentDescription = "도감 번호 $speciesId 포켓몬",
-                modifier = Modifier.size(160.dp),
+                modifier = Modifier.size(imageSize),
                 filterQuality = FilterQuality.None
             )
         } else {

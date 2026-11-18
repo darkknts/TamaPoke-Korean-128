@@ -92,8 +92,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Keep the status bar visually consistent with the light app surface
-        // and use dark system icons so notification indicators remain visible.
+        // DIAGNOSTIC BUILD: deliberately do not initialize JNI, widgets,
+        // notifications, audio, or the pet engine. This isolates Android UI startup.
         window.statusBarColor = android.graphics.Color.rgb(255, 252, 248)
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
             window.insetsController?.setSystemBarsAppearance(
@@ -106,42 +106,28 @@ class MainActivity : ComponentActivity() {
                 window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
         }
 
-        val initialStatus = runCatching {
-            PetNative.initialize(filesDir.absolutePath)
-            PetNative.update()
-            PetNative.engineStatus()
-        }.getOrElse { "엔진 초기화 오류: ${it.message ?: "알 수 없는 오류"}" }
-        val initialState = runCatching { PetNative.state() }.getOrNull()
-
         setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = PokePurple,
-                    onPrimary = Color.White,
-                    secondary = Color(0xFF62A985),
-                    background = PokeBackground,
-                    onBackground = PokeInk,
-                    surface = Color.White,
-                    onSurface = PokeInk,
-                    surfaceVariant = PokeLavender,
-                    onSurfaceVariant = Color(0xFF776A83)
-                )
-            ) {
+            MaterialTheme(colorScheme = lightColorScheme(
+                primary = PokePurple,
+                onPrimary = Color.White,
+                background = PokeBackground,
+                onBackground = PokeInk,
+                surface = Color.White,
+                onSurface = PokeInk
+            )) {
                 Surface(modifier = Modifier.fillMaxSize(), color = PokeBackground) {
-                    PetHome(initialStatus, initialState)
+                    Column(
+                        modifier = Modifier.fillMaxSize().padding(24.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("TamaPoke 진단 화면", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text("Android 기본 실행 및 Compose 화면 표시 테스트", modifier = Modifier.padding(top = 12.dp))
+                        Text("이 화면이 유지되면 다음 단계에서 C++ 엔진과 위젯을 하나씩 다시 연결합니다.", modifier = Modifier.padding(top = 8.dp))
+                    }
                 }
             }
         }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        runCatching { MiniPetWidgetRenderer.updateAll(this) }
-    }
-
-    override fun onDestroy() {
-        SoundFeedback.release()
-        super.onDestroy()
     }
 }
 

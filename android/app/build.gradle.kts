@@ -12,12 +12,25 @@ android {
         applicationId = "com.tamapoke.android"
         minSdk = 26
         targetSdk = 28
-        versionCode = 4
-        versionName = "0.1.3-sprite-diagnostic"
+        versionCode = 5
+        versionName = "0.1.4-jni-diagnostic"
     }
 
     sourceSets {
         getByName("main").assets.srcDir(rootProject.file("../tools/sdcard/mons"))
+    }
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
+    defaultConfig {
+        externalNativeBuild {
+            cmake { cppFlags += listOf("-std=c++17") }
+        }
     }
 
     buildFeatures {

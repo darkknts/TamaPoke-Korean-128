@@ -35,14 +35,19 @@ private fun readU16LE(input: DataInputStream): Int {
 
 internal fun loadPokemonSprite(context: Context, speciesId: Int, shiny: Boolean): PokemonSprite? {
     if (speciesId !in 1..151) return null
-    val prefix = if (shiny) "ps" else "p"
-    val fileName = "%s%03d.bin".format(prefix, speciesId)
+    fun loadAsset(isShiny: Boolean): PokemonSprite? {
+        val prefix = if (isShiny) "ps" else "p"
+        val fileName = "%s%03d.bin".format(prefix, speciesId)
+        return runCatching {
+            context.assets.open(fileName).use { raw ->
+                parseTpk2(raw)
+            }
+        }.getOrNull()
+    }
 
-    return runCatching {
-        context.assets.open(fileName).use { raw ->
-            parseTpk2(raw)
-        }
-    }.getOrNull()
+    // If a shiny sprite is missing or damaged, keep the pet visible with its
+    // regular sprite instead of showing an empty image.
+    return if (shiny) loadAsset(true) ?: loadAsset(false) else loadAsset(false)
 }
 
 internal fun parseTpk2(raw: InputStream): PokemonSprite? {

@@ -91,6 +91,21 @@ private fun habitatAccent(biome: Int): Color = when (biome) {
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Keep the status bar visually consistent with the light app surface
+        // and use dark system icons so notification indicators remain visible.
+        window.statusBarColor = android.graphics.Color.rgb(255, 252, 248)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.insetsController?.setSystemBarsAppearance(
+                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility =
+                window.decorView.systemUiVisibility or android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+        }
+
         val initialStatus = runCatching {
             PetNative.initialize(filesDir.absolutePath)
             PetNative.update()

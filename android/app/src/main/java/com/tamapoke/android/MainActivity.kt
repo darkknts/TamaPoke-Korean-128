@@ -277,14 +277,14 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     }
 
     BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-        val compactLayout = maxWidth < 360.dp
+        val compactLayout = maxWidth < 360.dp || maxHeight < 900.dp
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 6.dp else 10.dp),
-            verticalArrangement = Arrangement.spacedBy(if (compactLayout) 7.dp else 10.dp)
+                .padding(horizontal = if (compactLayout) 10.dp else 14.dp, vertical = if (compactLayout) 3.dp else 10.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compactLayout) 5.dp else 10.dp)
         ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
@@ -403,8 +403,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 8.dp else 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 6.dp else 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 4.dp else 8.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -420,7 +420,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         }
                     }
                     Box(
-                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 132.dp else 174.dp)
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 96.dp else 174.dp)
                             .clip(RoundedCornerShape(24.dp))
                             .background(
                                 Brush.verticalGradient(habitatGradient(pet!!.biome))
@@ -448,13 +448,13 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             actionId = if (pet!!.sleeping) 3 else spriteAction,
                             actionToken = spriteActionToken,
                             loopAction = pet!!.sleeping,
-                            modifier = Modifier.size(if (compactLayout) 108.dp else 138.dp)
+                            modifier = Modifier.size(if (compactLayout) 84.dp else 138.dp)
                         )
                     }
                     Text(
                         if (pet!!.sleeping) "포근하게 잠들어 있어요" else "오늘도 즐거운 하루를 보내요!",
                         modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = if (compactLayout) MaterialTheme.typography.labelMedium else MaterialTheme.typography.titleMedium,
                         color = Color(0xFF655777),
                         fontWeight = FontWeight.SemiBold,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -462,22 +462,22 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(if (compactLayout) 4.dp else 7.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                     Text("오늘의 컨디션", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PokeInk)
                     Text("실시간 상태", style = MaterialTheme.typography.labelSmall, color = Color(0xFF857991))
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    StatTile("🍚", "포만도", pet!!.fullness, Modifier.weight(1f))
-                    StatTile("💗", "행복도", pet!!.joy, Modifier.weight(1f))
+                    StatTile("🍚", "포만도", pet!!.fullness, Modifier.weight(1f), compactLayout)
+                    StatTile("💗", "행복도", pet!!.joy, Modifier.weight(1f), compactLayout)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    StatTile("⚡", "에너지", pet!!.energy, Modifier.weight(1f))
-                    StatTile("🫧", "위생", pet!!.hygiene, Modifier.weight(1f))
+                    StatTile("⚡", "에너지", pet!!.energy, Modifier.weight(1f), compactLayout)
+                    StatTile("🫧", "위생", pet!!.hygiene, Modifier.weight(1f), compactLayout)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    InfoChip("⚖ 몸무게", "${pet!!.weight} / 100", Modifier.weight(1f))
-                    InfoChip("🧹 배설물", "${pet!!.poops} / 3", Modifier.weight(1f))
+                    InfoChip("⚖ 몸무게", "${pet!!.weight} / 100", Modifier.weight(1f), compactLayout)
+                    InfoChip("🧹 배설물", "${pet!!.poops} / 3", Modifier.weight(1f), compactLayout)
                 }
             }
 
@@ -487,7 +487,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(Modifier.padding(if (compactLayout) 8.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 6.dp else 8.dp)) {
+                Column(Modifier.padding(if (compactLayout) 7.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 4.dp else 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         OutlinedButton(
@@ -496,19 +496,19 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         ) { Text("🍓 미니게임", style = MaterialTheme.typography.labelSmall) }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton("🍓  먹이 주기", Modifier.weight(1f)) { performPetAction(4) { PetNative.feed() } }
-                        ActionButton("🎾  놀아 주기", Modifier.weight(1f)) { performPetAction(8) { PetNative.play() } }
+                        ActionButton("🍓  먹이 주기", Modifier.weight(1f), compact = compactLayout) { performPetAction(4) { PetNative.feed() } }
+                        ActionButton("🎾  놀아 주기", Modifier.weight(1f), compact = compactLayout) { performPetAction(8) { PetNative.play() } }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton("🧹  청소하기", Modifier.weight(1f)) { performPetAction(9) { PetNative.clean() } }
-                        ActionButton("💗  쓰다듬기", Modifier.weight(1f)) { performPetAction(7) { PetNative.caress() } }
+                        ActionButton("🧹  청소하기", Modifier.weight(1f), compact = compactLayout) { performPetAction(9) { PetNative.clean() } }
+                        ActionButton("💗  쓰다듬기", Modifier.weight(1f), compact = compactLayout) { performPetAction(7) { PetNative.caress() } }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        ActionButton(if (pet!!.sleeping) "☀  깨우기" else "🌙  재우기", Modifier.weight(1f)) { performPetAction(if (pet!!.sleeping) 0 else 3) { PetNative.toggleSleep() } }
+                        ActionButton(if (pet!!.sleeping) "☀  깨우기" else "🌙  재우기", Modifier.weight(1f), compact = compactLayout) { performPetAction(if (pet!!.sleeping) 0 else 3) { PetNative.toggleSleep() } }
                         if (pet!!.canEvolve) {
                             ActionButton("✨  진화하기", Modifier.weight(1f)) { performPetAction(7) { PetNative.evolve() } }
                         } else {
-                            Surface(modifier = Modifier.weight(1f).height(44.dp), color = PokeMint, shape = RoundedCornerShape(14.dp)) {
+                            Surface(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 44.dp), color = PokeMint, shape = RoundedCornerShape(14.dp)) {
                                 BoxCenterText("건강하게 성장 중", Color(0xFF47775A))
                             }
                         }
@@ -922,14 +922,14 @@ private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onBack: () -> U
 }
 
 @Composable
-private fun StatTile(emoji: String, label: String, value: Int, modifier: Modifier = Modifier) {
+private fun StatTile(emoji: String, label: String, value: Int, modifier: Modifier = Modifier, compact: Boolean = false) {
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(17.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFFFFEFF)),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = if (compact) 8.dp else 11.dp, vertical = if (compact) 5.dp else 9.dp), verticalArrangement = Arrangement.spacedBy(if (compact) 2.dp else 5.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(emoji, style = MaterialTheme.typography.titleSmall)
                 Text(label, style = MaterialTheme.typography.labelMedium, color = Color(0xFF6E6378), fontWeight = FontWeight.SemiBold)
@@ -947,9 +947,9 @@ private fun StatTile(emoji: String, label: String, value: Int, modifier: Modifie
 }
 
 @Composable
-private fun InfoChip(label: String, value: String, modifier: Modifier = Modifier) {
+private fun InfoChip(label: String, value: String, modifier: Modifier = Modifier, compact: Boolean = false) {
     Surface(modifier = modifier, color = Color(0xFFF2F7FF), shape = RoundedCornerShape(12.dp)) {
-        Row(Modifier.padding(horizontal = 11.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(horizontal = if (compact) 8.dp else 11.dp, vertical = if (compact) 5.dp else 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text(label, style = MaterialTheme.typography.labelSmall, color = Color(0xFF746980))
             Text(value, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PokeInk)
         }
@@ -974,10 +974,10 @@ private inline fun choose(dex: Int, refresh: () -> Unit) {
 }
 
 @Composable
-private fun ActionButton(label: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+private fun ActionButton(label: String, modifier: Modifier = Modifier, enabled: Boolean = true, compact: Boolean = false, onClick: () -> Unit) {
     Button(
         onClick = { runCatching(onClick) },
-        modifier = modifier.height(44.dp),
+        modifier = modifier.height(if (compact) 38.dp else 44.dp),
         enabled = enabled,
         shape = RoundedCornerShape(16.dp),
         colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = Color(0xFF936BCB), contentColor = Color.White),

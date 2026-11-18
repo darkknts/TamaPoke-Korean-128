@@ -15,7 +15,7 @@ class MiniPetWidgetRefreshWorker(
     override fun doWork(): Result = try {
         val pet = PetNative.refreshForWidget(applicationContext.filesDir.absolutePath)
         MiniPetWidgetRenderer.updateAll(applicationContext)
-        PetCareNotifications.checkAndNotify(applicationContext, pet)
+        // Temporarily disabled: isolate notification code while diagnosing startup crashes.
         Result.success()
     } catch (_: Throwable) {
         Result.retry()

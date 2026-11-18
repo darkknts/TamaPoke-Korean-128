@@ -65,12 +65,18 @@ object MiniPetWidgetRenderer {
             loadPetSpriteBitmap(context, species, pet.shiny)?.let {
                 views.setImageViewBitmap(R.id.widget_pet_image, it)
             }
+            val needsCare = minOf(pet.fullness, pet.energy, pet.hygiene, pet.joy) < 30
+            if (needsCare) {
+                views.setInt(R.id.widget_pet_image, "setColorFilter", android.graphics.Color.rgb(190, 185, 210))
+            } else {
+                views.setInt(R.id.widget_pet_image, "clearColorFilter", 0)
+            }
             if (detailed) {
-                views.setTextViewText(R.id.widget_pet_name, if (pet.egg) "알" else "파트너 Lv.${pet.level}")
-                views.setTextViewText(R.id.widget_hunger, "배고픔  ${pet.fullness}%")
-                views.setTextViewText(R.id.widget_energy, "에너지  ${pet.energy}%")
-                views.setTextViewText(R.id.widget_hygiene, "청결도  ${pet.hygiene}%")
-                views.setTextViewText(R.id.widget_joy, "행복도  ${pet.joy}%")
+                views.setTextViewText(R.id.widget_pet_name, if (pet.egg) "알" else "파트너  ·  Lv.${pet.level}")
+                views.setTextViewText(R.id.widget_hunger, "🍓 배고픔  ${pet.fullness}%")
+                views.setTextViewText(R.id.widget_energy, "⚡ 에너지  ${pet.energy}%")
+                views.setTextViewText(R.id.widget_hygiene, "🫧 청결도  ${pet.hygiene}%")
+                views.setTextViewText(R.id.widget_joy, "💗 행복도  ${pet.joy}%")
                 views.setProgressBar(R.id.widget_hunger_bar, 100, pet.fullness.coerceIn(0, 100), false)
                 views.setProgressBar(R.id.widget_energy_bar, 100, pet.energy.coerceIn(0, 100), false)
                 views.setProgressBar(R.id.widget_hygiene_bar, 100, pet.hygiene.coerceIn(0, 100), false)

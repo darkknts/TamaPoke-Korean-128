@@ -68,8 +68,6 @@ object MiniPetWidgetRenderer {
             val needsCare = minOf(pet.fullness, pet.energy, pet.hygiene, pet.joy) < 30
             if (needsCare) {
                 views.setInt(R.id.widget_pet_image, "setColorFilter", android.graphics.Color.rgb(190, 185, 210))
-            } else {
-                views.setInt(R.id.widget_pet_image, "clearColorFilter", 0)
             }
             if (detailed) {
                 views.setTextViewText(R.id.widget_pet_name, if (pet.egg) "알" else "파트너  ·  Lv.${pet.level}")

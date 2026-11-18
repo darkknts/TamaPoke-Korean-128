@@ -69,6 +69,17 @@ object MiniPetWidgetRenderer {
             if (needsCare) {
                 views.setInt(R.id.widget_pet_image, "setColorFilter", android.graphics.Color.rgb(190, 185, 210))
             }
+            if (!detailed) {
+                val mood = when {
+                    pet.egg -> "🥚"
+                    pet.fullness < 30 -> "🍓"
+                    pet.energy < 30 -> "💤"
+                    pet.hygiene < 30 -> "🫧"
+                    pet.joy < 30 -> "💗"
+                    else -> "☺"
+                }
+                views.setTextViewText(R.id.widget_mood, mood)
+            }
             if (detailed) {
                 views.setTextViewText(R.id.widget_pet_name, if (pet.egg) "알" else "파트너  ·  Lv.${pet.level}")
                 views.setTextViewText(R.id.widget_hunger, "🍓 배고픔  ${pet.fullness}%")

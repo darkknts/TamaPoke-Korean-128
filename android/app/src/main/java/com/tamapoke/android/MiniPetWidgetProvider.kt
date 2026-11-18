@@ -66,11 +66,11 @@ object MiniPetWidgetRenderer {
                 views.setImageViewBitmap(R.id.widget_pet_image, it)
             }
             val needsCare = minOf(pet.fullness, pet.energy, pet.hygiene, pet.joy) < 30
-            views.setInt(
-                R.id.widget_pet_image,
-                "setColorFilter",
-                if (needsCare) android.graphics.Color.rgb(190, 185, 210) else android.graphics.Color.WHITE
-            )
+            // Do not apply a white tint in the healthy state: it washes out
+            // the sprite. Only tint when a care stat is critically low.
+            if (needsCare) {
+                views.setInt(R.id.widget_pet_image, "setColorFilter", android.graphics.Color.rgb(190, 185, 210))
+            }
             if (!detailed) {
                 val mood = when {
                     pet.egg -> "🥚"
@@ -83,7 +83,8 @@ object MiniPetWidgetRenderer {
                 views.setTextViewText(R.id.widget_mood, mood)
             }
             if (detailed) {
-                views.setTextViewText(R.id.widget_pet_name, if (pet.egg) "알" else "파트너  ·  Lv.${pet.level}")
+                views.setTextViewText(R.id.widget_pet_name, if (pet.egg) "알" else pet.nickname.ifBlank { "파트너" })
+                views.setTextViewText(R.id.widget_pet_level, if (pet.egg) "부화 대기" else "Lv. ${pet.level}")
                 views.setTextViewText(R.id.widget_hunger, "🍓 배고픔  ${pet.fullness}%")
                 views.setTextViewText(R.id.widget_energy, "⚡ 에너지  ${pet.energy}%")
                 views.setTextViewText(R.id.widget_hygiene, "🫧 청결도  ${pet.hygiene}%")

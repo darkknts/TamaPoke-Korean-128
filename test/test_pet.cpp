@@ -153,7 +153,7 @@ TEST(feed, chuche_engorda) {
   p.feedCandy();
   CHECK_EQ(p.fullness, (uint8_t)60);
   CHECK_EQ(p.joy, (uint8_t)62);
-  CHECK_EQ(p.weight, (uint8_t)12);
+  CHECK_EQ(p.weight, (uint8_t)0);
 }
 
 TEST(feed, dormido_o_huevo_no_come) {
@@ -218,38 +218,34 @@ TEST(tick, dormir_recupera_energia_con_suelos) {
   CHECK_EQ(p.careMistakes, (uint8_t)0);
 }
 
-TEST(tick, sobrepeso_se_quema_solo) {
+TEST(tick, peso_y_cacas_permanecen_deshabilitados) {
   Pet p;
   makePet(p, 4);
   p.weight = 30;
+  p.poops = 2;
   advance(p, 30);
-  CHECK_EQ(p.weight, (uint8_t)20);  // -1 cada 3 minutos
+  CHECK_EQ(p.weight, (uint8_t)0);
+  CHECK_EQ(p.poops, (uint8_t)0);
 }
 
-TEST(tick, descuido_cuenta_una_vez_por_hora) {
+TEST(tick, descuidos_no_se_acumulan) {
   Pet p;
   makePet(p, 4);
   setStats(p, 0, 0, 0, 0);
-  advance(p, 1);
-  CHECK_EQ(p.careMistakes, (uint8_t)1);
-  advance(p, 50);
-  CHECK_MSG(p.careMistakes == 1, "el enfriamiento evita contar el mismo descuido cada minuto");
-  advance(p, 11);
-  CHECK_EQ(p.careMistakes, (uint8_t)2);
+  advance(p, 62);
+  CHECK_EQ(p.careMistakes, (uint8_t)0);
 }
 
 // regresion v1.4: el descuido restaba 3 de vinculo cada 30 min y era imposible
 // recuperarlo; ahora resta 1 y nunca lo deja en 0
-TEST(tick, descuido_enfria_el_vinculo_sin_arrasarlo) {
+TEST(tick, descuido_no_reduce_el_vinculo) {
   Pet p;
   makePet(p, 4);
   p.bond = 50;
   setStats(p, 0, 0, 0, 0);
-  advance(p, 1);
-  CHECK_EQ(p.bond, (uint8_t)49);
-  p.bond = 1;
   advance(p, 61);
-  CHECK_MSG(p.bond == 1, "el vinculo no cae por debajo de 1");
+  CHECK_EQ(p.bond, (uint8_t)50);
+  CHECK_EQ(p.careMistakes, (uint8_t)0);
 }
 
 TEST(tick, buen_cuidado_12h_forja_defensa) {
@@ -301,13 +297,11 @@ TEST(evolve, requiere_nivel_y_buen_cuidado) {
   CHECK(p.canEvolveNow());
 }
 
-TEST(evolve, cada_descuido_retrasa_un_nivel) {
+TEST(evolve, los_descuidos_no_retrasan_la_evolucion) {
   Pet p;
   makePet(p, 4);
   p.ageMinutes = 15 * 60;  // nivel 16
   p.careMistakes = 1;
-  CHECK(!p.canEvolveNow());
-  p.ageMinutes = 16 * 60;  // nivel 17
   CHECK(p.canEvolveNow());
 }
 
@@ -447,7 +441,7 @@ TEST(train, el_saco_cansa_y_quema_peso) {
   p.trainStrength(30);
   CHECK_EQ(p.energy, (uint8_t)68);
   CHECK_EQ(p.fullness, (uint8_t)75);
-  CHECK_EQ(p.weight, (uint8_t)30);
+  CHECK_EQ(p.weight, (uint8_t)0);
   p.energy = 3;  // el suelo protege de dejarlo a cero
   p.trainStrength(30);
   CHECK_EQ(p.energy, (uint8_t)3);
@@ -461,7 +455,7 @@ TEST(play, minijuego_entrena_velocidad_y_guarda_record) {
   p.playResult(20);
   CHECK_EQ(p.trSpe, (uint8_t)4);
   CHECK_EQ(p.joy, (uint8_t)45);   // +5 +30 por marcar mas de 15
-  CHECK_EQ(p.weight, (uint8_t)10);  // 50 - 20*2
+  CHECK_EQ(p.weight, (uint8_t)0);  // peso deshabilitado
   CHECK_EQ(p.gameHi, (uint16_t)20);
   p.playResult(5);
   CHECK_MSG(p.gameHi == 20, "un resultado peor no baja el record");
@@ -680,10 +674,10 @@ TEST(medals, en_forma_llega_al_nivel_5) {
 
   Pet q;
   makePet(q, 4);
-  q.careMistakes = 1;   // un descuido la deja fuera
+  q.careMistakes = 1;   // los descuidos ya no afectan las medallas
   q.ageMinutes = 4 * 60 - 1;
   advance(q, 1);
-  CHECK(!q.hasMedal(MED_FIT));
+  CHECK(q.hasMedal(MED_FIT));
 }
 
 TEST(medals, cada_medalla_nueva_suma_al_total) {
@@ -789,7 +783,7 @@ TEST(ceremony, durante_la_ceremonia_no_se_puede_interactuar) {
   p.toggleLight();
   CHECK_EQ(p.fullness, (uint8_t)50);
   CHECK_EQ(p.joy, (uint8_t)50);
-  CHECK_EQ(p.poops, (uint8_t)2);
+  CHECK_EQ(p.poops, (uint8_t)0);
   CHECK(!p.sleeping);
 }
 

@@ -83,12 +83,10 @@ void Pet::syncClock(uint32_t nowEpoch) {
     joy = dropTo(joy, 1, 15);
   }
   if (!isEgg()) {
-    if (!sleeping) {  // durmiendo no ensucia
-      uint8_t p = poops + mins / 240;
-      poops = p > 3 ? 3 : p;
-    }
-    // la evolucion NO se aplica offline: queda lista y la dispara el usuario
-    // tocando al bicho cuando vuelve (para que vea la transformacion)
+    // Mobile balance: no poop, weight, or care-mistake mechanics.
+    poops = 0;
+    weight = 0;
+    careMistakes = 0;
   }
   Serial.printf("offline: %u min aplicados (nv.%u)\n", mins, level());
   save();
@@ -125,7 +123,7 @@ void Pet::tick() {
   // El peso aun se quema; la racha de buen cuidado (goodTicks) queda en pausa.
   if (sleeping) {
     energy = clamp100(energy + 6);
-    if (weight > 0 && ageMinutes % 3 == 0) weight--;
+    weight = 0;
     if (ageMinutes % 2 == 0) {                 // ~4x mas lento que despierto
       fullness = dropTo(fullness, 1, 30);
       joy = dropTo(joy, 1, 35);
@@ -140,12 +138,10 @@ void Pet::tick() {
 
   fullness = clamp100(fullness - 2);
   energy = clamp100(energy - 1);
-  if (fullness > 40 && poops < 3 && random(100) < 15) poops++;
-
-  hygiene = clamp100(hygiene - 1 - 4 * poops);
-  // el sobrepeso da pereza: la energia cae el doble
-  if (weight > 50) energy = clamp100(energy - 1);
-  if (weight > 0 && ageMinutes % 3 == 0) weight--;
+  // Mobile balance: hygiene decreases steadily without poop/weight penalties.
+  hygiene = clamp100(hygiene - 1);
+  poops = 0;
+  weight = 0;
 
   // la disciplina forja la defensa: 12 h seguidas bien cuidado = +1 DEF
   if (lowestStat() >= 40) {
@@ -162,16 +158,9 @@ void Pet::tick() {
   if (hygiene < 30) dJoy -= 2;
   joy = clamp100(joy + dJoy);
 
-  // Descuido: dejar una estadistica por los suelos cuenta como error de
-  // cuidado (con enfriamiento para no contar el mismo descuido cada minuto)
-  if (mistakeCooldown > 0) mistakeCooldown--;
-  if (lowestStat() <= 10 && mistakeCooldown == 0) {
-    careMistakes++;
-    mistakeCooldown = 60;
-    if (bond > 1) bond--;  // el descuido enfria el vinculo, pero sin arrasarlo:
-                           // a -3 cada 30 min se perdia mucho mas de lo que se
-                           // podia ganar en todo un dia y el vinculo se atascaba
-  }
+  // Care mistakes are disabled in the mobile balance shared with Windows.
+  careMistakes = 0;
+  mistakeCooldown = 0;
 
   checkMedals();  // la evolucion la dispara el usuario (canEvolveNow + tap), no el tick
 
@@ -304,7 +293,7 @@ void Pet::checkMedals() {
   if (streak >= 7) medals |= MED_STREAK7;
   if (bond >= 100) medals |= MED_BOND;
   if (DEX_TBL[speciesId].evolvesTo == 0) medals |= MED_FINAL;
-  if (weight == 0 && level() >= 5 && careMistakes == 0) medals |= MED_FIT;
+  if (level() >= 5) medals |= MED_FIT;
   uint16_t gained = medals & ~before;
   if (gained) {
     for (uint16_t m = gained; m; m &= (m - 1)) totalMedals++;
@@ -412,7 +401,7 @@ bool Pet::canEvolveNow() const {
   if (isEgg() || sleeping || ceremony != CER_NONE) return false;
   const DexEntry &d = DEX_TBL[speciesId];
   if (d.evolvesTo == 0) return false;
-  return level() >= (uint16_t)d.evolveLevel + careMistakes && lowestStat() >= 40;
+  return level() >= (uint16_t)d.evolveLevel && lowestStat() >= 40;
 }
 
 void Pet::evolve() {

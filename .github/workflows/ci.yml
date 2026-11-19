@@ -27,11 +27,16 @@ jobs:
       - name: Install libraries
         run: arduino-cli lib install "GFX Library for Arduino" SensorLib XPowersLib U8g2
 
+      - name: Prepare Arduino sketch directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/TamaPoke"
+          git archive HEAD | tar -x -C "$RUNNER_TEMP/TamaPoke"
+
       - name: Compile
         run: >
           arduino-cli compile --warnings=all
           --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
-          .
+          "$RUNNER_TEMP/TamaPoke"
 
       # Guition/Sunton 4848S040 (ST7701S RGB 480x480 + GT911): mismo codigo,
       # la capa board.h elige placa con un flag de compilacion. Se compila aqui
@@ -41,7 +46,7 @@ jobs:
           arduino-cli compile --warnings=all
           --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
           --build-property "compiler.cpp.extra_flags=-DBOARD_GUITION_4848S040"
-          .
+          "$RUNNER_TEMP/TamaPoke"
 
       # SpotPear 1.28" AI Ball (GC9A01 240x240 + CST816, experimental): same
       # code and FQBN, the UI is drawn at 480 and shrunk 2:1 on flush.
@@ -50,13 +55,13 @@ jobs:
           arduino-cli compile --warnings=all
           --fqbn "esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=16M,PSRAM=opi,PartitionScheme=app3M_fat9M_16MB"
           --build-property "compiler.cpp.extra_flags=-DBOARD_SPOTPEAR_BALL128"
-          .
+          "$RUNNER_TEMP/TamaPoke"
 
       # Waveshare AMOLED 1.75C (experimental): mismo codigo con
       # -DBOARD_AMOLED_175C=1 y su tabla de particiones (boards/175c/). Se
       # compila con el mismo script que se usa en casa para que no se oxide.
       - name: Compile (Waveshare AMOLED 1.75C)
-        run: tools/build_175c.sh --out "$RUNNER_TEMP/out-175c"
+        run: TAMAPOKE_SKETCH_ROOT="$RUNNER_TEMP/TamaPoke" tools/build_175c.sh --out "$RUNNER_TEMP/out-175c"
 
   generated:
     name: Generated headers up to date

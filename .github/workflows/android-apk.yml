@@ -10,6 +10,9 @@ on:
       - "android/**"
       - ".github/workflows/android-apk.yml"
 
+permissions:
+  contents: write
+
 jobs:
   build-debug-apk:
     name: Build installable Android debug APK
@@ -41,10 +44,22 @@ jobs:
         working-directory: android
         run: gradle --no-daemon :app:assembleDebug
 
-      - name: Upload debug APK
+      - name: Upload debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: TamaPoke-Android-debug
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 30
+
+      - name: Publish APK as public GitHub Release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-debug-${{ github.run_number }}-${{ github.run_attempt }}
+          target_commitish: ${{ github.sha }}
+          name: TamaPoke Android Debug #${{ github.run_number }}
+          body: |
+            Automatically generated installable Android debug APK.
+            Commit: ${{ github.sha }}
+          prerelease: true
+          files: android/app/build/outputs/apk/debug/*.apk

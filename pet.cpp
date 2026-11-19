@@ -450,7 +450,7 @@ void Pet::feedCandy() {
   if (isEgg() || sleeping) return;
   fullness = clamp100(fullness + 10);
   joy = clamp100(joy + 12);
-  weight = clamp100(weight + 12);  // las chuches pasan factura
+  weight = 0;  // Mobile balance: weight mechanic disabled
   eatUntil = millis() + EAT_ANIM_MS;
   registerCare();
   save();
@@ -463,8 +463,7 @@ void Pet::playResult(uint8_t score) {
   joy = clamp100(joy + 5 + (score > 15 ? 30 : score * 2));
   energy = dropTo(energy, 10 + score / 2, 5);
   fullness = dropTo(fullness, 5, 5);
-  int burn = (int)weight - score * 2;  // el ejercicio quema peso
-  weight = burn > 0 ? burn : 0;
+  weight = 0;  // Mobile balance: weight mechanic disabled
   if (score >= 5) heartUntil = millis() + HEART_MS;
   if (score > gameHi) gameHi = score;  // nuevo record
   addBond(2);
@@ -484,8 +483,7 @@ uint8_t Pet::trainStrength(uint16_t hits) {
                                     // pantalla anunciaba +18 aunque cupieran menos
   energy = dropTo(energy, 12, 5);   // cansa
   fullness = dropTo(fullness, 5, 5);
-  int burn = (int)weight - hits / 3;  // tambien quema peso
-  weight = burn > 0 ? burn : 0;
+  weight = 0;  // Mobile balance: weight mechanic disabled
   joy = clamp100(joy + 6);
   if (hits >= 20) heartUntil = millis() + HEART_MS;
   if (hits > strHi) strHi = hits;   // record de golpes
@@ -591,8 +589,8 @@ void Pet::load() {
   joy = prefs.getUChar("joy", 80);
   energy = prefs.getUChar("ene", 80);
   hygiene = prefs.getUChar("hyg", 100);
-  poops = prefs.getUChar("poop", 0);
-  weight = prefs.getUChar("wgt", 0);
+  poops = 0;  // Mobile balance: no poop mechanic
+  weight = 0;  // Mobile balance: no weight mechanic
   geneAtk = prefs.getUChar("gatk", 0);
   geneDef = prefs.getUChar("gdef", 0);
   geneSpe = prefs.getUChar("gspe", 0);

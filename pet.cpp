@@ -83,10 +83,12 @@ void Pet::syncClock(uint32_t nowEpoch) {
     joy = dropTo(joy, 1, 15);
   }
   if (!isEgg()) {
+#ifndef TAMAPOKE_ANDROID
     if (!sleeping) {  // durmiendo no ensucia
       uint8_t p = poops + mins / 240;
       poops = p > 3 ? 3 : p;
     }
+#endif
     // la evolucion NO se aplica offline: queda lista y la dispara el usuario
     // tocando al bicho cuando vuelve (para que vea la transformacion)
   }
@@ -125,7 +127,9 @@ void Pet::tick() {
   // El peso aun se quema; la racha de buen cuidado (goodTicks) queda en pausa.
   if (sleeping) {
     energy = clamp100(energy + 6);
+#ifndef TAMAPOKE_ANDROID
     if (weight > 0 && ageMinutes % 3 == 0) weight--;
+#endif
     if (ageMinutes % 2 == 0) {                 // ~4x mas lento que despierto
       fullness = dropTo(fullness, 1, 30);
       joy = dropTo(joy, 1, 35);
@@ -140,12 +144,15 @@ void Pet::tick() {
 
   fullness = clamp100(fullness - 2);
   energy = clamp100(energy - 1);
+#ifndef TAMAPOKE_ANDROID
   if (fullness > 40 && poops < 3 && random(100) < 15) poops++;
-
   hygiene = clamp100(hygiene - 1 - 4 * poops);
   // el sobrepeso da pereza: la energia cae el doble
   if (weight > 50) energy = clamp100(energy - 1);
   if (weight > 0 && ageMinutes % 3 == 0) weight--;
+#else
+  hygiene = clamp100(hygiene - 1);
+#endif
 
   // la disciplina forja la defensa: 12 h seguidas bien cuidado = +1 DEF
   if (lowestStat() >= 40) {
@@ -162,16 +169,18 @@ void Pet::tick() {
   if (hygiene < 30) dJoy -= 2;
   joy = clamp100(joy + dJoy);
 
-  // Descuido: dejar una estadistica por los suelos cuenta como error de
-  // cuidado (con enfriamiento para no contar el mismo descuido cada minuto)
+#ifndef TAMAPOKE_ANDROID
+  // Firmware-only care mistake penalty.
   if (mistakeCooldown > 0) mistakeCooldown--;
   if (lowestStat() <= 10 && mistakeCooldown == 0) {
     careMistakes++;
     mistakeCooldown = 60;
-    if (bond > 1) bond--;  // el descuido enfria el vinculo, pero sin arrasarlo:
-                           // a -3 cada 30 min se perdia mucho mas de lo que se
-                           // podia ganar en todo un dia y el vinculo se atascaba
+    if (bond > 1) bond--;
   }
+#else
+  careMistakes = 0;
+  mistakeCooldown = 0;
+#endif
 
   checkMedals();  // la evolucion la dispara el usuario (canEvolveNow + tap), no el tick
 
@@ -304,7 +313,11 @@ void Pet::checkMedals() {
   if (streak >= 7) medals |= MED_STREAK7;
   if (bond >= 100) medals |= MED_BOND;
   if (DEX_TBL[speciesId].evolvesTo == 0) medals |= MED_FINAL;
+#ifdef TAMAPOKE_ANDROID
+  if (level() >= 5) medals |= MED_FIT;
+#else
   if (weight == 0 && level() >= 5 && careMistakes == 0) medals |= MED_FIT;
+#endif
   uint16_t gained = medals & ~before;
   if (gained) {
     for (uint16_t m = gained; m; m &= (m - 1)) totalMedals++;
@@ -412,7 +425,11 @@ bool Pet::canEvolveNow() const {
   if (isEgg() || sleeping || ceremony != CER_NONE) return false;
   const DexEntry &d = DEX_TBL[speciesId];
   if (d.evolvesTo == 0) return false;
+#ifdef TAMAPOKE_ANDROID
+  return level() >= (uint16_t)d.evolveLevel && lowestStat() >= 40;
+#else
   return level() >= (uint16_t)d.evolveLevel + careMistakes && lowestStat() >= 40;
+#endif
 }
 
 void Pet::evolve() {
@@ -461,7 +478,9 @@ void Pet::feedCandy() {
   if (isEgg() || sleeping) return;
   fullness = clamp100(fullness + 10);
   joy = clamp100(joy + 12);
+#ifndef TAMAPOKE_ANDROID
   weight = clamp100(weight + 12);  // las chuches pasan factura
+#endif
   eatUntil = millis() + EAT_ANIM_MS;
   registerCare();
   save();
@@ -474,8 +493,10 @@ void Pet::playResult(uint8_t score) {
   joy = clamp100(joy + 5 + (score > 15 ? 30 : score * 2));
   energy = dropTo(energy, 10 + score / 2, 5);
   fullness = dropTo(fullness, 5, 5);
+#ifndef TAMAPOKE_ANDROID
   int burn = (int)weight - score * 2;  // el ejercicio quema peso
   weight = burn > 0 ? burn : 0;
+#endif
   if (score >= 5) heartUntil = millis() + HEART_MS;
   if (score > gameHi) gameHi = score;  // nuevo record
   addBond(2);
@@ -495,8 +516,10 @@ uint8_t Pet::trainStrength(uint16_t hits) {
                                     // pantalla anunciaba +18 aunque cupieran menos
   energy = dropTo(energy, 12, 5);   // cansa
   fullness = dropTo(fullness, 5, 5);
+#ifndef TAMAPOKE_ANDROID
   int burn = (int)weight - hits / 3;  // tambien quema peso
   weight = burn > 0 ? burn : 0;
+#endif
   joy = clamp100(joy + 6);
   if (hits >= 20) heartUntil = millis() + HEART_MS;
   if (hits > strHi) strHi = hits;   // record de golpes
@@ -527,7 +550,9 @@ void Pet::toggleLight() {
 
 void Pet::clean() {
   if (ceremony != CER_NONE) return;
+#ifndef TAMAPOKE_ANDROID
   poops = 0;
+#endif
   hygiene = 100;
   addBond(1);
   registerCare();

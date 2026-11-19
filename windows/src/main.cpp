@@ -453,10 +453,9 @@ void drawHome(HDC dc) {
 void drawStats(HDC dc) {
   text(dc,L"상태 정보",RECT{100,105,620,150},27,RGB(76,60,47),true);
   text(dc,petName()+L"  ·  Lv."+std::to_wstring(pet.level()),RECT{100,160,620,198},21,RGB(88,71,56),true);
-  const std::wstring rows[]={L"공격력  "+std::to_wstring(pet.atkStat()),L"방어력  "+std::to_wstring(pet.defStat()),L"속도  "+std::to_wstring(pet.speStat()),L"몸무게  "+std::to_wstring(pet.weight),L"유대감  "+std::to_wstring(pet.bond),L"돌봄 실수  "+std::to_wstring(pet.careMistakes)};
-  for(int i=0;i<6;i++) text(dc,rows[i],RECT{150,230+i*55,570,270+i*55},20,RGB(83,68,55));
-  text(dc,L"훈련은 아래 버튼에서 진행할 수 있습니다.",RECT{100,590,620,630},15,RGB(120,100,80));
-  button(dc,240,650,240,58,L"힘 훈련하기");
+  const std::wstring rows[]={L"공격력  "+std::to_wstring(pet.atkStat()),L"방어력  "+std::to_wstring(pet.defStat()),L"속도  "+std::to_wstring(pet.speStat()),L"유대감  "+std::to_wstring(pet.bond)};
+  for(int i=0;i<4;i++) text(dc,rows[i],RECT{150,245+i*68,570,290+i*68},20,RGB(83,68,55));
+  text(dc,L"돌봄과 미니게임을 통해 함께 성장해요.",RECT{100,570,620,610},15,RGB(120,100,80));
 }
 int gameSecondsLeft(){DWORD elapsed=GetTickCount()-gameStarted;return elapsed>=15000?0:(int)((15000-elapsed+999)/1000);}
 std::wstring miniBubbleText() {
@@ -579,8 +578,13 @@ void drawDex(HDC dc) {
   button(dc,440,650,105,48,L"다음");
 }
 void paint(HWND hwnd) {
-  PAINTSTRUCT ps{};HDC dc=BeginPaint(hwnd,&ps);
+  PAINTSTRUCT ps{};HDC target=BeginPaint(hwnd,&ps);
   RECT client{};GetClientRect(hwnd,&client);
+  const int width=client.right-client.left,height=client.bottom-client.top;
+  if(width<=0||height<=0){EndPaint(hwnd,&ps);return;}
+  HDC dc=CreateCompatibleDC(target);
+  HBITMAP buffer=CreateCompatibleBitmap(target,width,height);
+  HGDIOBJ previous=SelectObject(dc,buffer);
   HBRUSH bg=CreateSolidBrush(RGB(248,242,231));FillRect(dc,&client,bg);DeleteObject(bg);
   text(dc,L"TamaPoke",RECT{20,15,700,62},32,RGB(79,62,49),true);
   text(dc,L"나만의 포켓몬을 돌보는 작은 데스크톱 게임",RECT{20,60,700,88},14,RGB(133,112,91));
@@ -591,6 +595,8 @@ void paint(HWND hwnd) {
   button(dc,190,790,145,48,L"상태",page==1);
   button(dc,352,790,145,48,L"도감",page==2);
   button(dc,514,790,178,48,L"더보기",page==3);
+  BitBlt(target,0,0,width,height,dc,0,0,SRCCOPY);
+  SelectObject(dc,previous);DeleteObject(buffer);DeleteDC(dc);
   EndPaint(hwnd,&ps);
 }
 LRESULT CALLBACK renameProc(HWND h,UINT m,WPARAM w,LPARAM l) {
@@ -648,7 +654,6 @@ void act(HWND hwnd,int x,int y) {
     return;
   }
   if(page==2&&y>=640&&y<=710){if(x<360&&dexPage>0)dexPage--;else if(x>430&&dexPage<6)dexPage++;InvalidateRect(hwnd,nullptr,FALSE);return;}
-  if(page==1&&y>=640&&y<=715){uint8_t gain=pet.trainStrength(24);notice=L"힘 훈련 완료! 상승량 "+std::to_wstring(gain);InvalidateRect(hwnd,nullptr,FALSE);return;}
   if(page!=0)return;
   if(pet.awaitingStarter()&&y>=650&&y<=720){
     int id=x<265?1:x<455?4:7;pet.chooseStarter(id);notice=L"첫 파트너를 선택했어요! 이제 알을 세 번 톡톡 두드려 부화시켜 보세요." ;InvalidateRect(hwnd,nullptr,FALSE);return;

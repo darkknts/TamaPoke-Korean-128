@@ -150,6 +150,18 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showGame by remember { mutableStateOf(false) }
     var gameMode by remember { mutableStateOf("menu") }
     var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
+    fun openMainScreen(screen: String) {
+        showGame = false
+        showManual = false
+        showSettings = screen == "settings"
+        showGrowth = screen == "growth"
+        showDex = screen == "dex"
+        showAchievements = false
+        selectedDexEntry = null
+        if (screen == "dex") {
+            dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
+        }
+    }
     val context = LocalContext.current
     var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
     var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
@@ -304,10 +316,10 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 }
             }
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showSettings = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("설정", maxLines = 1) }
-                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showGrowth = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("성장", maxLines = 1) }
-                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList()); selectedDexEntry = null; showDex = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("도감", maxLines = 1) }
-                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { showManual = true }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("매뉴얼", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { openMainScreen("settings") }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("설정", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { openMainScreen("growth") }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("성장", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { openMainScreen("dex") }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("도감", maxLines = 1) }
+                OutlinedButton(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 42.dp), onClick = { openMainScreen("manual") }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 4.dp, vertical = 0.dp)) { Text("매뉴얼", maxLines = 1) }
             }
         }
 
@@ -498,10 +510,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     StatTile("⚡", "에너지", pet!!.energy, Modifier.weight(1f), compactLayout)
                     StatTile("🫧", "위생", pet!!.hygiene, Modifier.weight(1f), compactLayout)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    InfoChip("⚖ 몸무게", "${pet!!.weight} / 100", Modifier.weight(1f), compactLayout)
-                    InfoChip("🧹 배설물", "${pet!!.poops} / 3", Modifier.weight(1f), compactLayout)
                 }
             }
 
@@ -755,12 +763,12 @@ private fun GameManualScreen(compact: Boolean, onBack: () -> Unit) {
         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("먹이 주기", "먹이 주기 버튼에서 열매 또는 사탕을 선택해 포만도를 관리합니다. 포켓몬마다 선호하는 열매가 있으며, 좋아하는 열매를 발견하면 추가 효과를 얻습니다.")
         ManualCard("놀아 주기", "놀이를 통해 행복도를 높일 수 있습니다. 놀이와 미니게임은 에너지를 사용하므로 상태를 확인해 주세요.")
-        ManualCard("청소하기", "화면에 생긴 배설물을 치워 위생을 관리합니다.")
+        ManualCard("청소하기", "청소하기를 눌러 위생 상태를 회복합니다.")
         ManualCard("쓰다듬기", "포켓몬을 쓰다듬어 행복도와 유대감을 높입니다.")
         ManualCard("수면", "재우기/깨우기로 휴식 상태를 전환합니다. 잠자는 동안 에너지가 회복되고 돌봄 수치 감소가 느려집니다.")
         Text("성장과 진화", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("레벨", "포켓몬은 실제 경과 시간에 따라 성장합니다. 성장 화면에서 다음 레벨까지 남은 시간을 확인할 수 있습니다.")
-        ManualCard("진화", "진화 가능 레벨에 도달하고 네 가지 돌봄 수치 중 가장 낮은 값이 40 이상이어야 합니다. 돌봄 실수는 필요한 진화 레벨을 높일 수 있습니다. 조건을 충족해도 자동 진화하지 않으며, 홈 화면에 표시되는 진화하기 버튼을 직접 눌러야 합니다.")
+        ManualCard("진화", "진화 가능 레벨에 도달하고 네 가지 돌봄 수치 중 가장 낮은 값이 40 이상이어야 합니다. 조건을 충족해도 자동 진화하지 않으며, 홈 화면에 표시되는 진화하기 버튼을 직접 눌러야 합니다.")
         Text("미니게임", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("열매 받기", "20초 동안 진행합니다. 왼쪽/오른쪽 버튼으로 바구니를 세 개 레인 사이에서 움직여 떨어지는 열매를 받으세요. 받은 개수가 점수로 반영됩니다.")
         ManualCard("타이밍 맞추기", "총 10라운드입니다. 움직이는 표시가 초록색 구간에 들어왔을 때 '지금 누르기'를 누르세요. 정확도에 따라 점수가 달라집니다.")
@@ -883,7 +891,7 @@ private fun AchievementScreen(pet: PetState, compact: Boolean, onBack: () -> Uni
         Triple(16, "🔥 7일 연속 돌봄", "돌봄 연속 기록 7일 달성"),
         Triple(32, "💗 최고의 유대", "친밀도 100 달성"),
         Triple(64, "✨ 최종 진화", "최종 진화 단계 도달"),
-        Triple(128, "💪 건강한 몸", "레벨 5 이상 · 체중 0 · 돌봄 실수 없음")
+        Triple(128, "💪 건강한 몸", "레벨 5 달성")
     )
     Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {

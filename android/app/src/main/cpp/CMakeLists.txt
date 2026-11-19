@@ -14,4 +14,5 @@ target_include_directories(tamapoke PRIVATE
 )
 
 target_compile_features(tamapoke PRIVATE cxx_std_17)
+target_compile_definitions(tamapoke PRIVATE TAMAPOKE_ANDROID=1)
 target_compile_options(tamapoke PRIVATE -Wall -Wextra -Wno-unused-parameter)

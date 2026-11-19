@@ -522,10 +522,18 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 Column(Modifier.padding(if (compactLayout) 9.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 6.dp else 8.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        OutlinedButton(
-                            onClick = { showGame = true },
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 4.dp)
-                        ) { Text("🍓 미니게임", style = MaterialTheme.typography.labelSmall) }
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            if (pet!!.canEvolve) {
+                                OutlinedButton(
+                                    onClick = { performPetAction(7) { PetNative.evolve() } },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                            }
+                            OutlinedButton(
+                                onClick = { showGame = true },
+                                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 4.dp)
+                            ) { Text("🍓 미니게임", style = MaterialTheme.typography.labelSmall) }
+                        }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         ActionButton("🍓  먹이 주기", Modifier.weight(1f), compact = compactLayout) { performPetAction(4) { PetNative.feed() } }
@@ -537,12 +545,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         ActionButton(if (pet!!.sleeping) "☀  깨우기" else "🌙  재우기", Modifier.weight(1f), compact = compactLayout) { performPetAction(if (pet!!.sleeping) 0 else 3) { PetNative.toggleSleep() } }
-                        if (pet!!.canEvolve) {
-                            ActionButton("✨  진화하기", Modifier.weight(1f)) { performPetAction(7) { PetNative.evolve() } }
-                        } else {
-                            Surface(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 44.dp), color = PokeMint, shape = RoundedCornerShape(14.dp)) {
-                                BoxCenterText("건강하게 성장 중", Color(0xFF47775A))
-                            }
+                        Surface(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 44.dp), color = PokeMint, shape = RoundedCornerShape(14.dp)) {
+                            BoxCenterText("건강하게 성장 중", Color(0xFF47775A))
                         }
                     }
                 }

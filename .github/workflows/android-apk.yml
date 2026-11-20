@@ -6,6 +6,7 @@ on:
     branches:
       - feature/android-app
       - feature/android-care-ui-cleanup
+      - feature/android-pet-name-manual-energy
     paths:
       - "android/**"
       - ".github/workflows/android-apk.yml"

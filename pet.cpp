@@ -395,8 +395,12 @@ void Pet::startRunaway() {
   save();
 }
 
+bool Pet::canReleaseNow() const {
+  return !isEgg() && !sleeping && ceremony == CER_NONE;
+}
+
 void Pet::release() {
-  if (isEgg() || ceremony != CER_NONE) return;
+  if (!canReleaseNow()) return;
   lastEnd = CER_RELEASE;
   ceremony = CER_RELEASE;
   ceremonyUntil = millis() + CEREMONY_MS;

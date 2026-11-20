@@ -783,7 +783,7 @@ TEST(ceremony, durante_la_ceremonia_no_se_puede_interactuar) {
   p.toggleLight();
   CHECK_EQ(p.fullness, (uint8_t)50);
   CHECK_EQ(p.joy, (uint8_t)50);
-  CHECK_EQ(p.poops, (uint8_t)0);
+  CHECK_EQ(p.poops, (uint8_t)2);  // la ceremonia bloquea acciones sin alterar el estado
   CHECK(!p.sleeping);
 }
 
@@ -821,7 +821,7 @@ TEST(offline, aplica_el_tiempo_apagado_con_suelo_de_15) {
   CHECK_MSG(p.joy == 15, "suelo de felicidad offline = 15");
   CHECK_MSG(p.hygiene == 15, "suelo de higiene offline = 15");
   CHECK_MSG(p.careMistakes == 0, "en ausencia no se acumulan descuidos");
-  CHECK_EQ(p.poops, (uint8_t)2);  // una caca cada 4 h
+  CHECK_EQ(p.poops, (uint8_t)0);  // sin mecanica de suciedad offline
 }
 
 TEST(offline, tope_de_dos_semanas) {
@@ -895,7 +895,7 @@ TEST(save, el_estado_sobrevive_a_un_reinicio) {
   CHECK_EQ(b.bestStreak, (uint16_t)11);
   CHECK_EQ(b.bond, (uint8_t)44);
   CHECK_EQ(b.trAtk, (uint8_t)17);
-  CHECK_EQ(b.weight, (uint8_t)33);
+  CHECK_EQ(b.weight, (uint8_t)0);  // peso deshabilitado al guardar
   CHECK_EQ(b.gameHi, (uint16_t)21);
   CHECK_STREQ(b.nick, "SPARKY");
   CHECK(b.isRegistered(25));

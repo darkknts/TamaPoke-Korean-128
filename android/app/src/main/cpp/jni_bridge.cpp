@@ -47,7 +47,7 @@ Java_com_tamapoke_android_PetNative_nativeGetState(JNIEnv* env, jobject) {
         "{\"egg\":%s,\"speciesId\":%d,\"biome\":%d,\"level\":%u,\"fullness\":%u,\"joy\":%u,\"energy\":%u,\"hygiene\":%u,\"ageMinutes\":%u,\"canEvolve\":%s,\"sleeping\":%s,\"shiny\":%s,\"starterPick\":%s,\"atk\":%u,\"def\":%u,\"speed\":%u,\"bond\":%u,\"streak\":%u,\"medals\":%u,\"registeredCount\":%u,\"nextLevelMinutes\":%u}",
         g_pet->isEgg() ? "true" : "false", g_pet->speciesId, biome, g_pet->level(),
         g_pet->fullness, g_pet->joy, g_pet->energy, g_pet->hygiene, g_pet->ageMinutes,
-        g_pet->canEvolveNow() ? "true" : "false", g_pet->sleeping ? "true" : "false", g_pet->shiny ? "true" : "false",
+        g_pet->canEvolveNow() ? "true" : "false", g_pet->canReleaseNow() ? "true" : "false", g_pet->sleeping ? "true" : "false", g_pet->shiny ? "true" : "false",
         g_pet->awaitingStarter() ? "true" : "false", g_pet->atkStat(), g_pet->defStat(), g_pet->speStat(),
         g_pet->bond, g_pet->streak, g_pet->medals, g_pet->registeredCount(), nextLevelMinutes);
     return env->NewStringUTF(json);
@@ -99,3 +99,5 @@ extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEggT
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeToggleSleep(JNIEnv*, jobject) { if (g_pet) g_pet->toggleLight(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEvolve(JNIEnv*, jobject) { if (g_pet) g_pet->evolve(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeChooseStarter(JNIEnv*, jobject, jint dex) { if (g_pet) g_pet->chooseStarter(static_cast<int16_t>(dex)); }
+
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeRelease(JNIEnv*, jobject) { if (g_pet) g_pet->release(); }

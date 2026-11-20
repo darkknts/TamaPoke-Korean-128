@@ -439,8 +439,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 9.dp else 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 6.dp else 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 6.dp else 9.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 4.dp else 6.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),

@@ -2781,6 +2781,12 @@ void keyboardTap(int16_t x, int16_t y) {
   }
 }
 
+#if defined(BOARD_SPOTPEAR_BALL128)
+#define GAL_PAGE_SIZE 9
+#else
+#define GAL_PAGE_SIZE 16
+#endif
+
 // ---------- galeria pokedex ----------
 
 #if defined(BOARD_SPOTPEAR_BALL128)
@@ -2789,14 +2795,12 @@ void keyboardTap(int16_t x, int16_t y) {
 #define GAL_CELL 112
 #define GAL_COLS 3
 #define GAL_ROWS 3
-#define GAL_PAGE_SIZE 9
 #else
 #define GAL_X (73 + UI_DX)
 #define GAL_Y 84
 #define GAL_CELL 80
 #define GAL_COLS 4
 #define GAL_ROWS 4
-#define GAL_PAGE_SIZE 16
 #endif
 
 // dibuja una miniatura centrada en su celda; sil=true la pinta en tinta

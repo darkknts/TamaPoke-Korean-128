@@ -14,7 +14,7 @@
 # CI runs this same script, so a green CI means this command works.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="${TAMAPOKE_SKETCH_ROOT:-$(cd "$(dirname "$0")/.." && pwd)}"
 OUT="${TAMAPOKE_OUT:-${ROOT}/../out}"
 EXTRA=""
 FQBN="${FQBN_175C:-esp32:esp32:esp32s3:CDCOnBoot=cdc,FlashSize=32M,PSRAM=opi,PartitionScheme=custom}"

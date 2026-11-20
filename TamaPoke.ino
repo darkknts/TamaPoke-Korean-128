@@ -17,6 +17,13 @@
 // Los sprites y la tabla de especies se generan con tools/sprites.py (emit).
 
 #include <Arduino.h>
+
+#if defined(BOARD_SPOTPEAR_BALL128)
+#define GAL_PAGE_SIZE 9
+#else
+#define GAL_PAGE_SIZE 16
+#endif
+
 #include <Wire.h>
 #include "Arduino_GFX_Library.h"
 #include "pin_config.h"  // pines + capacidades de placa (pin_config.h / board.h); antes que el driver de tactil
@@ -2789,14 +2796,12 @@ void keyboardTap(int16_t x, int16_t y) {
 #define GAL_CELL 112
 #define GAL_COLS 3
 #define GAL_ROWS 3
-#define GAL_PAGE_SIZE 9
 #else
 #define GAL_X (73 + UI_DX)
 #define GAL_Y 84
 #define GAL_CELL 80
 #define GAL_COLS 4
 #define GAL_ROWS 4
-#define GAL_PAGE_SIZE 16
 #endif
 
 // dibuja una miniatura centrada en su celda; sil=true la pinta en tinta

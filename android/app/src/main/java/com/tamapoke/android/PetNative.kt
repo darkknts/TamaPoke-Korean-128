@@ -20,6 +20,7 @@ data class PetState(
     val hygiene: Int,
     val ageMinutes: Int,
     val canEvolve: Boolean,
+    val canRelease: Boolean,
     val sleeping: Boolean,
     val shiny: Boolean,
     val starterPick: Boolean,
@@ -49,6 +50,7 @@ object PetNative {
     external fun nativeEggTap()
     external fun nativeToggleSleep()
     external fun nativeEvolve()
+    external fun nativeRelease()
     external fun nativeChooseStarter(dex: Int)
 
     @Synchronized
@@ -70,6 +72,7 @@ object PetNative {
             hygiene = json.optInt("hygiene", 0),
             ageMinutes = json.optInt("ageMinutes", 0),
             canEvolve = json.optBoolean("canEvolve"),
+            canRelease = json.optBoolean("canRelease"),
             sleeping = json.optBoolean("sleeping"),
             shiny = json.optBoolean("shiny"),
             starterPick = json.optBoolean("starterPick"),
@@ -120,5 +123,6 @@ object PetNative {
     @Synchronized fun eggTap() = nativeEggTap()
     @Synchronized fun toggleSleep() = nativeToggleSleep()
     @Synchronized fun evolve() = nativeEvolve()
+    @Synchronized fun release() = nativeRelease()
     @Synchronized fun chooseStarter(dex: Int) = nativeChooseStarter(dex)
 }

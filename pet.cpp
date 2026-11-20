@@ -78,7 +78,11 @@ void Pet::syncClock(uint32_t nowEpoch) {
       continue;
     }
     fullness = dropTo(fullness, 2, 15);
+#ifdef TAMAPOKE_ANDROID
+    if (ageMinutes % 3 == 0) energy = dropTo(energy, 1, 15);
+#else
     energy = dropTo(energy, 1, 15);
+#endif
     hygiene = dropTo(hygiene, 1, 15);
     joy = dropTo(joy, 1, 15);
   }
@@ -143,7 +147,11 @@ void Pet::tick() {
   if (ageMinutes % MINUTES_PER_LEVEL == 0) sfxPlay(SFX_LEVEL);  // subio de nivel (despierto)
 
   fullness = clamp100(fullness - 2);
+#ifdef TAMAPOKE_ANDROID
+  if (ageMinutes % 3 == 0) energy = clamp100(energy - 1);
+#else
   energy = clamp100(energy - 1);
+#endif
 #ifndef TAMAPOKE_ANDROID
   if (fullness > 40 && poops < 3 && random(100) < 15) poops++;
   hygiene = clamp100(hygiene - 1 - 4 * poops);
@@ -491,7 +499,11 @@ void Pet::playResult(uint8_t score) {
   uint8_t v = trSpe + score / 5;  // jugar entrena la velocidad
   trSpe = v > 100 ? 100 : v;
   joy = clamp100(joy + 5 + (score > 15 ? 30 : score * 2));
+#ifdef TAMAPOKE_ANDROID
+  energy = dropTo(energy, 6 + score / 3, 5);
+#else
   energy = dropTo(energy, 10 + score / 2, 5);
+#endif
   fullness = dropTo(fullness, 5, 5);
 #ifndef TAMAPOKE_ANDROID
   int burn = (int)weight - score * 2;  // el ejercicio quema peso
@@ -533,7 +545,11 @@ void Pet::play() {
   if (ceremony != CER_NONE) return;
   if (isEgg() || sleeping) return;
   joy = clamp100(joy + 25);
+#ifdef TAMAPOKE_ANDROID
+  energy = clamp100(energy - 6);
+#else
   energy = clamp100(energy - 10);
+#endif
   fullness = clamp100(fullness - 5);
   heartUntil = millis() + HEART_MS;
   addBond(2);

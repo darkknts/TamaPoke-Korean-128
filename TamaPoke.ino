@@ -17,6 +17,13 @@
 // Los sprites y la tabla de especies se generan con tools/sprites.py (emit).
 
 #include <Arduino.h>
+
+#if defined(BOARD_SPOTPEAR_BALL128)
+#define GAL_PAGE_SIZE 9
+#else
+#define GAL_PAGE_SIZE 16
+#endif
+
 #include <Wire.h>
 #include "Arduino_GFX_Library.h"
 #include "pin_config.h"  // pines + capacidades de placa (pin_config.h / board.h); antes que el driver de tactil
@@ -2780,12 +2787,6 @@ void keyboardTap(int16_t x, int16_t y) {
     nameBuf[nameLen] = 0;
   }
 }
-
-#if defined(BOARD_SPOTPEAR_BALL128)
-#define GAL_PAGE_SIZE 9
-#else
-#define GAL_PAGE_SIZE 16
-#endif
 
 // ---------- galeria pokedex ----------
 

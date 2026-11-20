@@ -149,10 +149,10 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showManual by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
     var gameMode by remember { mutableStateOf("menu") }
-    var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
+    var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     fun openMainScreen(screen: String) {
         showGame = false
-        showManual = false
+        showManual = screen == "manual"
         showSettings = screen == "settings"
         showGrowth = screen == "growth"
         showDex = screen == "dex"
@@ -449,7 +449,18 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
-                            Text("도감 번호 ${pet!!.speciesId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PokeInk)
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("No. ${pet!!.speciesId.toString().padStart(3, '0')}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = PokePurple)
+                            Text(
+                                dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = PokeInk,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
                         }
                         Surface(color = Color.White, shape = RoundedCornerShape(50)) {
                             Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)

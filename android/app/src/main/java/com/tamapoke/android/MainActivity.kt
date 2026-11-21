@@ -170,9 +170,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             while (true) {
                 delay(15 * 60 * 1000L)
                 val current = runCatching { PetNative.state() }.getOrNull()
-                if (current != null && !current.egg && !current.sleeping && Random.nextInt(100) < 7) {
+                if (current != null && !current.egg && !current.sleeping && !showWildEncounter && Random.nextInt(100) < 7) {
                     showWildEncounter = true
-                    break
                 }
             }
         }

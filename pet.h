@@ -203,7 +203,7 @@ private:
   void checkMedals();
   void tick();
   void hatch();
-  void registerSpecies(int16_t dex);
+  void registerSpecies(int16_t dex, bool isShiny = false);
   void save();
   void load();
   static uint8_t clamp100(int v) { return v < 0 ? 0 : (v > 100 ? 100 : v); }

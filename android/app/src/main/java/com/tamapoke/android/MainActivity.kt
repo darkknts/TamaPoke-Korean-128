@@ -1230,8 +1230,12 @@ private fun WildBattleScreen(
 ) {
     val player = pet
     val eligible = remember(dexEntries) { dexEntries.filter { it.rarity == 1 || it.rarity == 2 } }
-    var enemy by remember { mutableStateOf(eligible.randomOrNull()) }
-    var enemyLevel by remember { mutableIntStateOf(((player?.level ?: 1) + Random.nextInt(-2, 3)).coerceIn(1, 100)) }
+    var enemy by remember { mutableStateOf((if (Random.nextInt(100) < 25) eligible.filter { it.rarity == 2 } else eligible.filter { it.rarity == 1 }).randomOrNull() ?: eligible.randomOrNull()) }
+    var enemyLevel by remember {
+        val roll = Random.nextInt(100)
+        val delta = when { roll < 55 -> roll % 3 - 1; roll < 85 -> -2 - roll % 3; else -> 2 + roll % 2 }
+        mutableIntStateOf(((player?.level ?: 1) + delta).coerceIn(1, 100))
+    }
     var playerHp by remember { mutableIntStateOf(0) }
     var enemyHp by remember { mutableIntStateOf(0) }
     var round by remember { mutableIntStateOf(1) }
@@ -1245,7 +1249,7 @@ private fun WildBattleScreen(
     var rewardApplied by remember { mutableStateOf(false) }
     var log by remember { mutableStateOf("야생 포켓몬이 나타났어요!") }
     val pMax = remember(player) { (30 + (player?.level ?: 1) * 5 + (player?.defense ?: 50)).coerceAtLeast(1) }
-    val eMax = remember(enemy, enemyLevel) { ((enemy?.hp ?: 45) * 2 + enemyLevel * 5 + (enemy?.defense ?: 40)).coerceAtLeast(1) }
+    val eMax = remember(enemy, enemyLevel) { (30 + enemyLevel * 5 + (enemy?.defense ?: 40) + enemyLevel).coerceAtLeast(1) }
     LaunchedEffect(enemy?.id, enemyLevel) { playerHp = pMax; enemyHp = eMax }
     fun finishIfNeeded() {
         if (enemyHp <= 0) {

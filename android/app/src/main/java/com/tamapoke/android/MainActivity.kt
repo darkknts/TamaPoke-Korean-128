@@ -358,8 +358,11 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     pet = pet,
                     dexEntries = dexEntries,
                     onBack = { gameMode = "menu" },
-                    onCapture = { dex, closeWin ->
-                        runCatching { PetNative.registerCaught(dex, closeWin); pet = PetNative.state(); dexEntries = PetNative.dexEntries(); MiniPetWidgetRenderer.updateAll(context) }
+                    onBattleWin = { dex, closeWin ->
+                        runCatching { PetNative.applyBattleWin(dex, closeWin); pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context) }
+                    },
+                    onCapture = { dex ->
+                        runCatching { PetNative.registerCaught(dex); pet = PetNative.state(); dexEntries = PetNative.dexEntries(); MiniPetWidgetRenderer.updateAll(context) }
                             .onFailure { status = "포획 저장 오류: ${it.message ?: "다시 시도해 주세요"}" }
                     }
                 )
@@ -451,8 +454,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 6.dp else 9.dp),
-                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 4.dp else 6.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 3.dp else 5.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 2.dp else 4.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -475,7 +478,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         }
                         }
                         Surface(color = Color.White, shape = RoundedCornerShape(50)) {
-                            Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                            Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         }
                     }
                     Box(
@@ -552,6 +555,12 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                 ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
                             }
+                            if (pet!!.canRelease) {
+                                OutlinedButton(
+                                    onClick = { showReleaseConfirm = true },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                            }
                             OutlinedButton(
                                 onClick = { showGame = true },
                                 contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 9.dp, vertical = 4.dp)
@@ -571,13 +580,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Surface(modifier = Modifier.weight(1f).height(if (compactLayout) 38.dp else 44.dp), color = PokeMint, shape = RoundedCornerShape(14.dp)) {
                             BoxCenterText("건강하게 성장 중", Color(0xFF47775A))
                         }
-                    }
-                    if (pet!!.canRelease) {
-                        OutlinedButton(
-                            onClick = { showReleaseConfirm = true },
-                            modifier = Modifier.fillMaxWidth(),
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 6.dp)
-                        ) { Text("💔  포켓몬 방출하기", color = Color(0xFF9B5360), fontWeight = FontWeight.SemiBold) }
                     }
                 }
             }
@@ -1223,7 +1225,8 @@ private fun WildBattleScreen(
     pet: PetState?,
     dexEntries: List<DexEntry>,
     onBack: () -> Unit,
-    onCapture: (Int, Boolean) -> Unit
+    onBattleWin: (Int, Boolean) -> Unit,
+    onCapture: (Int) -> Unit
 ) {
     val player = pet
     val eligible = remember(dexEntries) { dexEntries.filter { it.rarity == 1 || it.rarity == 2 } }
@@ -1239,6 +1242,7 @@ private fun WildBattleScreen(
     var captureResult by remember { mutableStateOf<String?>(null) }
     var captured by remember { mutableStateOf(false) }
     var closeWin by remember { mutableStateOf(false) }
+    var rewardApplied by remember { mutableStateOf(false) }
     var log by remember { mutableStateOf("야생 포켓몬이 나타났어요!") }
     val pMax = remember(player) { (30 + (player?.level ?: 1) * 5 + (player?.defense ?: 50)).coerceAtLeast(1) }
     val eMax = remember(enemy, enemyLevel) { ((enemy?.hp ?: 45) * 2 + enemyLevel * 5 + (enemy?.defense ?: 40)).coerceAtLeast(1) }
@@ -1247,12 +1251,13 @@ private fun WildBattleScreen(
         if (enemyHp <= 0) {
             result = "승리!"
             closeWin = playerHp <= pMax / 3
+            if (!rewardApplied) { rewardApplied = true; onBattleWin(enemy!!.id, closeWin) }
             log = "야생 ${enemy?.name ?: "포켓몬"}에게 승리했어요!"
         } else if (playerHp <= 0) {
             result = "패배"
             log = "포켓몬이 쓰러졌어요."
         } else if (round > 20) {
-            if (playerHp >= enemyHp) { result = "승리!"; closeWin = playerHp <= pMax / 3 }
+            if (playerHp >= enemyHp) { result = "승리!"; closeWin = playerHp <= pMax / 3; if (!rewardApplied) { rewardApplied = true; onBattleWin(enemy!!.id, closeWin) } }
             else result = "패배"
         }
     }
@@ -1337,11 +1342,13 @@ private fun WildBattleScreen(
             Text(result!!, style = MaterialTheme.typography.headlineMedium, color = if (result!!.startsWith("승리")) Color(0xFF438A63) else PokePurple, fontWeight = FontWeight.ExtraBold)
             if (result!!.startsWith("승리") && captureResult == null) {
                 val gap = enemyLevel - player.level
-                val chance = if (enemy?.rarity == 3) 0 else ((if (enemy?.rarity == 2) 28 else 55) + if (gap > 0) -gap * 4 else -gap * 2 + (if (closeWin) 8 else 0) + player.bond / 20).coerceIn(10, if (enemy?.rarity == 2) 60 else 75)
+                val baseChance = if (enemy?.rarity == 2) 28 else 55
+                val levelAdjust = if (gap > 0) -gap * 4 else -gap * 2
+                val chance = if (enemy?.rarity == 3) 0 else (baseChance + levelAdjust + (if (closeWin) 8 else 0) + player.bond / 20).coerceIn(10, if (enemy?.rarity == 2) 60 else 75)
                 Text("포획 확률 $chance%")
                 Button(onClick = {
                     if (chance > 0 && Random.nextInt(100) < chance) {
-                        onCapture(enemy!!.id, closeWin); captured = true; captureResult = "포획 성공! 도감에 등록했어요."
+                        onCapture(enemy!!.id); captured = true; captureResult = "포획 성공! 도감에 등록했어요."
                     } else captureResult = if (chance == 0) "이 포켓몬은 포획할 수 없어요." else "포획에 실패했어요. 야생 포켓몬이 도망갔어요."
                 }, modifier = Modifier.fillMaxWidth(), enabled = !captured) { Text("🎯 포획하기") }
                 OutlinedButton(onClick = { captureResult = "야생 포켓몬을 보내줬어요." }, modifier = Modifier.fillMaxWidth()) { Text("보내주기") }

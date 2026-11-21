@@ -619,7 +619,8 @@ void Pet::playWithFriend() {
   joy = clamp100((int)joy + 18);
   energy = energy > 8 ? energy - 8 : 0;
   fullness = fullness > 5 ? fullness - 5 : 0;
-  bond = clamp100((int)bond + 2);
+  heartUntil = millis() + HEART_MS;
+  addBond(2);
   registerCare();
   save();
 }

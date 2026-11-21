@@ -1342,6 +1342,15 @@ private fun WildBattleScreen(
     var closeWin by remember { mutableStateOf(false) }
     var rewardApplied by remember { mutableStateOf(false) }
     var log by remember { mutableStateOf("야생 포켓몬이 나타났어요!") }
+    var impactToken by remember { mutableIntStateOf(0) }
+    var impactVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(impactToken) {
+        if (impactToken > 0) {
+            impactVisible = true
+            delay(520)
+            impactVisible = false
+        }
+    }
     val pMax = remember(player) { (30 + (player?.level ?: 1) * 5 + (player?.defense ?: 50)).coerceAtLeast(1) }
     val eMax = remember(enemy, enemyLevel) { (30 + enemyLevel * 5 + (enemy?.defense ?: 40) + enemyLevel).coerceAtLeast(1) }
     LaunchedEffect(enemy?.id, enemyLevel) { playerHp = pMax; enemyHp = eMax }
@@ -1401,15 +1410,6 @@ private fun WildBattleScreen(
             return@Column
         }
         // Battle stage: animated Pokémon sprites on a habitat-inspired pixel arena.
-        var impactToken by remember { mutableIntStateOf(0) }
-        var impactVisible by remember { mutableStateOf(false) }
-        LaunchedEffect(impactToken) {
-            if (impactToken > 0) {
-                impactVisible = true
-                delay(520)
-                impactVisible = false
-            }
-        }
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Card(
                 Modifier.fillMaxWidth(),

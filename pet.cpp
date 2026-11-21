@@ -614,6 +614,16 @@ void Pet::caress() {
   save();
 }
 
+void Pet::playWithFriend() {
+  if (ceremony != CER_NONE || isEgg() || sleeping) return;
+  joy = clamp100((int)joy + 18);
+  energy = energy > 8 ? energy - 8 : 0;
+  fullness = fullness > 5 ? fullness - 5 : 0;
+  bond = clamp100((int)bond + 2);
+  registerCare();
+  save();
+}
+
 void Pet::eggTap() {
   if (!isEgg()) return;
   if (++eggTaps >= 3) hatch();

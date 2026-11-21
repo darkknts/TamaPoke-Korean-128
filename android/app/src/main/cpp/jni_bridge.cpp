@@ -99,7 +99,8 @@ extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeCare
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEggTap(JNIEnv*, jobject) { if (g_pet) g_pet->eggTap(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeToggleSleep(JNIEnv*, jobject) { if (g_pet) g_pet->toggleLight(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEvolve(JNIEnv*, jobject) { if (g_pet) g_pet->evolve(); }
-extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeRegisterCaught(JNIEnv*, jobject, jint dex, jboolean closeWin) { if (g_pet) g_pet->registerCaught(static_cast<int16_t>(dex), closeWin == JNI_TRUE); }
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeApplyBattleWin(JNIEnv*, jobject, jint dex, jboolean closeWin) { if (g_pet) g_pet->applyBattleWin(static_cast<int16_t>(dex), closeWin == JNI_TRUE); }
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeRegisterCaught(JNIEnv*, jobject, jint dex) { if (g_pet) g_pet->registerCaught(static_cast<int16_t>(dex)); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeChooseStarter(JNIEnv*, jobject, jint dex) { if (g_pet) g_pet->chooseStarter(static_cast<int16_t>(dex)); }
 
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeRelease(JNIEnv*, jobject) { if (g_pet) g_pet->release(); }

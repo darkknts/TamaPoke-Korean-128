@@ -268,10 +268,10 @@ int16_t Pet::pickEggSpecies() {
   return CLASSIC_DEX[random(NUM_CLASSIC_DEX)];  // inalcanzable, por si acaso
 }
 
-void Pet::registerSpecies(int16_t dex) {
+void Pet::registerSpecies(int16_t dex, bool isShiny) {
   if (dex < 1 || dex > 151) return;
   dexReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
-  if (shiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+  if (isShiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
 }
 
 void Pet::applyBattleWin(int16_t wildDex, bool closeWin) {
@@ -448,7 +448,7 @@ void Pet::hatch() {
   medals = 0;
   newMedal = 0;
   nick[0] = 0;
-  registerSpecies(speciesId);  // criado = registrado en la pokedex
+  registerSpecies(speciesId, shiny);  // registra la variante real que acaba de nacer
   checkMedals();     // por si nace ya en forma final (legendario)
   sfxPlay(SFX_HATCH);
   save();
@@ -483,7 +483,7 @@ void Pet::evolve() {
     next = n > 0 ? opts[random(n)] : (int16_t)(134 + random(3));
   }
   speciesId = next;
-  registerSpecies(speciesId);
+  registerSpecies(speciesId, shiny);
   sfxPlay(SFX_EVOLVE);
   evolveUntil = millis() + EVOLVE_ANIM_MS;
   save();
@@ -730,5 +730,5 @@ void Pet::load() {
   strHi = prefs.getUShort("shi", 0);
   prefs.getString("nick", nick, sizeof(nick));
   // siembra: la mascota actual cuenta como criada (guardados antiguos)
-  if (speciesId >= 1) registerSpecies(speciesId);
+  if (speciesId >= 1) registerSpecies(speciesId, shiny);
 }

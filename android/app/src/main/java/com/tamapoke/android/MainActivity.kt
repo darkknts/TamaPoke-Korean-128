@@ -582,19 +582,18 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                if (pet!!.canRelease) {
-                                    OutlinedButton(
-                                        onClick = { showReleaseConfirm = true },
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
-                                }
-                                if (pet!!.canEvolve) {
-                                    OutlinedButton(
-                                        onClick = { performPetAction(7) { PetNative.evolve() } },
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
-                                }
+                            // 버튼 순서를 고정: 방출 → 진화 → 미니게임
+                            if (pet!!.canRelease) {
+                                OutlinedButton(
+                                    onClick = { showReleaseConfirm = true },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                            }
+                            if (pet!!.canEvolve) {
+                                OutlinedButton(
+                                    onClick = { performPetAction(7) { PetNative.evolve() } },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
                             }
                             OutlinedButton(
                                 onClick = { showGame = true },

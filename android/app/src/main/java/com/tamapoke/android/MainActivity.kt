@@ -155,6 +155,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showFriendPlay by remember { mutableStateOf(false) }
     var friendVisitDex by remember { mutableIntStateOf(0) }
     var gameMode by remember { mutableStateOf("menu") }
+    val context = LocalContext.current
+    var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     fun openMainScreen(screen: String) {
         showGame = false
         showManual = screen == "manual"
@@ -167,8 +169,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
         }
     }
-    val context = LocalContext.current
-    var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     LaunchedEffect(pet?.speciesId, pet?.sleeping) {
         if (pet != null && !pet!!.egg && !pet!!.sleeping) {
             while (true) {
@@ -633,7 +633,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             title = { Text("💚 친구 포켓몬이 놀러왔어요!") },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("$visitorName가 함께 놀고 싶어 해요.")
+                    Text("${visitorName}가 함께 놀고 싶어 해요.")
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                         PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 0, actionToken = 0, loopAction = false, modifier = Modifier.size(76.dp))
                         Text("💗", style = MaterialTheme.typography.titleLarge)
@@ -656,7 +656,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             title = { Text("🎉 친구와 즐거운 시간!") },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("내 포켓몬과 $visitorName가 함께 놀고 있어요.")
+                    Text("내 포켓몬과 ${visitorName}가 함께 놀고 있어요.")
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                         PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 1, actionToken = 1, loopAction = true, modifier = Modifier.size(84.dp))
                         Text("💞", style = MaterialTheme.typography.headlineMedium)

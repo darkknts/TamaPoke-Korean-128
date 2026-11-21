@@ -192,7 +192,7 @@ void Pet::tick() {
 
   checkMedals();  // la evolucion la dispara el usuario (canEvolveNow + tap), no el tick
 
-  // abandono total: con TODO a cero durante una hora queda lista para escaparse;
+  // abandono total: con TODO a cero durante 14 dias queda lista para escaparse;
   // NO se va sola, la dispara el usuario con el boton (final triste, lo presencia)
   if (fullness == 0 && joy == 0 && energy == 0 && hygiene == 0) {
     if (neglectTicks < RUNAWAY_TICKS) neglectTicks++;

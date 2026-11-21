@@ -421,7 +421,7 @@ void Pet::startRunaway() {
 }
 
 bool Pet::canReleaseNow() const {
-  return !isEgg() && !sleeping && ceremony == CER_NONE;
+  return !isEgg() && level() >= 5 && !sleeping && ceremony == CER_NONE;
 }
 
 void Pet::release() {

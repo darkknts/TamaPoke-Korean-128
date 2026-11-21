@@ -101,7 +101,8 @@ public:
   void play();
   void toggleLight();  // dormir / despertar
   void clean();
-  void caress();  // tocar al bicho
+  void caress();
+  void playWithFriend();  // tocar al bicho
   void eggTap();  // tocar el huevo: 3 toques y eclosiona
   void newEgg();   // empezar de cero con un inicial aleatorio
   void release();  // soltar (pulsacion larga + confirmar)

@@ -57,7 +57,8 @@ object PetNative {
     external fun nativeEvolve()
     external fun nativeRelease()
     external fun nativeChooseStarter(dex: Int)
-    external fun nativeRegisterCaught(dex: Int, closeWin: Boolean)
+    external fun nativeApplyBattleWin(dex: Int, closeWin: Boolean)
+    external fun nativeRegisterCaught(dex: Int)
 
     @Synchronized
     fun initialize(filesDir: String) = nativeInit(filesDir, System.currentTimeMillis() / 1000)
@@ -136,5 +137,6 @@ object PetNative {
     @Synchronized fun evolve() = nativeEvolve()
     @Synchronized fun release() = nativeRelease()
     @Synchronized fun chooseStarter(dex: Int) = nativeChooseStarter(dex)
-    @Synchronized fun registerCaught(dex: Int, closeWin: Boolean) = nativeRegisterCaught(dex, closeWin)
+    @Synchronized fun applyBattleWin(dex: Int, closeWin: Boolean) = nativeApplyBattleWin(dex, closeWin)
+    @Synchronized fun registerCaught(dex: Int) = nativeRegisterCaught(dex)
 }

@@ -1270,7 +1270,12 @@ private fun WildBattleScreen(
         val eSpe = (enemy?.speed ?: 50) + enemyLevel
         val first = pSpe >= eSpe
         val pDamage = ((eMax * (16 + (pAtk - eDef) / 12).coerceIn(11, 23) / 100.0) * power / 100.0 * Random.nextInt(90, 111) / 100.0).toInt().coerceAtLeast(1)
-        val eDamage = ((pMax * (16 + (eAtk - pDef) / 12).coerceIn(11, 23) / 100.0) * Random.nextInt(90, 111) / 100.0).toInt().coerceAtLeast(1)
+        val enemySkillPower = when {
+            enemyLevel >= 20 && Random.nextInt(100) < 35 -> 135
+            enemyLevel >= 10 && Random.nextInt(100) < 50 -> 120
+            else -> 100
+        }
+        val eDamage = ((pMax * (16 + (eAtk - pDef) / 12).coerceIn(11, 23) / 100.0) * enemySkillPower / 100.0 * Random.nextInt(90, 111) / 100.0).toInt().coerceAtLeast(1)
         if (first) {
             enemyHp = (enemyHp - pDamage).coerceAtLeast(0)
             if (enemyHp > 0) playerHp = (playerHp - eDamage).coerceAtLeast(0)
@@ -1287,8 +1292,8 @@ private fun WildBattleScreen(
             Text("⚔️ 야생 배틀", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
             OutlinedButton(onClick = onBack) { Text("나가기") }
         }
-        if (player == null || player.egg) {
-            Text("부화한 포켓몬이 있어야 배틀할 수 있어요.")
+        if (player == null || player.egg || player.sleeping) {
+            Text(if (player?.sleeping == true) "잠든 포켓몬은 배틀할 수 없어요. 먼저 깨워 주세요." else "부화한 포켓몬이 있어야 배틀할 수 있어요.")
             Button(onClick = onBack) { Text("돌아가기") }
             return@Column
         }

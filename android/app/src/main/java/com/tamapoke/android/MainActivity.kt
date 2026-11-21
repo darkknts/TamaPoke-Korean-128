@@ -150,6 +150,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showManual by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
     var showReleaseConfirm by remember { mutableStateOf(false) }
+    var showWildEncounter by remember { mutableStateOf(false) }
     var gameMode by remember { mutableStateOf("menu") }
     var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     fun openMainScreen(screen: String) {
@@ -162,6 +163,18 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         selectedDexEntry = null
         if (screen == "dex") {
             dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
+        }
+    }
+    LaunchedEffect(pet?.speciesId, pet?.sleeping) {
+        if (pet != null && !pet!!.egg && !pet!!.sleeping) {
+            while (true) {
+                delay(15 * 60 * 1000L)
+                val current = runCatching { PetNative.state() }.getOrNull()
+                if (current != null && !current.egg && !current.sleeping && Random.nextInt(100) < 7) {
+                    showWildEncounter = true
+                    break
+                }
+            }
         }
     }
     val context = LocalContext.current
@@ -592,6 +605,23 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             maxLines = 1
         )
         }
+    }
+    if (showWildEncounter) {
+        AlertDialog(
+            onDismissRequest = { showWildEncounter = false },
+            title = { Text("🌿 야생 포켓몬 출현!") },
+            text = { Text("주변에서 야생 포켓몬의 기척이 느껴져요. 지금 배틀을 시작할까요?") },
+            confirmButton = {
+                Button(onClick = {
+                    showWildEncounter = false
+                    showGame = true
+                    gameMode = "battle"
+                }) { Text("싸운다") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showWildEncounter = false }) { Text("나중에") }
+            }
+        )
     }
     if (showReleaseConfirm) {
         AlertDialog(

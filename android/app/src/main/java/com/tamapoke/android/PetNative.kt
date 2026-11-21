@@ -133,6 +133,7 @@ object PetNative {
     @Synchronized fun playResult(score: Int) = nativePlayResult(score)
     @Synchronized fun clean() = nativeClean()
     @Synchronized fun caress() = nativeCaress()
+    /** Applies the native-engine reward after the 10-second friend visit scene. */
     @Synchronized fun playWithFriend() = nativePlayWithFriend()
     @Synchronized fun eggTap() = nativeEggTap()
     @Synchronized fun toggleSleep() = nativeToggleSleep()

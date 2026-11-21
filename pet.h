@@ -91,7 +91,8 @@ public:
   }
   void playResult(uint8_t score);  // recompensa del minijuego (entrena VEL)
   uint8_t trainStrength(uint16_t hits);  // saco de entrenamiento (entrena FUE)
-  void registerCaught(int16_t dex, bool closeWin);
+  void applyBattleWin(int16_t wildDex, bool closeWin);
+  void registerCaught(int16_t dex);
 
   // stats de combate: base real de gen 1 x genes + nivel + entrenamiento
   uint16_t atkStat() const;

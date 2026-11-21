@@ -582,17 +582,19 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            if (pet!!.canEvolve) {
-                                OutlinedButton(
-                                    onClick = { performPetAction(7) { PetNative.evolve() } },
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
-                            }
-                            if (pet!!.canRelease) {
-                                OutlinedButton(
-                                    onClick = { showReleaseConfirm = true },
-                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                                if (pet!!.canEvolve) {
+                                    OutlinedButton(
+                                        onClick = { performPetAction(7) { PetNative.evolve() } },
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                                }
+                                if (pet!!.canRelease) {
+                                    OutlinedButton(
+                                        onClick = { showReleaseConfirm = true },
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                                }
                             }
                             OutlinedButton(
                                 onClick = { showGame = true },
@@ -923,7 +925,7 @@ private fun GameManualScreen(compact: Boolean, onBack: () -> Unit) {
         ManualCard("성장 리포트와 메달", "성장 화면에서 전투 능력치, 친밀도, 연속 돌봄, 메달 및 도감 등록 수를 확인할 수 있습니다. 메달 화면에서 8종의 업적 달성 여부를 볼 수 있습니다.")
         Text("작별과 새 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("작별", "최종 진화형으로 게임 시간 3일 이상 함께 지내면 작별을 선택할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알의 희귀도와 이로치 확률에 보너스가 적용됩니다.")
-        ManualCard("방출과 도주", "방출은 부화한 포켓몬이 깨어 있고 다른 작별 의식이 진행 중이지 않을 때 직접 선택할 수 있습니다. 방출을 확정하면 10초간 작별 의식이 진행된 뒤 새 알을 받습니다. 돌봄 수치가 모두 0인 상태가 1시간 지속되면 도주할 수 있으며, 도주 후 새 알은 일반 등급으로 제한됩니다.")
+        ManualCard("방출과 도주", "방출은 부화 후 레벨 5 이상이고 깨어 있으며 다른 작별 의식이 진행 중이지 않을 때 직접 선택할 수 있습니다. 방출을 확정하면 10초간 작별 의식이 진행된 뒤 새 알을 받습니다. 돌봄 수치가 모두 0인 상태가 1시간 지속되면 도주할 수 있으며, 도주 후 새 알은 일반 등급으로 제한됩니다.")
         Text("설정과 저장 데이터", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("효과음과 진동", "설정 화면에서 효과음과 진동 피드백을 각각 켜거나 끌 수 있습니다.")
         ManualCard("백업과 복원", "설정 화면에서 저장 데이터를 ZIP 파일로 내보내거나 복원할 수 있습니다. 복원하면 현재 기기의 저장 데이터가 백업 시점의 데이터로 교체되므로, 필요한 경우 먼저 백업해 주세요.")

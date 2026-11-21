@@ -353,6 +353,16 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             .onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
                     }
                 )
+                "battle" -> WildBattleScreen(
+                    compact = compactLayout,
+                    pet = pet,
+                    dexEntries = dexEntries,
+                    onBack = { gameMode = "menu" },
+                    onCapture = { dex, closeWin ->
+                        runCatching { PetNative.registerCaught(dex, closeWin); pet = PetNative.state(); dexEntries = PetNative.dexEntries(); MiniPetWidgetRenderer.updateAll(context) }
+                            .onFailure { status = "포획 저장 오류: ${it.message ?: "다시 시도해 주세요"}" }
+                    }
+                )
                 "memory" -> MemoryGame(
                     compact = compactLayout,
                     onBack = { gameMode = "menu" },
@@ -607,6 +617,7 @@ private fun MiniGameMenu(compact: Boolean, onSelect: (String) -> Unit, onBack: (
             OutlinedButton(onClick = onBack) { Text("닫기") }
         }
         Text("게임을 완료하면 점수에 따라 포켓몬 훈련 보상을 받아요.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
+        Button(onClick = { onSelect("battle") }, modifier = Modifier.fillMaxWidth()) { Text("⚔️ 야생 포켓몬 배틀 · 승리하면 포획 도전") }
         Button(onClick = { onSelect("berry") }, modifier = Modifier.fillMaxWidth()) { Text("🍓 열매 받기  ·  좌우 이동") }
         Button(onClick = { onSelect("timing") }, modifier = Modifier.fillMaxWidth()) { Text("⏱ 타이밍 맞추기  ·  정확한 순간에 누르기") }
         Button(onClick = { onSelect("memory") }, modifier = Modifier.fillMaxWidth()) { Text("🧠 카드 짝 맞추기  ·  기억력 도전") }
@@ -1202,5 +1213,141 @@ private fun ActionButton(label: String, modifier: Modifier = Modifier, enabled: 
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 5.dp, vertical = 3.dp)
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, fontWeight = FontWeight.Bold)
+    }
+}
+
+
+@Composable
+private fun WildBattleScreen(
+    compact: Boolean,
+    pet: PetState?,
+    dexEntries: List<DexEntry>,
+    onBack: () -> Unit,
+    onCapture: (Int, Boolean) -> Unit
+) {
+    val player = pet
+    val eligible = remember(dexEntries) { dexEntries.filter { it.rarity == 1 || it.rarity == 2 } }
+    var enemy by remember { mutableStateOf(eligible.randomOrNull()) }
+    var enemyLevel by remember { mutableIntStateOf(((player?.level ?: 1) + Random.nextInt(-2, 3)).coerceIn(1, 100)) }
+    var playerHp by remember { mutableIntStateOf(0) }
+    var enemyHp by remember { mutableIntStateOf(0) }
+    var round by remember { mutableIntStateOf(1) }
+    var skill1Uses by remember { mutableIntStateOf(3) }
+    var skill2Uses by remember { mutableIntStateOf(2) }
+    var recoverUses by remember { mutableIntStateOf(2) }
+    var result by remember { mutableStateOf<String?>(null) }
+    var captureResult by remember { mutableStateOf<String?>(null) }
+    var captured by remember { mutableStateOf(false) }
+    var closeWin by remember { mutableStateOf(false) }
+    var log by remember { mutableStateOf("야생 포켓몬이 나타났어요!") }
+    val pMax = remember(player) { (30 + (player?.level ?: 1) * 5 + (player?.defense ?: 50)).coerceAtLeast(1) }
+    val eMax = remember(enemy, enemyLevel) { ((enemy?.hp ?: 45) * 2 + enemyLevel * 5 + (enemy?.defense ?: 40)).coerceAtLeast(1) }
+    LaunchedEffect(enemy?.id, enemyLevel) { playerHp = pMax; enemyHp = eMax }
+    fun finishIfNeeded() {
+        if (enemyHp <= 0) {
+            result = "승리!"
+            closeWin = playerHp <= pMax / 3
+            log = "야생 ${enemy?.name ?: "포켓몬"}에게 승리했어요!"
+        } else if (playerHp <= 0) {
+            result = "패배"
+            log = "포켓몬이 쓰러졌어요."
+        } else if (round > 20) {
+            if (playerHp >= enemyHp) { result = "승리!"; closeWin = playerHp <= pMax / 3 }
+            else result = "패배"
+        }
+    }
+    fun attack(power: Int) {
+        val pAtk = player?.atk ?: 50
+        val pDef = player?.defense ?: 50
+        val pSpe = player?.speed ?: 50
+        val eAtk = (enemy?.atk ?: 50) + enemyLevel
+        val eDef = (enemy?.defense ?: 50) + enemyLevel
+        val eSpe = (enemy?.speed ?: 50) + enemyLevel
+        val first = pSpe >= eSpe
+        val pDamage = ((eMax * (16 + (pAtk - eDef) / 12).coerceIn(11, 23) / 100.0) * power / 100.0 * Random.nextInt(90, 111) / 100.0).toInt().coerceAtLeast(1)
+        val eDamage = ((pMax * (16 + (eAtk - pDef) / 12).coerceIn(11, 23) / 100.0) * Random.nextInt(90, 111) / 100.0).toInt().coerceAtLeast(1)
+        if (first) {
+            enemyHp = (enemyHp - pDamage).coerceAtLeast(0)
+            if (enemyHp > 0) playerHp = (playerHp - eDamage).coerceAtLeast(0)
+        } else {
+            playerHp = (playerHp - eDamage).coerceAtLeast(0)
+            if (playerHp > 0) enemyHp = (enemyHp - pDamage).coerceAtLeast(0)
+        }
+        log = "내 공격 $pDamage · 상대 공격 $eDamage"
+        round++
+        finishIfNeeded()
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("⚔️ 야생 배틀", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+            OutlinedButton(onClick = onBack) { Text("나가기") }
+        }
+        if (player == null || player.egg) {
+            Text("부화한 포켓몬이 있어야 배틀할 수 있어요.")
+            Button(onClick = onBack) { Text("돌아가기") }
+            return@Column
+        }
+        if (enemy == null) {
+            Text("배틀 가능한 야생 포켓몬이 없습니다.")
+            Button(onClick = onBack) { Text("돌아가기") }
+            return@Column
+        }
+        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF7E6))) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("야생 포켓몬 · Lv.$enemyLevel", color = PokeInk, fontWeight = FontWeight.Bold)
+                Text("🦊  ${enemy?.name}", style = MaterialTheme.typography.headlineSmall, color = PokeInk)
+                Text("HP  $enemyHp / $eMax")
+                LinearProgressIndicator(progress = { enemyHp.toFloat() / eMax }, modifier = Modifier.fillMaxWidth())
+            }
+        }
+        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeLavender)) {
+            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("내 포켓몬 · Lv.${player.level}", color = PokeInk, fontWeight = FontWeight.Bold)
+                Text("💚  No. ${player.speciesId}", style = MaterialTheme.typography.headlineSmall, color = PokeInk)
+                Text("HP  $playerHp / $pMax")
+                LinearProgressIndicator(progress = { playerHp.toFloat() / pMax }, modifier = Modifier.fillMaxWidth())
+                Text("공격 ${player.atk} · 방어 ${player.defense} · 속도 ${player.speed}", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        Text("R${(round.coerceAtMost(21))} · $log", color = PokePurple, fontWeight = FontWeight.SemiBold)
+        if (result == null) {
+            val canSkill1 = player.level >= 10 && skill1Uses > 0
+            val canSkill2 = player.level >= 20 && skill2Uses > 0
+            Button(onClick = { attack(100) }, modifier = Modifier.fillMaxWidth()) { Text("기본 공격") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { skill1Uses--; attack(120) }, enabled = canSkill1, modifier = Modifier.weight(1f)) { Text("기술 1 ($skill1Uses)") }
+                OutlinedButton(onClick = { skill2Uses--; attack(135) }, enabled = canSkill2, modifier = Modifier.weight(1f)) { Text("기술 2 ($skill2Uses)") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = {
+                    if (recoverUses > 0 && (playerHp < pMax || skill1Uses < 3 || skill2Uses < 2)) {
+                        recoverUses--; playerHp = (playerHp + (pMax * 0.28f).toInt()).coerceAtMost(pMax)
+                        skill1Uses = (skill1Uses + 1).coerceAtMost(3); skill2Uses = (skill2Uses + 1).coerceAtMost(2)
+                        val eDamage = ((enemy?.atk ?: 50) + enemyLevel - (player.defense)).coerceAtLeast(8)
+                        playerHp = (playerHp - eDamage).coerceAtLeast(0); round++; log = "회복했지만 상대 공격으로 $eDamage 피해를 받았어요."; finishIfNeeded()
+                    } else log = "지금은 회복할 수 없어요."
+                }, enabled = recoverUses > 0, modifier = Modifier.weight(1f)) { Text("회복 ($recoverUses)") }
+                OutlinedButton(onClick = {
+                    val chance = (40 + (player.speed - ((enemy?.speed ?: 50) + enemyLevel)) / 2).coerceIn(25, 90)
+                    if (Random.nextInt(100) < chance) { result = "도망 성공"; log = "무사히 도망쳤어요." }
+                    else { playerHp = (playerHp - ((enemy?.atk ?: 50) + enemyLevel) / 2).coerceAtLeast(0); round++; log = "도망에 실패했어요."; finishIfNeeded() }
+                }, modifier = Modifier.weight(1f)) { Text("도망") }
+            }
+        } else {
+            Text(result!!, style = MaterialTheme.typography.headlineMedium, color = if (result!!.startsWith("승리")) Color(0xFF438A63) else PokePurple, fontWeight = FontWeight.ExtraBold)
+            if (result!!.startsWith("승리") && captureResult == null) {
+                val gap = enemyLevel - player.level
+                val chance = if (enemy?.rarity == 3) 0 else ((if (enemy?.rarity == 2) 28 else 55) + if (gap > 0) -gap * 4 else -gap * 2 + (if (closeWin) 8 else 0) + player.bond / 20).coerceIn(10, if (enemy?.rarity == 2) 60 else 75)
+                Text("포획 확률 $chance%")
+                Button(onClick = {
+                    if (chance > 0 && Random.nextInt(100) < chance) {
+                        onCapture(enemy!!.id, closeWin); captured = true; captureResult = "포획 성공! 도감에 등록했어요."
+                    } else captureResult = if (chance == 0) "이 포켓몬은 포획할 수 없어요." else "포획에 실패했어요. 야생 포켓몬이 도망갔어요."
+                }, modifier = Modifier.fillMaxWidth(), enabled = !captured) { Text("🎯 포획하기") }
+                OutlinedButton(onClick = { captureResult = "야생 포켓몬을 보내줬어요." }, modifier = Modifier.fillMaxWidth()) { Text("보내주기") }
+            }
+            captureResult?.let { Text(it, color = PokePurple, fontWeight = FontWeight.Bold) }
+            Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("미니게임으로 돌아가기") }
+        }
     }
 }

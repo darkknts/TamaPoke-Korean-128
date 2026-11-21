@@ -274,6 +274,25 @@ void Pet::registerSpecies(int16_t dex) {
   if (shiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
 }
 
+void Pet::registerCaught(int16_t dex, bool closeWin) {
+  if (isEgg() || ceremony != CER_NONE || dex < 1 || dex > DEX_COUNT) return;
+  registerSpecies(dex);
+  const DexEntry &wild = DEX_TBL[dex];
+  uint8_t amount = wild.rarity == R_RARO ? 2 : 1;
+  if (closeWin && amount < 3) amount++;
+  if (wild.bAtk >= wild.bDef && wild.bAtk >= wild.bSpe)
+    trAtk = clamp100((int)trAtk + amount);
+  else if (wild.bDef >= wild.bAtk && wild.bDef >= wild.bSpe)
+    trDef = clamp100((int)trDef + amount);
+  else
+    trSpe = clamp100((int)trSpe + amount);
+  joy = clamp100((int)joy + 8 + (closeWin ? 4 : 0));
+  energy = energy > 8 ? energy - 8 : 0;
+  fullness = fullness > 3 ? fullness - 3 : 0;
+  bond = bond < 98 ? bond + (closeWin ? 3 : 2) : 100;
+  save();
+}
+
 // la racha y el vinculo mejoran el sorteo del huevo (0..~14)
 int Pet::careBonus() const {
   int s = streak > 30 ? 30 : streak;

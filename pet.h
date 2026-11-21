@@ -13,7 +13,7 @@
 #define EVOLVE_ANIM_MS 5200UL              // animacion de evolucion (mas larga = mas epica)
 #define CEREMONY_MS 10000UL                // duracion de la despedida en pantalla
 #define FAREWELL_AGE_MIN (3UL * 24 * 60)   // se despide a los 3 dias de juego (en forma final)
-#define RUNAWAY_TICKS 60                   // se escapa tras 1 h con TODO a cero
+#define RUNAWAY_TICKS (14UL * 24UL * 60UL) // 14 dias con TODO a cero
 
 // milisegundos que faltan hasta `deadline` (0 si ya paso, o si deadline==0:
 // "temporizador inactivo"). Todos los temporizadores del juego (dialogos,
@@ -122,7 +122,7 @@ public:
   bool canEvolveNow() const;  // condiciones de evolucion cumplidas (lista)
   void evolve();              // dispara la transformacion (la llama un toque del usuario)
   bool canFarewellNow() const;  // forma final + 7 dias: lista para despedirse (boton)
-  bool canRunawayNow() const;   // abandono total 1h: lista para escaparse (boton triste)
+  bool canRunawayNow() const;   // abandono total 14 dias: lista para escaparse (boton triste)
   bool canReleaseNow() const;   // manual release when awake and no ceremony is active
   // el usuario decide en un dialogo; "mantener/quedaros" pospone y re-ofrece luego
   bool wantEvolveButton() const { return canEvolveNow() && level() > evoDeclinedLv; }
@@ -190,7 +190,7 @@ private:
   uint16_t evoDeclinedLv = 0;   // "mantener forma": no ofrecer evolucion hasta subir de nivel
   uint32_t farDeclinedAge = 0;  // "quedaros juntos": no ofrecer despedida hasta esta edad
   bool starterPick = false;     // primera partida: esperando que el jugador elija inicial
-  uint8_t neglectTicks = 0;
+  uint16_t neglectTicks = 0;
   uint16_t goodTicks = 0;  // racha bien cuidado: forja la DEF
   uint32_t ceremonyUntil = 0;
   uint8_t bondToday = 0;       // tope diario de subida de vinculo

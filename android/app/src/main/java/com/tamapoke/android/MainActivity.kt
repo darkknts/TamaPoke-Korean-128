@@ -151,6 +151,9 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showGame by remember { mutableStateOf(false) }
     var showReleaseConfirm by remember { mutableStateOf(false) }
     var showWildEncounter by remember { mutableStateOf(false) }
+    var showFriendVisit by remember { mutableStateOf(false) }
+    var showFriendPlay by remember { mutableStateOf(false) }
+    var friendVisitDex by remember { mutableIntStateOf(0) }
     var gameMode by remember { mutableStateOf("menu") }
     var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     fun openMainScreen(screen: String) {
@@ -170,10 +173,28 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             while (true) {
                 delay(15 * 60 * 1000L)
                 val current = runCatching { PetNative.state() }.getOrNull()
-                if (current != null && !current.egg && !current.sleeping && !showWildEncounter && Random.nextInt(100) < 7) {
-                    showWildEncounter = true
+                if (current != null && !current.egg && !current.sleeping && !showWildEncounter && !showFriendVisit && !showFriendPlay) {
+                    val knownFriends = dexEntries.filter { it.registered && it.id != current.speciesId }
+                    if (knownFriends.isNotEmpty() && Random.nextInt(100) < 7) {
+                        friendVisitDex = knownFriends.random().id
+                        showFriendVisit = true
+                    } else if (Random.nextInt(100) < 7) {
+                        showWildEncounter = true
+                    }
                 }
             }
+        }
+    }
+    LaunchedEffect(showFriendPlay) {
+        if (showFriendPlay) {
+            delay(10_000L)
+            runCatching {
+                PetNative.playWithFriend()
+                pet = PetNative.state()
+                MiniPetWidgetRenderer.updateAll(context)
+                status = "친구 포켓몬과 즐겁게 놀았어요! 행복도와 친밀도가 올랐어요."
+            }.onFailure { status = "친구 방문 보상 오류: ${it.message ?: "다시 시도해 주세요"}" }
+            showFriendPlay = false
         }
     }
     val context = LocalContext.current
@@ -466,8 +487,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 3.dp else 5.dp),
-                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 2.dp else 4.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 2.dp else 3.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 1.dp else 2.dp)
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -494,7 +515,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         }
                     }
                     Box(
-                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 132.dp else 174.dp)
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 104.dp else 132.dp)
                             .clip(RoundedCornerShape(24.dp))
                             .background(
                                 Brush.verticalGradient(habitatGradient(pet!!.biome))
@@ -557,7 +578,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(Modifier.padding(if (compactLayout) 9.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 6.dp else 8.dp)) {
+                Column(Modifier.padding(if (compactLayout) 8.dp else 10.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 5.dp else 6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -604,6 +625,48 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             maxLines = 1
         )
         }
+    }
+    if (showFriendVisit) {
+        val visitorName = dexEntries.firstOrNull { it.id == friendVisitDex }?.name ?: "친구 포켓몬"
+        AlertDialog(
+            onDismissRequest = { showFriendVisit = false },
+            title = { Text("💚 친구 포켓몬이 놀러왔어요!") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("$visitorName가 함께 놀고 싶어 해요.")
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 0, actionToken = 0, loopAction = false, modifier = Modifier.size(76.dp))
+                        Text("💗", style = MaterialTheme.typography.titleLarge)
+                        PetSprite(speciesId = friendVisitDex, shiny = dexEntries.firstOrNull { it.id == friendVisitDex }?.shiny ?: false, actionId = 0, actionToken = 0, loopAction = false, modifier = Modifier.size(76.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showFriendVisit = false; showFriendPlay = true }) { Text("함께 놀기") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showFriendVisit = false }) { Text("다음에") }
+            }
+        )
+    }
+    if (showFriendPlay) {
+        val visitorName = dexEntries.firstOrNull { it.id == friendVisitDex }?.name ?: "친구 포켓몬"
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("🎉 친구와 즐거운 시간!") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("내 포켓몬과 $visitorName가 함께 놀고 있어요.")
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 1, actionToken = 1, loopAction = true, modifier = Modifier.size(84.dp))
+                        Text("💞", style = MaterialTheme.typography.headlineMedium)
+                        PetSprite(speciesId = friendVisitDex, shiny = dexEntries.firstOrNull { it.id == friendVisitDex }?.shiny ?: false, actionId = 1, actionToken = 1, loopAction = true, modifier = Modifier.size(84.dp))
+                    }
+                    Text("10초 후 행복도와 친밀도 보상을 받을 수 있어요.")
+                }
+            },
+            confirmButton = { Text("함께 노는 중…", color = PokePurple, fontWeight = FontWeight.Bold) }
+        )
     }
     if (showWildEncounter) {
         AlertDialog(

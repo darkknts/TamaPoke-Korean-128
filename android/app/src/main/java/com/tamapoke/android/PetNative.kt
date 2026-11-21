@@ -6,7 +6,12 @@ data class DexEntry(
     val id: Int,
     val name: String,
     val registered: Boolean,
-    val shiny: Boolean
+    val shiny: Boolean,
+    val hp: Int = 50,
+    val atk: Int = 50,
+    val defense: Int = 50,
+    val speed: Int = 50,
+    val rarity: Int = 1
 )
 
 data class PetState(
@@ -52,6 +57,7 @@ object PetNative {
     external fun nativeEvolve()
     external fun nativeRelease()
     external fun nativeChooseStarter(dex: Int)
+    external fun nativeRegisterCaught(dex: Int, closeWin: Boolean)
 
     @Synchronized
     fun initialize(filesDir: String) = nativeInit(filesDir, System.currentTimeMillis() / 1000)
@@ -109,7 +115,12 @@ object PetNative {
                 id = item.optInt("id"),
                 name = item.optString("name"),
                 registered = item.optBoolean("registered"),
-                shiny = item.optBoolean("shiny")
+                shiny = item.optBoolean("shiny"),
+                hp = item.optInt("hp", 50),
+                atk = item.optInt("atk", 50),
+                defense = item.optInt("def", 50),
+                speed = item.optInt("speed", 50),
+                rarity = item.optInt("rarity", 1)
             )
         }
     }
@@ -125,4 +136,5 @@ object PetNative {
     @Synchronized fun evolve() = nativeEvolve()
     @Synchronized fun release() = nativeRelease()
     @Synchronized fun chooseStarter(dex: Int) = nativeChooseStarter(dex)
+    @Synchronized fun registerCaught(dex: Int, closeWin: Boolean) = nativeRegisterCaught(dex, closeWin)
 }

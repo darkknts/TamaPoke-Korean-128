@@ -491,7 +491,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     verticalArrangement = Arrangement.spacedBy(if (compactLayout) 1.dp else 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 46.dp else 52.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -543,7 +543,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             actionId = if (pet!!.sleeping) 3 else spriteAction,
                             actionToken = spriteActionToken,
                             loopAction = pet!!.sleeping,
-                            modifier = Modifier.size(if (compactLayout) 112.dp else 138.dp)
+                            modifier = Modifier.size(if (compactLayout) 112.dp else 138.dp).offset(y = if (compactLayout) 5.dp else 6.dp)
                         )
                     }
                     Text(

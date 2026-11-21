@@ -754,7 +754,7 @@ TEST(ceremony, la_despedida_deja_un_huevo_nuevo) {
   CHECK_EQ(p.ageMinutes, (uint32_t)0);
 }
 
-TEST(ceremony, escaparse_pide_una_hora_de_abandono_total) {
+TEST(ceremony, escaparse_pide_catorce_dias_de_abandono_total) {
   Pet p;
   makePet(p, 4);
   setStats(p, 0, 0, 0, 0);

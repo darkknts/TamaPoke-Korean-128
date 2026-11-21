@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -148,11 +149,17 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showSettings by remember { mutableStateOf(false) }
     var showManual by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
+    var showReleaseConfirm by remember { mutableStateOf(false) }
+    var showWildEncounter by remember { mutableStateOf(false) }
+    var showFriendVisit by remember { mutableStateOf(false) }
+    var showFriendPlay by remember { mutableStateOf(false) }
+    var friendVisitDex by remember { mutableIntStateOf(0) }
     var gameMode by remember { mutableStateOf("menu") }
-    var dexEntries by remember { mutableStateOf(emptyList<DexEntry>()) }
+    val context = LocalContext.current
+    var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     fun openMainScreen(screen: String) {
         showGame = false
-        showManual = false
+        showManual = screen == "manual"
         showSettings = screen == "settings"
         showGrowth = screen == "growth"
         showDex = screen == "dex"
@@ -162,7 +169,35 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
         }
     }
-    val context = LocalContext.current
+    LaunchedEffect(pet?.speciesId, pet?.sleeping) {
+        if (pet != null && !pet!!.egg && !pet!!.sleeping) {
+            while (true) {
+                delay(15 * 60 * 1000L)
+                val current = runCatching { PetNative.state() }.getOrNull()
+                if (current != null && !current.egg && !current.sleeping && !showWildEncounter && !showFriendVisit && !showFriendPlay) {
+                    val knownFriends = dexEntries.filter { it.registered && it.id != current.speciesId }
+                    if (knownFriends.isNotEmpty() && Random.nextInt(100) < 7) {
+                        friendVisitDex = knownFriends.random().id
+                        showFriendVisit = true
+                    } else if (Random.nextInt(100) < 7) {
+                        showWildEncounter = true
+                    }
+                }
+            }
+        }
+    }
+    LaunchedEffect(showFriendPlay) {
+        if (showFriendPlay) {
+            delay(10_000L)
+            runCatching {
+                PetNative.playWithFriend()
+                pet = PetNative.state()
+                MiniPetWidgetRenderer.updateAll(context)
+                status = "친구 포켓몬과 즐겁게 놀았어요! 행복도와 친밀도가 올랐어요."
+            }.onFailure { status = "친구 방문 보상 오류: ${it.message ?: "다시 시도해 주세요"}" }
+            showFriendPlay = false
+        }
+    }
     var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
     var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
     var backupMessage by remember { mutableStateOf("") }
@@ -351,6 +386,19 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             .onFailure { status = "보상 반영 오류: ${it.message ?: "다시 시도해 주세요"}" }
                     }
                 )
+                "battle" -> WildBattleScreen(
+                    compact = compactLayout,
+                    pet = pet,
+                    dexEntries = dexEntries,
+                    onBack = { gameMode = "menu" },
+                    onBattleWin = { dex, closeWin ->
+                        runCatching { PetNative.applyBattleWin(dex, closeWin); pet = PetNative.state(); MiniPetWidgetRenderer.updateAll(context) }
+                    },
+                    onCapture = { dex ->
+                        runCatching { PetNative.registerCaught(dex); pet = PetNative.state(); dexEntries = PetNative.dexEntries(); MiniPetWidgetRenderer.updateAll(context) }
+                            .onFailure { status = "포획 저장 오류: ${it.message ?: "다시 시도해 주세요"}" }
+                    }
+                )
                 "memory" -> MemoryGame(
                     compact = compactLayout,
                     onBack = { gameMode = "menu" },
@@ -439,24 +487,35 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 9.dp else 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 6.dp else 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = if (compactLayout) 8.dp else 14.dp, vertical = if (compactLayout) 2.dp else 3.dp),
+                    verticalArrangement = Arrangement.spacedBy(if (compactLayout) 1.dp else 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 46.dp else 52.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
-                            Text("도감 번호 ${pet!!.speciesId}", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = PokeInk)
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("No. ${pet!!.speciesId.toString().padStart(3, '0')}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = PokePurple)
+                            Text(
+                                dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
+                                modifier = Modifier.weight(1f),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = PokeInk,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                maxLines = 1
+                            )
+                        }
                         }
                         Surface(color = Color.White, shape = RoundedCornerShape(50)) {
-                            Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
+                            Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         }
                     }
                     Box(
-                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 132.dp else 174.dp)
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 104.dp else 132.dp)
                             .clip(RoundedCornerShape(24.dp))
                             .background(
                                 Brush.verticalGradient(habitatGradient(pet!!.biome))
@@ -484,7 +543,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             actionId = if (pet!!.sleeping) 3 else spriteAction,
                             actionToken = spriteActionToken,
                             loopAction = pet!!.sleeping,
-                            modifier = Modifier.size(if (compactLayout) 112.dp else 138.dp)
+                            modifier = Modifier.size(if (compactLayout) 112.dp else 138.dp).offset(y = if (compactLayout) 5.dp else 6.dp)
                         )
                     }
                     Text(
@@ -519,10 +578,17 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
-                Column(Modifier.padding(if (compactLayout) 9.dp else 12.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 6.dp else 8.dp)) {
+                Column(Modifier.padding(if (compactLayout) 8.dp else 10.dp), verticalArrangement = Arrangement.spacedBy(if (compactLayout) 5.dp else 6.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                            // 버튼 순서를 고정: 방출 → 진화 → 미니게임
+                            if (pet!!.canRelease) {
+                                OutlinedButton(
+                                    onClick = { showReleaseConfirm = true },
+                                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                            }
                             if (pet!!.canEvolve) {
                                 OutlinedButton(
                                     onClick = { performPetAction(7) { PetNative.evolve() } },
@@ -561,6 +627,81 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         )
         }
     }
+    if (showFriendVisit) {
+        val visitorName = dexEntries.firstOrNull { it.id == friendVisitDex }?.name ?: "친구 포켓몬"
+        AlertDialog(
+            onDismissRequest = { showFriendVisit = false },
+            title = { Text("💚 친구 포켓몬이 놀러왔어요!") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("${visitorName}가 함께 놀고 싶어 해요.")
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 0, actionToken = 0, loopAction = false, modifier = Modifier.size(76.dp))
+                        Text("💗", style = MaterialTheme.typography.titleLarge)
+                        PetSprite(speciesId = friendVisitDex, shiny = dexEntries.firstOrNull { it.id == friendVisitDex }?.shiny ?: false, actionId = 0, actionToken = 0, loopAction = false, modifier = Modifier.size(76.dp))
+                    }
+                }
+            },
+            confirmButton = {
+                Button(onClick = { showFriendVisit = false; showFriendPlay = true }) { Text("함께 놀기") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showFriendVisit = false }) { Text("다음에") }
+            }
+        )
+    }
+    if (showFriendPlay) {
+        val visitorName = dexEntries.firstOrNull { it.id == friendVisitDex }?.name ?: "친구 포켓몬"
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("🎉 친구와 즐거운 시간!") },
+            text = {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("내 포켓몬과 ${visitorName}가 함께 놀고 있어요.")
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 1, actionToken = 1, loopAction = true, modifier = Modifier.size(84.dp))
+                        Text("💞", style = MaterialTheme.typography.headlineMedium)
+                        PetSprite(speciesId = friendVisitDex, shiny = dexEntries.firstOrNull { it.id == friendVisitDex }?.shiny ?: false, actionId = 1, actionToken = 1, loopAction = true, modifier = Modifier.size(84.dp))
+                    }
+                    Text("10초 후 행복도와 친밀도 보상을 받을 수 있어요.")
+                }
+            },
+            confirmButton = { Text("함께 노는 중…", color = PokePurple, fontWeight = FontWeight.Bold) }
+        )
+    }
+    if (showWildEncounter) {
+        AlertDialog(
+            onDismissRequest = { showWildEncounter = false },
+            title = { Text("🌿 야생 포켓몬 출현!") },
+            text = { Text("주변에서 야생 포켓몬의 기척이 느껴져요. 지금 배틀을 시작할까요?") },
+            confirmButton = {
+                Button(onClick = {
+                    showWildEncounter = false
+                    showGame = true
+                    gameMode = "battle"
+                }) { Text("싸운다") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showWildEncounter = false }) { Text("나중에") }
+            }
+        )
+    }
+    if (showReleaseConfirm) {
+        AlertDialog(
+            onDismissRequest = { showReleaseConfirm = false },
+            title = { Text("포켓몬을 방출할까요?") },
+            text = { Text("방출하면 현재 포켓몬과의 기록을 마무리하고, 10초간 작별 의식이 진행된 뒤 새로운 알을 받습니다. 이 작업은 되돌릴 수 없습니다.") },
+            confirmButton = {
+                Button(onClick = {
+                    showReleaseConfirm = false
+                    performPetAction(7) { PetNative.release() }
+                }) { Text("방출하기") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showReleaseConfirm = false }) { Text("취소") }
+            }
+        )
+    }
 }
 
 @Composable
@@ -571,6 +712,7 @@ private fun MiniGameMenu(compact: Boolean, onSelect: (String) -> Unit, onBack: (
             OutlinedButton(onClick = onBack) { Text("닫기") }
         }
         Text("게임을 완료하면 점수에 따라 포켓몬 훈련 보상을 받아요.", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall)
+        Button(onClick = { onSelect("battle") }, modifier = Modifier.fillMaxWidth()) { Text("⚔️ 야생 포켓몬 배틀 · 승리하면 포획 도전") }
         Button(onClick = { onSelect("berry") }, modifier = Modifier.fillMaxWidth()) { Text("🍓 열매 받기  ·  좌우 이동") }
         Button(onClick = { onSelect("timing") }, modifier = Modifier.fillMaxWidth()) { Text("⏱ 타이밍 맞추기  ·  정확한 순간에 누르기") }
         Button(onClick = { onSelect("memory") }, modifier = Modifier.fillMaxWidth()) { Text("🧠 카드 짝 맞추기  ·  기억력 도전") }
@@ -782,7 +924,7 @@ private fun GameManualScreen(compact: Boolean, onBack: () -> Unit) {
         ManualCard("성장 리포트와 메달", "성장 화면에서 전투 능력치, 친밀도, 연속 돌봄, 메달 및 도감 등록 수를 확인할 수 있습니다. 메달 화면에서 8종의 업적 달성 여부를 볼 수 있습니다.")
         Text("작별과 새 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("작별", "최종 진화형으로 게임 시간 3일 이상 함께 지내면 작별을 선택할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알의 희귀도와 이로치 확률에 보너스가 적용됩니다.")
-        ManualCard("방출과 도주", "방출은 사용자가 직접 선택하는 작별 방식입니다. 돌봄 수치가 모두 0인 상태가 일정 시간 지속되면 도주할 수 있으며, 도주 후 새 알은 일반 등급으로 제한됩니다.")
+        ManualCard("방출과 도주", "방출은 부화 후 레벨 5 이상이고 깨어 있으며 다른 작별 의식이 진행 중이지 않을 때 직접 선택할 수 있습니다. 방출을 확정하면 10초간 작별 의식이 진행된 뒤 새 알을 받습니다. 돌봄 수치가 모두 0인 상태가 14일 지속되면 도주할 수 있으며, 도주 후 새 알은 일반 등급으로 제한됩니다.")
         Text("설정과 저장 데이터", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("효과음과 진동", "설정 화면에서 효과음과 진동 피드백을 각각 켜거나 끌 수 있습니다.")
         ManualCard("백업과 복원", "설정 화면에서 저장 데이터를 ZIP 파일로 내보내거나 복원할 수 있습니다. 복원하면 현재 기기의 저장 데이터가 백업 시점의 데이터로 교체되므로, 필요한 경우 먼저 백업해 주세요.")
@@ -1166,5 +1308,214 @@ private fun ActionButton(label: String, modifier: Modifier = Modifier, enabled: 
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 5.dp, vertical = 3.dp)
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, maxLines = 1, fontWeight = FontWeight.Bold)
+    }
+}
+
+
+@Composable
+private fun WildBattleScreen(
+    compact: Boolean,
+    pet: PetState?,
+    dexEntries: List<DexEntry>,
+    onBack: () -> Unit,
+    onBattleWin: (Int, Boolean) -> Unit,
+    onCapture: (Int) -> Unit
+) {
+    val player = pet
+    val eligible = remember(dexEntries) { dexEntries.filter { it.rarity == 1 || it.rarity == 2 } }
+    var enemy by remember { mutableStateOf((if (Random.nextInt(100) < 25) eligible.filter { it.rarity == 2 } else eligible.filter { it.rarity == 1 }).randomOrNull() ?: eligible.randomOrNull()) }
+    var enemyLevel by remember {
+        val roll = Random.nextInt(100)
+        val delta = when { roll < 55 -> roll % 3 - 1; roll < 85 -> -2 - roll % 3; else -> 2 + roll % 2 }
+        mutableIntStateOf(((player?.level ?: 1) + delta).coerceIn(1, 100))
+    }
+    var playerHp by remember { mutableIntStateOf(0) }
+    var enemyHp by remember { mutableIntStateOf(0) }
+    var round by remember { mutableIntStateOf(1) }
+    var skill1Uses by remember { mutableIntStateOf(3) }
+    var skill2Uses by remember { mutableIntStateOf(2) }
+    var recoverUses by remember { mutableIntStateOf(2) }
+    var result by remember { mutableStateOf<String?>(null) }
+    var captureResult by remember { mutableStateOf<String?>(null) }
+    var captured by remember { mutableStateOf(false) }
+    var closeWin by remember { mutableStateOf(false) }
+    var rewardApplied by remember { mutableStateOf(false) }
+    var log by remember { mutableStateOf("야생 포켓몬이 나타났어요!") }
+    var impactToken by remember { mutableIntStateOf(0) }
+    var impactVisible by remember { mutableStateOf(false) }
+    LaunchedEffect(impactToken) {
+        if (impactToken > 0) {
+            impactVisible = true
+            delay(520)
+            impactVisible = false
+        }
+    }
+    val pMax = remember(player) { (30 + (player?.level ?: 1) * 5 + (player?.defense ?: 50)).coerceAtLeast(1) }
+    val eMax = remember(enemy, enemyLevel) { (30 + enemyLevel * 5 + (enemy?.defense ?: 40) + enemyLevel).coerceAtLeast(1) }
+    LaunchedEffect(enemy?.id, enemyLevel) { playerHp = pMax; enemyHp = eMax }
+    fun finishIfNeeded() {
+        if (enemyHp <= 0) {
+            result = "승리!"
+            closeWin = playerHp <= pMax / 3
+            if (!rewardApplied) { rewardApplied = true; onBattleWin(enemy!!.id, closeWin) }
+            log = "야생 ${enemy?.name ?: "포켓몬"}에게 승리했어요!"
+        } else if (playerHp <= 0) {
+            result = "패배"
+            log = "포켓몬이 쓰러졌어요."
+        } else if (round > 20) {
+            if (playerHp >= enemyHp) { result = "승리!"; closeWin = playerHp <= pMax / 3; if (!rewardApplied) { rewardApplied = true; onBattleWin(enemy!!.id, closeWin) } }
+            else result = "패배"
+        }
+    }
+    fun attack(power: Int) {
+        val pAtk = player?.atk ?: 50
+        val pDef = player?.defense ?: 50
+        val pSpe = player?.speed ?: 50
+        val eAtk = (enemy?.atk ?: 50) + enemyLevel
+        val eDef = (enemy?.defense ?: 50) + enemyLevel
+        val eSpe = (enemy?.speed ?: 50) + enemyLevel
+        val first = pSpe >= eSpe
+        val pDamage = ((eMax * (16 + (pAtk - eDef) / 12).coerceIn(11, 23) / 100.0) * power / 100.0 * Random.nextInt(90, 111) / 100.0).toInt().coerceAtLeast(1)
+        val enemySkillPower = when {
+            enemyLevel >= 20 && Random.nextInt(100) < 35 -> 135
+            enemyLevel >= 10 && Random.nextInt(100) < 50 -> 120
+            else -> 100
+        }
+        val eDamage = ((pMax * (16 + (eAtk - pDef) / 12).coerceIn(11, 23) / 100.0) * enemySkillPower / 100.0 * Random.nextInt(90, 111) / 100.0).toInt().coerceAtLeast(1)
+        if (first) {
+            enemyHp = (enemyHp - pDamage).coerceAtLeast(0)
+            if (enemyHp > 0) playerHp = (playerHp - eDamage).coerceAtLeast(0)
+        } else {
+            playerHp = (playerHp - eDamage).coerceAtLeast(0)
+            if (playerHp > 0) enemyHp = (enemyHp - pDamage).coerceAtLeast(0)
+        }
+        log = "내 공격 $pDamage · 상대 공격 $eDamage"
+        round++
+        finishIfNeeded()
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(if (compact) 8.dp else 12.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+            Text("⚔️ 야생 배틀", style = MaterialTheme.typography.titleLarge, color = PokeInk, fontWeight = FontWeight.ExtraBold)
+            OutlinedButton(onClick = onBack) { Text("나가기") }
+        }
+        if (player == null || player.egg || player.sleeping) {
+            Text(if (player?.sleeping == true) "잠든 포켓몬은 배틀할 수 없어요. 먼저 깨워 주세요." else "부화한 포켓몬이 있어야 배틀할 수 있어요.")
+            Button(onClick = onBack) { Text("돌아가기") }
+            return@Column
+        }
+        if (enemy == null) {
+            Text("배틀 가능한 야생 포켓몬이 없습니다.")
+            Button(onClick = onBack) { Text("돌아가기") }
+            return@Column
+        }
+        // Battle stage: animated Pokémon sprites on a habitat-inspired pixel arena.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF7E6))
+            ) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text("야생 포켓몬 · Lv.$enemyLevel", color = PokeInk, fontWeight = FontWeight.Bold)
+                            Text(enemy?.name ?: "야생 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokeInk)
+                        }
+                        Text("HP $enemyHp / $eMax", color = PokeInk, style = MaterialTheme.typography.labelMedium)
+                    }
+                    LinearProgressIndicator(progress = { enemyHp.toFloat() / eMax }, modifier = Modifier.fillMaxWidth(), color = Color(0xFF5BAE77))
+                }
+            }
+            Box(
+                Modifier.fillMaxWidth().height(if (compact) 218.dp else 252.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Brush.verticalGradient(listOf(Color(0xFFDDF0FF), Color(0xFFEAF6DF), Color(0xFFD2EAC8))))
+            ) {
+                Box(Modifier.fillMaxWidth().height(74.dp).align(Alignment.BottomCenter).background(Color(0xFFB9DFAE)))
+                Box(Modifier.size(116.dp).align(Alignment.BottomCenter).offset(y = 26.dp).background(Color(0xFFA5D49A), RoundedCornerShape(50)))
+                Box(Modifier.size(66.dp).align(Alignment.TopStart).offset(x = 22.dp, y = 28.dp).background(Color(0x66FFFFFF), RoundedCornerShape(50)))
+                Box(Modifier.size(42.dp).align(Alignment.TopEnd).offset(x = (-28).dp, y = 48.dp).background(Color(0x77FFFFFF), RoundedCornerShape(50)))
+                Text("WILD", Modifier.align(Alignment.TopCenter).padding(top = 10.dp), color = Color(0xFF6D8B78), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+                PetSprite(
+                    speciesId = enemy!!.id,
+                    shiny = false,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(end = 26.dp, top = 44.dp),
+                    imageSize = if (compact) 104.dp else 122.dp
+                )
+                PetSprite(
+                    speciesId = player.speciesId,
+                    shiny = player.shiny,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(start = 22.dp, bottom = 8.dp),
+                    imageSize = if (compact) 122.dp else 144.dp
+                )
+                Text("내 포켓몬", Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 2.dp), color = PokeInk, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                if (impactVisible) {
+                    Text(
+                        if (impactToken % 2 == 0) "💥 타격!" else "✨ 기술 발동!",
+                        Modifier.align(Alignment.Center).background(Color(0xDDFFFFFF), RoundedCornerShape(18.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
+                        color = PokePurple,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = PokeLavender)
+            ) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text("내 포켓몬 · Lv.${player.level}", color = PokeInk, fontWeight = FontWeight.Bold)
+                            Text("No. ${player.speciesId}", color = PokeInk, style = MaterialTheme.typography.titleMedium)
+                        }
+                        Text("HP $playerHp / $pMax", color = PokeInk, style = MaterialTheme.typography.labelMedium)
+                    }
+                    LinearProgressIndicator(progress = { playerHp.toFloat() / pMax }, modifier = Modifier.fillMaxWidth(), color = Color(0xFF8A63C7))
+                    Text("공격 ${player.atk} · 방어 ${player.defense} · 속도 ${player.speed}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF766B80))
+                }
+            }
+        }
+        Text("R${(round.coerceAtMost(21))} · $log", color = PokePurple, fontWeight = FontWeight.SemiBold)
+        if (result == null) {
+            val canSkill1 = player.level >= 10 && skill1Uses > 0
+            val canSkill2 = player.level >= 20 && skill2Uses > 0
+            Button(onClick = { attack(100) }, modifier = Modifier.fillMaxWidth()) { Text("기본 공격") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = { skill1Uses--; attack(120) }, enabled = canSkill1, modifier = Modifier.weight(1f)) { Text("기술 1 ($skill1Uses)") }
+                OutlinedButton(onClick = { skill2Uses--; attack(135) }, enabled = canSkill2, modifier = Modifier.weight(1f)) { Text("기술 2 ($skill2Uses)") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(onClick = {
+                    if (recoverUses > 0 && (playerHp < pMax || skill1Uses < 3 || skill2Uses < 2)) {
+                        recoverUses--; playerHp = (playerHp + (pMax * 0.28f).toInt()).coerceAtMost(pMax)
+                        skill1Uses = (skill1Uses + 1).coerceAtMost(3); skill2Uses = (skill2Uses + 1).coerceAtMost(2)
+                        val eDamage = ((enemy?.atk ?: 50) + enemyLevel - (player.defense)).coerceAtLeast(8)
+                        playerHp = (playerHp - eDamage).coerceAtLeast(0); round++; log = "회복했지만 상대 공격으로 $eDamage 피해를 받았어요."; finishIfNeeded()
+                    } else log = "지금은 회복할 수 없어요."
+                }, enabled = recoverUses > 0, modifier = Modifier.weight(1f)) { Text("회복 ($recoverUses)") }
+                OutlinedButton(onClick = {
+                    val chance = (40 + (player.speed - ((enemy?.speed ?: 50) + enemyLevel)) / 2).coerceIn(25, 90)
+                    if (Random.nextInt(100) < chance) { result = "도망 성공"; log = "무사히 도망쳤어요." }
+                    else { playerHp = (playerHp - ((enemy?.atk ?: 50) + enemyLevel) / 2).coerceAtLeast(0); round++; log = "도망에 실패했어요."; finishIfNeeded() }
+                }, modifier = Modifier.weight(1f)) { Text("도망") }
+            }
+        } else {
+            Text(result!!, style = MaterialTheme.typography.headlineMedium, color = if (result!!.startsWith("승리")) Color(0xFF438A63) else PokePurple, fontWeight = FontWeight.ExtraBold)
+            if (result!!.startsWith("승리") && captureResult == null) {
+                val gap = enemyLevel - player.level
+                val baseChance = if (enemy?.rarity == 2) 28 else 55
+                val levelAdjust = if (gap > 0) -gap * 4 else -gap * 2
+                val chance = if (enemy?.rarity == 3) 0 else (baseChance + levelAdjust + (if (closeWin) 8 else 0) + player.bond / 20).coerceIn(10, if (enemy?.rarity == 2) 60 else 75)
+                Text("포획 확률 $chance%")
+                Button(onClick = {
+                    if (chance > 0 && Random.nextInt(100) < chance) {
+                        onCapture(enemy!!.id); captured = true; captureResult = "포획 성공! 도감에 등록했어요."
+                    } else captureResult = if (chance == 0) "이 포켓몬은 포획할 수 없어요." else "포획에 실패했어요. 야생 포켓몬이 도망갔어요."
+                }, modifier = Modifier.fillMaxWidth(), enabled = !captured) { Text("🎯 포획하기") }
+                OutlinedButton(onClick = { captureResult = "야생 포켓몬을 보내줬어요." }, modifier = Modifier.fillMaxWidth()) { Text("보내주기") }
+            }
+            captureResult?.let { Text(it, color = PokePurple, fontWeight = FontWeight.Bold) }
+            Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("미니게임으로 돌아가기") }
+        }
     }
 }

@@ -6,7 +6,12 @@ data class DexEntry(
     val id: Int,
     val name: String,
     val registered: Boolean,
-    val shiny: Boolean
+    val shiny: Boolean,
+    val hp: Int = 50,
+    val atk: Int = 50,
+    val defense: Int = 50,
+    val speed: Int = 50,
+    val rarity: Int = 1
 )
 
 data class PetState(
@@ -20,6 +25,7 @@ data class PetState(
     val hygiene: Int,
     val ageMinutes: Int,
     val canEvolve: Boolean,
+    val canRelease: Boolean,
     val sleeping: Boolean,
     val shiny: Boolean,
     val starterPick: Boolean,
@@ -46,10 +52,14 @@ object PetNative {
     external fun nativePlayResult(score: Int)
     external fun nativeClean()
     external fun nativeCaress()
+    external fun nativePlayWithFriend()
     external fun nativeEggTap()
     external fun nativeToggleSleep()
     external fun nativeEvolve()
+    external fun nativeRelease()
     external fun nativeChooseStarter(dex: Int)
+    external fun nativeApplyBattleWin(dex: Int, closeWin: Boolean)
+    external fun nativeRegisterCaught(dex: Int)
 
     @Synchronized
     fun initialize(filesDir: String) = nativeInit(filesDir, System.currentTimeMillis() / 1000)
@@ -70,6 +80,7 @@ object PetNative {
             hygiene = json.optInt("hygiene", 0),
             ageMinutes = json.optInt("ageMinutes", 0),
             canEvolve = json.optBoolean("canEvolve"),
+            canRelease = json.optBoolean("canRelease"),
             sleeping = json.optBoolean("sleeping"),
             shiny = json.optBoolean("shiny"),
             starterPick = json.optBoolean("starterPick"),
@@ -106,7 +117,12 @@ object PetNative {
                 id = item.optInt("id"),
                 name = item.optString("name"),
                 registered = item.optBoolean("registered"),
-                shiny = item.optBoolean("shiny")
+                shiny = item.optBoolean("shiny"),
+                hp = item.optInt("hp", 50),
+                atk = item.optInt("atk", 50),
+                defense = item.optInt("def", 50),
+                speed = item.optInt("speed", 50),
+                rarity = item.optInt("rarity", 1)
             )
         }
     }
@@ -117,8 +133,13 @@ object PetNative {
     @Synchronized fun playResult(score: Int) = nativePlayResult(score)
     @Synchronized fun clean() = nativeClean()
     @Synchronized fun caress() = nativeCaress()
+    /** Applies the native-engine reward after the 10-second friend visit scene. */
+    @Synchronized fun playWithFriend() = nativePlayWithFriend()
     @Synchronized fun eggTap() = nativeEggTap()
     @Synchronized fun toggleSleep() = nativeToggleSleep()
     @Synchronized fun evolve() = nativeEvolve()
+    @Synchronized fun release() = nativeRelease()
     @Synchronized fun chooseStarter(dex: Int) = nativeChooseStarter(dex)
+    @Synchronized fun applyBattleWin(dex: Int, closeWin: Boolean) = nativeApplyBattleWin(dex, closeWin)
+    @Synchronized fun registerCaught(dex: Int) = nativeRegisterCaught(dex)
 }

@@ -78,7 +78,11 @@ void Pet::syncClock(uint32_t nowEpoch) {
       continue;
     }
     fullness = dropTo(fullness, 2, 15);
+#ifdef TAMAPOKE_ANDROID
+    if (ageMinutes % 3 == 0) energy = dropTo(energy, 1, 15);
+#else
     energy = dropTo(energy, 1, 15);
+#endif
     hygiene = dropTo(hygiene, 1, 15);
     joy = dropTo(joy, 1, 15);
   }
@@ -143,7 +147,11 @@ void Pet::tick() {
   if (ageMinutes % MINUTES_PER_LEVEL == 0) sfxPlay(SFX_LEVEL);  // subio de nivel (despierto)
 
   fullness = clamp100(fullness - 2);
+#ifdef TAMAPOKE_ANDROID
+  if (ageMinutes % 3 == 0) energy = clamp100(energy - 1);
+#else
   energy = clamp100(energy - 1);
+#endif
 #ifndef TAMAPOKE_ANDROID
   if (fullness > 40 && poops < 3 && random(100) < 15) poops++;
   hygiene = clamp100(hygiene - 1 - 4 * poops);
@@ -184,7 +192,7 @@ void Pet::tick() {
 
   checkMedals();  // la evolucion la dispara el usuario (canEvolveNow + tap), no el tick
 
-  // abandono total: con TODO a cero durante una hora queda lista para escaparse;
+  // abandono total: con TODO a cero durante 14 dias queda lista para escaparse;
   // NO se va sola, la dispara el usuario con el boton (final triste, lo presencia)
   if (fullness == 0 && joy == 0 && energy == 0 && hygiene == 0) {
     if (neglectTicks < RUNAWAY_TICKS) neglectTicks++;
@@ -260,10 +268,35 @@ int16_t Pet::pickEggSpecies() {
   return CLASSIC_DEX[random(NUM_CLASSIC_DEX)];  // inalcanzable, por si acaso
 }
 
-void Pet::registerSpecies(int16_t dex) {
+void Pet::registerSpecies(int16_t dex, bool isShiny) {
   if (dex < 1 || dex > 151) return;
   dexReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
-  if (shiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+  if (isShiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+}
+
+void Pet::applyBattleWin(int16_t wildDex, bool closeWin) {
+  if (isEgg() || ceremony != CER_NONE) return;
+  if (wildDex < 1 || wildDex > DEX_COUNT) wildDex = 1;
+  const DexEntry &wild = DEX_TBL[wildDex];
+  uint8_t amount = wild.rarity == R_RARO ? 2 : 1;
+  if (closeWin) amount++;
+  if (wild.bAtk >= wild.bDef && wild.bAtk >= wild.bSpe)
+    trDef = clamp100((int)trDef + amount);
+  else if (wild.bDef >= wild.bAtk && wild.bDef >= wild.bSpe)
+    trAtk = clamp100((int)trAtk + amount);
+  else
+    trSpe = clamp100((int)trSpe + amount);
+  joy = clamp100((int)joy + 8 + (closeWin ? 4 : 0));
+  energy = energy > 8 ? energy - 8 : 0;
+  fullness = fullness > 3 ? fullness - 3 : 0;
+  bond = bond < 98 ? bond + (closeWin ? 3 : 2) : 100;
+  save();
+}
+
+void Pet::registerCaught(int16_t dex) {
+  if (isEgg() || ceremony != CER_NONE || dex < 1 || dex > DEX_COUNT) return;
+  registerSpecies(dex);
+  save();
 }
 
 // la racha y el vinculo mejoran el sorteo del huevo (0..~14)
@@ -387,8 +420,12 @@ void Pet::startRunaway() {
   save();
 }
 
+bool Pet::canReleaseNow() const {
+  return !isEgg() && level() >= 5 && !sleeping && ceremony == CER_NONE;
+}
+
 void Pet::release() {
-  if (isEgg() || ceremony != CER_NONE) return;
+  if (!canReleaseNow()) return;
   lastEnd = CER_RELEASE;
   ceremony = CER_RELEASE;
   ceremonyUntil = millis() + CEREMONY_MS;
@@ -411,7 +448,7 @@ void Pet::hatch() {
   medals = 0;
   newMedal = 0;
   nick[0] = 0;
-  registerSpecies(speciesId);  // criado = registrado en la pokedex
+  registerSpecies(speciesId, shiny);  // registra la variante real que acaba de nacer
   checkMedals();     // por si nace ya en forma final (legendario)
   sfxPlay(SFX_HATCH);
   save();
@@ -446,7 +483,7 @@ void Pet::evolve() {
     next = n > 0 ? opts[random(n)] : (int16_t)(134 + random(3));
   }
   speciesId = next;
-  registerSpecies(speciesId);
+  registerSpecies(speciesId, shiny);
   sfxPlay(SFX_EVOLVE);
   evolveUntil = millis() + EVOLVE_ANIM_MS;
   save();
@@ -491,7 +528,11 @@ void Pet::playResult(uint8_t score) {
   uint8_t v = trSpe + score / 5;  // jugar entrena la velocidad
   trSpe = v > 100 ? 100 : v;
   joy = clamp100(joy + 5 + (score > 15 ? 30 : score * 2));
+#ifdef TAMAPOKE_ANDROID
+  energy = dropTo(energy, 6 + score / 3, 5);
+#else
   energy = dropTo(energy, 10 + score / 2, 5);
+#endif
   fullness = dropTo(fullness, 5, 5);
 #ifndef TAMAPOKE_ANDROID
   int burn = (int)weight - score * 2;  // el ejercicio quema peso
@@ -533,7 +574,11 @@ void Pet::play() {
   if (ceremony != CER_NONE) return;
   if (isEgg() || sleeping) return;
   joy = clamp100(joy + 25);
+#ifdef TAMAPOKE_ANDROID
+  energy = clamp100(energy - 6);
+#else
   energy = clamp100(energy - 10);
+#endif
   fullness = clamp100(fullness - 5);
   heartUntil = millis() + HEART_MS;
   addBond(2);
@@ -565,6 +610,17 @@ void Pet::caress() {
   joy = clamp100(joy + 5);
   heartUntil = millis() + HEART_MS;
   addBond(1);
+  registerCare();
+  save();
+}
+
+void Pet::playWithFriend() {
+  if (ceremony != CER_NONE || isEgg() || sleeping) return;
+  joy = clamp100((int)joy + 18);
+  energy = energy > 8 ? energy - 8 : 0;
+  fullness = fullness > 5 ? fullness - 5 : 0;
+  heartUntil = millis() + HEART_MS;
+  addBond(2);
   registerCare();
   save();
 }
@@ -674,5 +730,5 @@ void Pet::load() {
   strHi = prefs.getUShort("shi", 0);
   prefs.getString("nick", nick, sizeof(nick));
   // siembra: la mascota actual cuenta como criada (guardados antiguos)
-  if (speciesId >= 1) registerSpecies(speciesId);
+  if (speciesId >= 1) registerSpecies(speciesId, shiny);
 }

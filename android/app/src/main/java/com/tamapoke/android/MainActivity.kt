@@ -168,6 +168,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             dexEntries = runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())
         }
     }
+    val context = LocalContext.current
     LaunchedEffect(pet?.speciesId, pet?.sleeping) {
         if (pet != null && !pet!!.egg && !pet!!.sleeping) {
             while (true) {
@@ -197,7 +198,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             showFriendPlay = false
         }
     }
-    val context = LocalContext.current
     var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
     var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
     var backupMessage by remember { mutableStateOf("") }

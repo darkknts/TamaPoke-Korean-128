@@ -155,7 +155,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showFriendPlay by remember { mutableStateOf(false) }
     var friendVisitDex by remember { mutableIntStateOf(0) }
     var gameMode by remember { mutableStateOf("menu") }
-    var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     fun openMainScreen(screen: String) {
         showGame = false
         showManual = screen == "manual"
@@ -169,6 +168,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         }
     }
     val context = LocalContext.current
+    var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     LaunchedEffect(pet?.speciesId, pet?.sleeping) {
         if (pet != null && !pet!!.egg && !pet!!.sleeping) {
             while (true) {

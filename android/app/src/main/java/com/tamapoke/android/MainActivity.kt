@@ -583,17 +583,17 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                                if (pet!!.canEvolve) {
-                                    OutlinedButton(
-                                        onClick = { performPetAction(7) { PetNative.evolve() } },
-                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                    ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
-                                }
                                 if (pet!!.canRelease) {
                                     OutlinedButton(
                                         onClick = { showReleaseConfirm = true },
                                         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
                                     ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                                }
+                                if (pet!!.canEvolve) {
+                                    OutlinedButton(
+                                        onClick = { performPetAction(7) { PetNative.evolve() } },
+                                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+                                    ) { Text("✨ 진화", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
                                 }
                             }
                             OutlinedButton(
@@ -1400,21 +1400,80 @@ private fun WildBattleScreen(
             Button(onClick = onBack) { Text("돌아가기") }
             return@Column
         }
-        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF7E6))) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("야생 포켓몬 · Lv.$enemyLevel", color = PokeInk, fontWeight = FontWeight.Bold)
-                Text("🦊  ${enemy?.name}", style = MaterialTheme.typography.headlineSmall, color = PokeInk)
-                Text("HP  $enemyHp / $eMax")
-                LinearProgressIndicator(progress = { enemyHp.toFloat() / eMax }, modifier = Modifier.fillMaxWidth())
+        // Battle stage: animated Pokémon sprites on a habitat-inspired pixel arena.
+        var impactToken by remember { mutableIntStateOf(0) }
+        var impactVisible by remember { mutableStateOf(false) }
+        LaunchedEffect(impactToken) {
+            if (impactToken > 0) {
+                impactVisible = true
+                delay(520)
+                impactVisible = false
             }
         }
-        Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = PokeLavender)) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("내 포켓몬 · Lv.${player.level}", color = PokeInk, fontWeight = FontWeight.Bold)
-                Text("💚  No. ${player.speciesId}", style = MaterialTheme.typography.headlineSmall, color = PokeInk)
-                Text("HP  $playerHp / $pMax")
-                LinearProgressIndicator(progress = { playerHp.toFloat() / pMax }, modifier = Modifier.fillMaxWidth())
-                Text("공격 ${player.atk} · 방어 ${player.defense} · 속도 ${player.speed}", style = MaterialTheme.typography.bodySmall)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFEAF7E6))
+            ) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text("야생 포켓몬 · Lv.$enemyLevel", color = PokeInk, fontWeight = FontWeight.Bold)
+                            Text(enemy?.name ?: "야생 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokeInk)
+                        }
+                        Text("HP $enemyHp / $eMax", color = PokeInk, style = MaterialTheme.typography.labelMedium)
+                    }
+                    LinearProgressIndicator(progress = { enemyHp.toFloat() / eMax }, modifier = Modifier.fillMaxWidth(), color = Color(0xFF5BAE77))
+                }
+            }
+            Box(
+                Modifier.fillMaxWidth().height(if (compact) 218.dp else 252.dp)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(Brush.verticalGradient(listOf(Color(0xFFDDF0FF), Color(0xFFEAF6DF), Color(0xFFD2EAC8))))
+            ) {
+                Box(Modifier.fillMaxWidth().height(74.dp).align(Alignment.BottomCenter).background(Color(0xFFB9DFAE)))
+                Box(Modifier.size(116.dp).align(Alignment.BottomCenter).offset(y = 26.dp).background(Color(0xFFA5D49A), RoundedCornerShape(50)))
+                Box(Modifier.size(66.dp).align(Alignment.TopStart).offset(x = 22.dp, y = 28.dp).background(Color(0x66FFFFFF), RoundedCornerShape(50)))
+                Box(Modifier.size(42.dp).align(Alignment.TopEnd).offset(x = (-28).dp, y = 48.dp).background(Color(0x77FFFFFF), RoundedCornerShape(50)))
+                Text("WILD", Modifier.align(Alignment.TopCenter).padding(top = 10.dp), color = Color(0xFF6D8B78), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.ExtraBold)
+                PetSprite(
+                    speciesId = enemy!!.id,
+                    shiny = false,
+                    modifier = Modifier.align(Alignment.TopEnd).padding(end = 26.dp, top = 44.dp),
+                    imageSize = if (compact) 104.dp else 122.dp
+                )
+                PetSprite(
+                    speciesId = player.speciesId,
+                    shiny = player.shiny,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(start = 22.dp, bottom = 8.dp),
+                    imageSize = if (compact) 122.dp else 144.dp
+                )
+                Text("내 포켓몬", Modifier.align(Alignment.BottomStart).padding(start = 14.dp, bottom = 2.dp), color = PokeInk, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                if (impactVisible) {
+                    Text(
+                        if (impactToken % 2 == 0) "💥 타격!" else "✨ 기술 발동!",
+                        Modifier.align(Alignment.Center).background(Color(0xDDFFFFFF), RoundedCornerShape(18.dp)).padding(horizontal = 14.dp, vertical = 8.dp),
+                        color = PokePurple,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.ExtraBold
+                    )
+                }
+            }
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = PokeLavender)
+            ) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Column {
+                            Text("내 포켓몬 · Lv.${player.level}", color = PokeInk, fontWeight = FontWeight.Bold)
+                            Text("No. ${player.speciesId}", color = PokeInk, style = MaterialTheme.typography.titleMedium)
+                        }
+                        Text("HP $playerHp / $pMax", color = PokeInk, style = MaterialTheme.typography.labelMedium)
+                    }
+                    LinearProgressIndicator(progress = { playerHp.toFloat() / pMax }, modifier = Modifier.fillMaxWidth(), color = Color(0xFF8A63C7))
+                    Text("공격 ${player.atk} · 방어 ${player.defense} · 속도 ${player.speed}", style = MaterialTheme.typography.bodySmall, color = Color(0xFF766B80))
+                }
             }
         }
         Text("R${(round.coerceAtMost(21))} · $log", color = PokePurple, fontWeight = FontWeight.SemiBold)

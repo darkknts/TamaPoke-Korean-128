@@ -96,6 +96,7 @@ extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlay
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlay(JNIEnv*, jobject) { if (g_pet) g_pet->play(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeClean(JNIEnv*, jobject) { if (g_pet) g_pet->clean(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeCaress(JNIEnv*, jobject) { if (g_pet) g_pet->caress(); }
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlayWithFriend(JNIEnv*, jobject) { if (g_pet) g_pet->playWithFriend(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEggTap(JNIEnv*, jobject) { if (g_pet) g_pet->eggTap(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeToggleSleep(JNIEnv*, jobject) { if (g_pet) g_pet->toggleLight(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEvolve(JNIEnv*, jobject) { if (g_pet) g_pet->evolve(); }

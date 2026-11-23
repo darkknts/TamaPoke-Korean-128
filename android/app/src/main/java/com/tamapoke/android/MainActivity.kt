@@ -602,7 +602,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                 OutlinedButton(
                                     onClick = { showReleaseConfirm = true },
                                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
-                                ) { Text("💔 방출", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                                ) { Text("💗 작별", color = Color(0xFF9B5360), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
                             }
                             if (pet!!.canEvolve) {
                                 OutlinedButton(
@@ -705,7 +705,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         AlertDialog(
             onDismissRequest = { showReleaseConfirm = false },
             title = { Text("포켓몬과 작별할까요?") },
-            text = { Text("현재 진화 단계에서 게임 시간 3일이 지나면 작별할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알에 희귀도와 이로치 확률 보너스가 적용됩니다.") },
+            text = { Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) { PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 1, actionToken = 9001, loopAction = true, modifier = Modifier.size(112.dp)); Text("💞   ✨   🥚", style = MaterialTheme.typography.headlineMedium); Text("소중한 시간을 함께한 포켓몬과 작별합니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알에 희귀도와 이로치 확률 보너스가 적용됩니다.", textAlign = androidx.compose.ui.text.style.TextAlign.Center) } },
             confirmButton = {
                 Button(onClick = {
                     showReleaseConfirm = false
@@ -1147,9 +1147,10 @@ private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onSelect: (DexE
                             }
                             Text(
                                 when {
-                                    entry.shiny -> "✨ 이로치"
-                                    entry.registered -> "발견 완료"
-                                    else -> "미발견"
+                                    entry.normal && entry.shiny -> "일반 ✓  ·  ✨ 이로치 ✓"
+                                    entry.normal -> "일반 ✓  ·  이로치 미발견"
+                                    entry.shiny -> "일반 미발견  ·  ✨ 이로치 ✓"
+                                    else -> "일반 미발견  ·  이로치 미발견"
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (entry.shiny) Color(0xFFB58A32) else Color(0xFF8B8191)
@@ -1244,11 +1245,11 @@ private fun DexDetailScreen(entry: DexEntry, compact: Boolean, onBack: () -> Uni
                 Text("발견 기록", style = MaterialTheme.typography.titleMedium, color = PokeInk, fontWeight = FontWeight.Bold)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("일반 포켓몬", color = Color(0xFF766B80), style = MaterialTheme.typography.bodyMedium)
-                    Text(if (entry.registered) "등록됨" else "미등록", color = PokeInk, fontWeight = FontWeight.Bold)
+                    Text(if (entry.normal) "수집 완료" else "미수집", color = if (entry.normal) Color(0xFF438A63) else PokeInk, fontWeight = FontWeight.Bold)
                 }
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Text("이로치", color = Color(0xFF766B80), style = MaterialTheme.typography.bodyMedium)
-                    Text(if (entry.shiny) "발견 완료" else "미발견", color = if (entry.shiny) Color(0xFFB58A32) else PokeInk, fontWeight = FontWeight.Bold)
+                    Text(if (entry.shiny) "수집 완료" else "미수집", color = if (entry.shiny) Color(0xFFB58A32) else PokeInk, fontWeight = FontWeight.Bold)
                 }
             }
         }

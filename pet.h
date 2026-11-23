@@ -57,6 +57,7 @@ public:
   bool berryKnown = false;  // ya descubrio su baya favorita
   bool shiny = false;       // variante de color rara (se sortea en el huevo)
   uint32_t ageMinutes = 0;
+  uint32_t finalFormAge = 0;  // ageMinutes when the current final evolution was reached
   int16_t speciesId = -1;      // numero de Pokedex (1-151), -1 = huevo
   int16_t prevSpeciesId = -1;  // para la animacion de evolucion
   uint8_t careMistakes = 0;   // descuidos: cada uno retrasa la evolucion 1 nivel

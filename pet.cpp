@@ -395,10 +395,9 @@ bool Pet::canFarewellNow() const {
   if (isEgg() || sleeping || ceremony != CER_NONE || speciesId < 1 || speciesId > DEX_COUNT)
     return false;
 
-  // Offer farewell after three in-game days in the current evolution stage.
-  // Stage 1 / no-evolution species start at hatching; later stages start on evolution.
-  const uint32_t stageStart = finalFormAge > 0 ? finalFormAge : 0;
-  return ageMinutes >= stageStart && ageMinutes - stageStart >= FAREWELL_AGE_MIN;
+  // Three in-game days since hatching or the latest evolution.
+  return ageMinutes >= finalFormAge &&
+         ageMinutes - finalFormAge >= FAREWELL_AGE_MIN;
 }
 
 // abandono total durante 1h: lista para escaparse. La dispara el usuario con el
@@ -464,6 +463,7 @@ bool Pet::canEvolveNow() const {
 void Pet::evolve() {
   if (!canEvolveNow()) return;
   const DexEntry &d = DEX_TBL[speciesId];
+  finalFormAge = ageMinutes; // reset the farewell clock for every newly reached stage
   prevSpeciesId = speciesId;
   int16_t next = d.evolvesTo;
   if (speciesId == DEX_EEVEE) {
@@ -475,7 +475,6 @@ void Pet::evolve() {
     next = n > 0 ? opts[random(n)] : (int16_t)(134 + random(3));
   }
   speciesId = next;
-  if (DEX_TBL[speciesId].evolvesTo == 0) finalFormAge = ageMinutes;
   registerSpecies(speciesId, shiny);
   sfxPlay(SFX_EVOLVE);
   evolveUntil = millis() + EVOLVE_ANIM_MS;
@@ -725,7 +724,8 @@ void Pet::load() {
   strHi = prefs.getUShort("shi", 0);
   prefs.getString("nick", nick, sizeof(nick));
   // Migrate old saves: start the final-form waiting period from this update.
-  if (speciesId >= 1 && DEX_TBL[speciesId].evolvesTo == 0 && finalFormAge == 0) {
+  if (speciesId >= 1 && finalFormAge == 0) {
+    // Legacy saves lack a stage-entry timestamp. Start eligibility from now.
     finalFormAge = ageMinutes;
     save();
   }

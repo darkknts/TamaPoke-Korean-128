@@ -392,7 +392,8 @@ uint16_t Pet::registeredCount() const {
 // despedida la dispara el usuario con el boton (no salta sola, para que la vea)
 bool Pet::canFarewellNow() const {
   return !isEgg() && !sleeping && ceremony == CER_NONE &&
-         DEX_TBL[speciesId].evolvesTo == 0 && ageMinutes >= FAREWELL_AGE_MIN;
+         DEX_TBL[speciesId].evolvesTo == 0 && finalFormAge > 0 &&
+         ageMinutes - finalFormAge >= FAREWELL_AGE_MIN;
 }
 
 // abandono total durante 1h: lista para escaparse. La dispara el usuario con el
@@ -483,6 +484,7 @@ void Pet::evolve() {
     next = n > 0 ? opts[random(n)] : (int16_t)(134 + random(3));
   }
   speciesId = next;
+  if (DEX_TBL[speciesId].evolvesTo == 0) finalFormAge = ageMinutes;
   registerSpecies(speciesId, shiny);
   sfxPlay(SFX_EVOLVE);
   evolveUntil = millis() + EVOLVE_ANIM_MS;
@@ -659,6 +661,7 @@ void Pet::save() {
   prefs.putBool("stpk", starterPick);
   prefs.putBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
   prefs.putUInt("age", ageMinutes);
+  prefs.putUInt("ffage", finalFormAge);
   prefs.putShort("dexn", speciesId);
   prefs.putShort("eggT2", eggTarget);
   prefs.putUChar("crack", eggTaps);
@@ -703,6 +706,7 @@ void Pet::load() {
   starterPick = prefs.getBool("stpk", false);
   prefs.getBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
   ageMinutes = prefs.getUInt("age", 0);
+  finalFormAge = prefs.getUInt("ffage", 0);
   if (prefs.isKey("dexn")) {
     speciesId = prefs.getShort("dexn", -1);
     eggTarget = prefs.getShort("eggT2", 4);
@@ -729,6 +733,11 @@ void Pet::load() {
   gameHi = prefs.getUShort("ghi", 0);
   strHi = prefs.getUShort("shi", 0);
   prefs.getString("nick", nick, sizeof(nick));
+  // Migrate old saves: start the final-form waiting period from this update.
+  if (speciesId >= 1 && DEX_TBL[speciesId].evolvesTo == 0 && finalFormAge == 0) {
+    finalFormAge = ageMinutes;
+    save();
+  }
   // siembra: la mascota actual cuenta como criada (guardados antiguos)
   if (speciesId >= 1) registerSpecies(speciesId, shiny);
 }

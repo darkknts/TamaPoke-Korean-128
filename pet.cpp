@@ -703,11 +703,6 @@ void Pet::load() {
   starterPick = prefs.getBool("stpk", false);
   firstPetCycle = prefs.getBool("firstpet", false);
   prefs.getBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
-  if (prefs.isKey("dexnorm")) prefs.getBytes("dexnorm", dexNormalReg, sizeof(dexNormalReg));
-  else {
-    memcpy(dexNormalReg, dexReg, sizeof(dexNormalReg));
-    for (int i = 0; i < 19; ++i) dexNormalReg[i] &= (uint8_t)~dexShinyReg[i];
-  }
   ageMinutes = prefs.getUInt("age", 0);
   finalFormAge = prefs.getUInt("ffage", 0);
   if (prefs.isKey("dexn")) {
@@ -726,6 +721,11 @@ void Pet::load() {
   sleeping = prefs.getBool("sleep", false);
   lastEnd = prefs.getUChar("lend", CER_NONE);
   prefs.getBytes("dexreg", dexReg, sizeof(dexReg));
+  if (prefs.isKey("dexnorm")) prefs.getBytes("dexnorm", dexNormalReg, sizeof(dexNormalReg));
+  else {
+    memcpy(dexNormalReg, dexReg, sizeof(dexNormalReg));
+    for (int i = 0; i < 19; ++i) dexNormalReg[i] &= (uint8_t)~dexShinyReg[i];
+  }
   streak = prefs.getUShort("strk", 0);
   bestStreak = prefs.getUShort("bstrk", 0);
   lastCareDay = prefs.getUInt("cday", 0);
@@ -744,4 +744,5 @@ void Pet::load() {
   }
   // siembra: la mascota actual cuenta como criada (guardados antiguos)
   if (speciesId >= 1) registerSpecies(speciesId, shiny);
+  save();
 }

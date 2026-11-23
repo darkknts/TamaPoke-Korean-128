@@ -111,6 +111,8 @@ public:
   void syncClock(uint32_t nowEpoch);  // aplica el tiempo transcurrido apagado
   void setClock(uint32_t nowEpoch);   // fija la hora sin aplicar progresion
   void startFarewell();  // tambien usable desde la consola serie (BYE)
+  // Compatibilidad con la antigua accion de soltar: ahora respeta las reglas de despedida.
+  void release() { startFarewell(); }
   void startRunaway();   // tambien usable desde la consola serie (RUN)
 
   bool isEgg() const { return speciesId < 0; }
@@ -143,6 +145,8 @@ public:
     uint32_t lv = 1 + ageMinutes / MINUTES_PER_LEVEL;
     return lv > 999 ? 999 : (uint16_t)lv;
   }
+  // Publico para pruebas de registro de variantes normal e shiny.
+  void registerSpecies(int16_t dex, bool isShiny = false);
   bool isRegistered(int16_t dex) const {
     return dex >= 1 && dex <= 151 && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
@@ -207,7 +211,6 @@ private:
   void checkMedals();
   void tick();
   void hatch();
-  void registerSpecies(int16_t dex, bool isShiny = false);
   void save();
   void load();
   static uint8_t clamp100(int v) { return v < 0 ? 0 : (v > 100 ? 100 : v); }

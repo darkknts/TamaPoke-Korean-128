@@ -725,6 +725,27 @@ TEST(medals, el_total_acumula_entre_crianzas) {
 }
 
 // ---------------------------------------------------------------- ceremonias
+TEST(ceremony, primer_companero_solo_puede_despedirse_en_forma_final) {
+  Pet p;
+  makePet(p, 4);
+  p.firstPetCycle = true;
+  p.ageMinutes = FAREWELL_AGE_MIN * 5;
+  CHECK(!p.canFarewellNow());
+  p.evolve();
+  CHECK(!p.canFarewellNow());
+  p.evolve();
+  p.ageMinutes = p.finalFormAge + FAREWELL_AGE_MIN;
+  CHECK(p.canFarewellNow());
+}
+
+TEST(ceremony, siguiente_companero_puede_despedirse_en_cualquier_etapa) {
+  Pet p;
+  makePet(p, 4);
+  p.firstPetCycle = false;
+  p.ageMinutes = FAREWELL_AGE_MIN;
+  CHECK(p.canFarewellNow());
+}
+
 TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
   Pet first;
   makePet(first, 25); // one-stage species

@@ -12,7 +12,7 @@
 #define HEART_MS 1500UL
 #define EVOLVE_ANIM_MS 5200UL              // animacion de evolucion (mas larga = mas epica)
 #define CEREMONY_MS 10000UL                // duracion de la despedida en pantalla
-#define FAREWELL_AGE_MIN (3UL * 24 * 60)   // se despide a los 3 dias de juego (en forma final)
+#define FAREWELL_AGE_MIN (3UL * 24 * 60)   // three in-game days in the current evolution stage
 #define RUNAWAY_TICKS (14UL * 24UL * 60UL) // 14 dias con TODO a cero
 
 // milisegundos que faltan hasta `deadline` (0 si ya paso, o si deadline==0:
@@ -30,7 +30,7 @@ static inline uint32_t timeLeft(uint32_t deadline) {
 }
 
 // ceremonias de fin de ciclo
-enum : uint8_t { CER_NONE = 0, CER_FAREWELL, CER_RUNAWAY, CER_RELEASE };
+enum : uint8_t { CER_NONE = 0, CER_FAREWELL, CER_RUNAWAY };
 
 enum PetMood : uint8_t { MOOD_HAPPY, MOOD_SAD, MOOD_EATING, MOOD_SLEEPING };
 
@@ -106,7 +106,6 @@ public:
   void playWithFriend();  // tocar al bicho
   void eggTap();  // tocar el huevo: 3 toques y eclosiona
   void newEgg();   // empezar de cero con un inicial aleatorio
-  void release();  // soltar (pulsacion larga + confirmar)
   void syncClock(uint32_t nowEpoch);  // aplica el tiempo transcurrido apagado
   void setClock(uint32_t nowEpoch);   // fija la hora sin aplicar progresion
   void startFarewell();  // tambien usable desde la consola serie (BYE)
@@ -124,7 +123,6 @@ public:
   void evolve();              // dispara la transformacion (la llama un toque del usuario)
   bool canFarewellNow() const;  // forma final + 7 dias: lista para despedirse (boton)
   bool canRunawayNow() const;   // abandono total 14 dias: lista para escaparse (boton triste)
-  bool canReleaseNow() const;   // manual release when awake and no ceremony is active
   // el usuario decide en un dialogo; "mantener/quedaros" pospone y re-ofrece luego
   bool wantEvolveButton() const { return canEvolveNow() && level() > evoDeclinedLv; }
   bool wantFarewellButton() const { return canFarewellNow() && ageMinutes >= farDeclinedAge; }

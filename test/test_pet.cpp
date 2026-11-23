@@ -727,26 +727,37 @@ TEST(medals, el_total_acumula_entre_crianzas) {
 // ---------------------------------------------------------------- ceremonias
 TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
   Pet first;
-  makePet(first, 25);
+  makePet(first, 25); // one-stage species
+  first.finalFormAge = 0;
   first.ageMinutes = FAREWELL_AGE_MIN - 1;
   CHECK(!first.canFarewellNow());
-  first.ageMinutes = FAREWELL_AGE_MIN;
+  first.ageMinutes++;
   CHECK(first.canFarewellNow());
 
   Pet second;
-  makePet(second, 5);
-  second.ageMinutes = FAREWELL_AGE_MIN - 1;
+  makePet(second, 5); // second evolution stage
+  second.finalFormAge = 150;
+  second.ageMinutes = 150 + FAREWELL_AGE_MIN - 1;
   CHECK(!second.canFarewellNow());
-  second.ageMinutes = FAREWELL_AGE_MIN;
+  second.ageMinutes++;
   CHECK(second.canFarewellNow());
 
   Pet final;
-  makePet(final, 6);
-  final.finalFormAge = 100;
-  final.ageMinutes = 100 + FAREWELL_AGE_MIN - 1;
+  makePet(final, 6); // final evolution stage
+  final.finalFormAge = 500;
+  final.ageMinutes = 500 + FAREWELL_AGE_MIN - 1;
   CHECK(!final.canFarewellNow());
   final.ageMinutes++;
   CHECK(final.canFarewellNow());
+}
+
+TEST(ceremony, evolucion_reinicia_el_reloj_de_despedida) {
+  Pet p;
+  makePet(p, 5);
+  p.ageMinutes = 700;
+  p.evolve();
+  CHECK_EQ(p.finalFormAge, (uint32_t)700);
+  CHECK(!p.canFarewellNow());
 }
 
 TEST(ceremony, la_despedida_deja_un_huevo_nuevo) {

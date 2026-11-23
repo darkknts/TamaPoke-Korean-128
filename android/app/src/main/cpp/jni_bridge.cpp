@@ -76,12 +76,13 @@ Java_com_tamapoke_android_PetNative_nativeGetDexState(JNIEnv* env, jobject) {
     json += "[";
     for (int dex = 1; dex <= DEX_COUNT; ++dex) {
         if (dex > 1) json += ",";
-        char item[192];
+        char item[224];
         const char* name = DEX_NAME_KO[dex] ? DEX_NAME_KO[dex] : DEX_TBL[dex].name;
         std::snprintf(item, sizeof(item),
             "{\"id\":%d,\"name\":\"%s\",\"registered\":%s,\"shiny\":%s,\"hp\":%u,\"atk\":%u,\"def\":%u,\"speed\":%u,\"rarity\":%u}",
             dex, name, g_pet->isRegistered(dex) ? "true" : "false",
-            g_pet->isShinyRegistered(dex) ? "true" : "false", DEX_TBL[dex].bHp,
+            g_pet->isNormalRegistered(dex) ? "true" : "false",
+            g_pet->isShinyRegistered(dex) ? "true" : "false", DEX_TBL[dex].evolvesTo, DEX_TBL[dex].bHp,
             DEX_TBL[dex].bAtk, DEX_TBL[dex].bDef, DEX_TBL[dex].bSpe, DEX_TBL[dex].rarity);
         json += item;
     }

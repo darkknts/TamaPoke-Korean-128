@@ -729,11 +729,14 @@ TEST(ceremony, primer_companero_solo_puede_despedirse_en_forma_final) {
   Pet p;
   makePet(p, 4);
   p.firstPetCycle = true;
-  p.ageMinutes = FAREWELL_AGE_MIN * 5;
+  setStats(p, 100, 100, 100, 100);
+  p.ageMinutes = 900; // level 16
   CHECK(!p.canFarewellNow());
   p.evolve();
   CHECK(!p.canFarewellNow());
+  p.ageMinutes = 2100; // level 36
   p.evolve();
+  CHECK(!p.canFarewellNow());
   p.ageMinutes = p.finalFormAge + FAREWELL_AGE_MIN;
   CHECK(p.canFarewellNow());
 }

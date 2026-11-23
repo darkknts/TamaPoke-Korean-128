@@ -47,7 +47,7 @@ Java_com_tamapoke_android_PetNative_nativeGetState(JNIEnv* env, jobject) {
         "{\"egg\":%s,\"speciesId\":%d,\"biome\":%d,\"level\":%u,\"fullness\":%u,\"joy\":%u,\"energy\":%u,\"hygiene\":%u,\"ageMinutes\":%u,\"canEvolve\":%s,\"canFarewell\":%s,\"sleeping\":%s,\"ceremony\":%u,\"ceremonyT\":%.3f,\"shiny\":%s,\"starterPick\":%s,\"atk\":%u,\"def\":%u,\"speed\":%u,\"bond\":%u,\"streak\":%u,\"medals\":%u,\"registeredCount\":%u,\"nextLevelMinutes\":%u}",
         g_pet->isEgg() ? "true" : "false", g_pet->speciesId, biome, g_pet->level(),
         g_pet->fullness, g_pet->joy, g_pet->energy, g_pet->hygiene, g_pet->ageMinutes,
-        g_pet->canEvolveNow() ? "true" : "false", g_pet->canFarewellNow() ? "true" : "false", g_pet->sleeping ? "true" : "false", g_pet->ceremony, g_pet->ceremonyT(), g_pet->shiny ? "true" : "false",
+        g_pet->canEvolveNow() ? "true" : "false", g_pet->canFarewellNow() ? "true" : "false", g_pet->sleeping ? "true" : "false", static_cast<unsigned>(g_pet->ceremony), g_pet->ceremonyT(), g_pet->shiny ? "true" : "false",
         g_pet->awaitingStarter() ? "true" : "false", g_pet->atkStat(), g_pet->defStat(), g_pet->speStat(),
         g_pet->bond, g_pet->streak, g_pet->medals, g_pet->registeredCount(), nextLevelMinutes);
     return env->NewStringUTF(json);

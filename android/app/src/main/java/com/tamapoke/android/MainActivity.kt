@@ -598,7 +598,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            // 버튼 순서를 고정: 방출 → 진화 → 미니게임
+                            // 버튼 순서를 고정: 작별 → 진화 → 미니게임
                             if (pet!!.canFarewell) {
                                 OutlinedButton(
                                     onClick = { showReleaseConfirm = true },
@@ -939,7 +939,7 @@ private fun GameManualScreen(compact: Boolean, onBack: () -> Unit) {
         ManualCard("도감", "도감에서 151종의 발견 여부를 확인할 수 있습니다. 발견한 포켓몬을 선택하면 상세 정보와 이로치 발견 여부를 확인할 수 있습니다.")
         ManualCard("성장 리포트와 메달", "성장 화면에서 전투 능력치, 친밀도, 연속 돌봄, 메달 및 도감 등록 수를 확인할 수 있습니다. 메달 화면에서 8종의 업적 달성 여부를 볼 수 있습니다.")
         Text("작별과 새 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
-        ManualCard("작별", "1차 진화가 없는 포켓몬은 부화 후, 2차 진화형은 해당 형태가 된 후, 최종 진화형은 최종 진화 후 게임 시간 3일이 지나면 작별을 선택할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알의 희귀도와 이로치 확률에 보너스가 적용됩니다.")
+        ManualCard("작별", "처음 만난 파트너는 마지막 진화까지 성장한 뒤 게임 시간 3일이 지나면 작별할 수 있습니다. 이후 만나는 포켓몬은 1차·2차 등 현재 진화 단계에서 3일이 지나면 작별할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알의 희귀도와 이로치 확률에 보너스가 적용됩니다.")
         ManualCard("도주", "돌봄 수치가 모두 0인 상태가 14일 지속되면 도주할 수 있으며, 도주 후 새 알은 일반 등급으로 제한됩니다.")
         Text("설정과 저장 데이터", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("효과음과 진동", "설정 화면에서 효과음과 진동 피드백을 각각 켜거나 끌 수 있습니다.")

@@ -723,8 +723,7 @@ void Pet::load() {
   prefs.getBytes("dexreg", dexReg, sizeof(dexReg));
   if (prefs.isKey("dexnorm")) prefs.getBytes("dexnorm", dexNormalReg, sizeof(dexNormalReg));
   else {
-    memcpy(dexNormalReg, dexReg, sizeof(dexNormalReg));
-    for (int i = 0; i < 19; ++i) dexNormalReg[i] &= (uint8_t)~dexShinyReg[i];
+    memcpy(dexNormalReg, dexReg, sizeof(dexNormalReg)); // legacy saves had no variant split; preserve old entries as collected
   }
   streak = prefs.getUShort("strk", 0);
   bestStreak = prefs.getUShort("bstrk", 0);

@@ -392,8 +392,8 @@ uint16_t Pet::registeredCount() const {
   return n;
 }
 
-// forma final que ya cumplio su ciclo (7 dias): lista para despedirse. La
-// despedida la dispara el usuario con el boton (no salta sola, para que la vea)
+// Primera mascota: solo puede despedirse tras alcanzar la forma final.
+// Las mascotas siguientes pueden despedirse tras tres dias en cualquier etapa.
 bool Pet::canFarewellNow() const {
   if (isEgg() || sleeping || ceremony != CER_NONE || speciesId < 1 || speciesId > DEX_COUNT)
     return false;

@@ -529,6 +529,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         }
                     }
+                    EvolutionTrack(entries = dexEntries, currentId = pet!!.speciesId, compact = compactLayout)
                     Box(
                         modifier = Modifier.fillMaxWidth().height(if (compactLayout) 104.dp else 132.dp)
                             .clip(RoundedCornerShape(24.dp))
@@ -1087,6 +1088,69 @@ private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier)
         }
     }
 }
+@Composable
+private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boolean) {
+    val path = remember(entries, currentId) {
+        val byId = entries.associateBy { it.id }
+        val ancestors = mutableListOf<Int>()
+        var cursor = currentId
+        repeat(3) {
+            val previous = entries.firstOrNull { it.evolvesTo == cursor }?.id
+            if (previous != null && previous !in ancestors) {
+                ancestors.add(previous)
+                cursor = previous
+            }
+        }
+        val result = ancestors.asReversed().toMutableList()
+        if (currentId !in result) result.add(currentId)
+        cursor = currentId
+        repeat(3) {
+            val next = byId[cursor]?.evolvesTo ?: 0
+            if (next > 0 && next !in result) {
+                result.add(next)
+                cursor = next
+            }
+        }
+        result
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.width(7.dp))
+        path.forEachIndexed { index, id ->
+            val entry = entries.firstOrNull { it.id == id }
+            val known = entry?.registered == true
+            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                if (known) {
+                    PetSprite(speciesId = id, shiny = entry?.shiny == true, modifier = Modifier.size(if (compact) 25.dp else 30.dp), imageSize = if (compact) 24.dp else 28.dp)
+                } else {
+                    Box(
+                        modifier = Modifier.size(if (compact) 25.dp else 30.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFFE7E1EA)),
+                        contentAlignment = Alignment.Center
+                    ) { Text("??", color = Color(0xFF8F8795), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
+                }
+                Text(
+                    when {
+                        id == currentId -> "현재"
+                        index == 0 -> "1차"
+                        index == path.lastIndex -> "최종"
+                        else -> "${index + 1}차"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (id == currentId) PokePurple else Color(0xFF8B8191),
+                    fontWeight = if (id == currentId) FontWeight.Bold else FontWeight.Normal
+                )
+            }
+            if (index < path.lastIndex) {
+                Text("›", modifier = Modifier.padding(horizontal = 3.dp), color = Color(0xFFAAA1B0), fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
 @Composable
 private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onSelect: (DexEntry) -> Unit, onBack: () -> Unit) {
     val registeredCount = entries.count { it.registered }

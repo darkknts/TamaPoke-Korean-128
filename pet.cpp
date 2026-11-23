@@ -16,6 +16,7 @@ void Pet::begin() {
 void Pet::newEgg() {
   ceremony = CER_NONE;
   neglectTicks = 0;
+  finalFormAge = 0;
   weight = 0;
   speciesId = -1;
   prevSpeciesId = -1;
@@ -391,9 +392,13 @@ uint16_t Pet::registeredCount() const {
 // forma final que ya cumplio su ciclo (7 dias): lista para despedirse. La
 // despedida la dispara el usuario con el boton (no salta sola, para que la vea)
 bool Pet::canFarewellNow() const {
-  return !isEgg() && !sleeping && ceremony == CER_NONE &&
-         DEX_TBL[speciesId].evolvesTo == 0 && finalFormAge > 0 &&
-         ageMinutes - finalFormAge >= FAREWELL_AGE_MIN;
+  if (isEgg() || sleeping || ceremony != CER_NONE || speciesId < 1 || speciesId > DEX_COUNT)
+    return false;
+
+  // Offer farewell after three in-game days in the current evolution stage.
+  // Stage 1 / no-evolution species start at hatching; later stages start on evolution.
+  const uint32_t stageStart = finalFormAge > 0 ? finalFormAge : 0;
+  return ageMinutes >= stageStart && ageMinutes - stageStart >= FAREWELL_AGE_MIN;
 }
 
 // abandono total durante 1h: lista para escaparse. La dispara el usuario con el
@@ -403,7 +408,7 @@ bool Pet::canRunawayNow() const {
 }
 
 void Pet::startFarewell() {
-  if (isEgg() || ceremony != CER_NONE) return;
+  if (!canFarewellNow()) return;
   lastEnd = CER_FAREWELL;
   ceremony = CER_FAREWELL;
   ceremonyUntil = millis() + CEREMONY_MS;
@@ -417,20 +422,6 @@ void Pet::startRunaway() {
   lastEnd = CER_RUNAWAY;
   ceremony = CER_RUNAWAY;
   ceremonyUntil = millis() + CEREMONY_MS;
-  sfxPlay(SFX_BYE);
-  save();
-}
-
-bool Pet::canReleaseNow() const {
-  return !isEgg() && level() >= 5 && !sleeping && ceremony == CER_NONE;
-}
-
-void Pet::release() {
-  if (!canReleaseNow()) return;
-  lastEnd = CER_RELEASE;
-  ceremony = CER_RELEASE;
-  ceremonyUntil = millis() + CEREMONY_MS;
-  heartUntil = ceremonyUntil;
   sfxPlay(SFX_BYE);
   save();
 }

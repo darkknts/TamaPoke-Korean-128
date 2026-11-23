@@ -725,18 +725,28 @@ TEST(medals, el_total_acumula_entre_crianzas) {
 }
 
 // ---------------------------------------------------------------- ceremonias
-TEST(ceremony, despedida_solo_en_forma_final_y_a_los_3_dias) {
-  Pet p;
-  makePet(p, 6);  // CHARIZARD, forma final
-  p.ageMinutes = FAREWELL_AGE_MIN - 1;
-  CHECK(!p.canFarewellNow());
-  p.ageMinutes = FAREWELL_AGE_MIN;
-  CHECK(p.canFarewellNow());
+TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
+  Pet first;
+  makePet(first, 25);
+  first.ageMinutes = FAREWELL_AGE_MIN - 1;
+  CHECK(!first.canFarewellNow());
+  first.ageMinutes = FAREWELL_AGE_MIN;
+  CHECK(first.canFarewellNow());
 
-  Pet q;
-  makePet(q, 4);  // CHARMANDER no es forma final
-  q.ageMinutes = FAREWELL_AGE_MIN * 3;
-  CHECK(!q.canFarewellNow());
+  Pet second;
+  makePet(second, 5);
+  second.ageMinutes = FAREWELL_AGE_MIN - 1;
+  CHECK(!second.canFarewellNow());
+  second.ageMinutes = FAREWELL_AGE_MIN;
+  CHECK(second.canFarewellNow());
+
+  Pet final;
+  makePet(final, 6);
+  final.finalFormAge = 100;
+  final.ageMinutes = 100 + FAREWELL_AGE_MIN - 1;
+  CHECK(!final.canFarewellNow());
+  final.ageMinutes++;
+  CHECK(final.canFarewellNow());
 }
 
 TEST(ceremony, la_despedida_deja_un_huevo_nuevo) {
@@ -793,15 +803,18 @@ TEST(ceremony, durante_la_ceremonia_no_se_puede_interactuar) {
   CHECK(!p.sleeping);
 }
 
-TEST(ceremony, soltar_marca_el_final_como_liberacion) {
+TEST(ceremony, todas_las_salidas_usan_despedida_y_bonus) {
   Pet p;
-  makePet(p, 4);
-  p.release();
-  CHECK_EQ(p.ceremony, (uint8_t)CER_RELEASE);
-  CHECK_EQ(p.lastEnd, (uint8_t)CER_RELEASE);
+  makePet(p, 25);
+  p.ageMinutes = FAREWELL_AGE_MIN;
+  CHECK(p.canFarewellNow());
+  p.startFarewell();
+  CHECK_EQ(p.ceremony, (uint8_t)CER_FAREWELL);
+  CHECK_EQ(p.lastEnd, (uint8_t)CER_FAREWELL);
   mockAdvanceMillis(CEREMONY_MS + 1);
   p.update(millis());
   CHECK(p.isEgg());
+  CHECK_EQ(p.lastEnd, (uint8_t)CER_FAREWELL);
 }
 
 TEST(ceremony, un_huevo_no_se_despide_ni_se_suelta) {

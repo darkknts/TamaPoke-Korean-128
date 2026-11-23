@@ -56,8 +56,9 @@ public:
   uint8_t trAtk = 0, trDef = 0, trSpe = 0;
   bool berryKnown = false;  // ya descubrio su baya favorita
   bool shiny = false;       // variante de color rara (se sortea en el huevo)
+  bool firstPetCycle = false; // primera mascota: solo se despide al alcanzar la forma final
   uint32_t ageMinutes = 0;
-  uint32_t finalFormAge = 0;  // ageMinutes when the current final evolution was reached
+  uint32_t finalFormAge = 0;  // ageMinutes when the current evolution stage was reached
   int16_t speciesId = -1;      // numero de Pokedex (1-151), -1 = huevo
   int16_t prevSpeciesId = -1;  // para la animacion de evolucion
   uint8_t careMistakes = 0;   // descuidos: cada uno retrasa la evolucion 1 nivel
@@ -65,8 +66,9 @@ public:
   uint32_t lastSeenEpoch = 0;   // ultima hora RTC vista (para progresion offline)
   uint8_t ceremony = CER_NONE;  // despedida/escapada/liberacion en curso
   uint8_t lastEnd = CER_NONE;   // como acabo la anterior (afecta al huevo)
-  uint8_t dexReg[19] = { 0 };       // pokedex de criados (bitmap 151 bits)
-  uint8_t dexShinyReg[19] = { 0 };  // criados en version shiny
+  uint8_t dexReg[19] = { 0 };       // especies descubiertas (bitmap 151 bits)
+  uint8_t dexNormalReg[19] = { 0 }; // variante normal descubierta
+  uint8_t dexShinyReg[19] = { 0 };  // variante shiny descubierta
   // racha de cuidado diario (del jugador: persiste entre crianzas)
   uint16_t streak = 0, bestStreak = 0;
   uint32_t lastCareDay = 0;
@@ -143,6 +145,9 @@ public:
   }
   bool isRegistered(int16_t dex) const {
     return dex >= 1 && dex <= 151 && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+  }
+  bool isNormalRegistered(int16_t dex) const {
+    return dex >= 1 && dex <= 151 && (dexNormalReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   bool isShinyRegistered(int16_t dex) const {
     return dex >= 1 && dex <= 151 && (dexShinyReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));

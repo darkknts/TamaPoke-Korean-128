@@ -17,6 +17,8 @@ void Pet::newEgg() {
   ceremony = CER_NONE;
   neglectTicks = 0;
   finalFormAge = 0;
+  firstPetCycle = prefs.getBool("firstpet", true);
+  if (lastEnd == CER_FAREWELL) firstPetCycle = false;
   weight = 0;
   speciesId = -1;
   prevSpeciesId = -1;
@@ -273,6 +275,7 @@ void Pet::registerSpecies(int16_t dex, bool isShiny) {
   if (dex < 1 || dex > 151) return;
   dexReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
   if (isShiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+  else dexNormalReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
 }
 
 void Pet::applyBattleWin(int16_t wildDex, bool closeWin) {
@@ -395,7 +398,9 @@ bool Pet::canFarewellNow() const {
   if (isEgg() || sleeping || ceremony != CER_NONE || speciesId < 1 || speciesId > DEX_COUNT)
     return false;
 
-  // Three in-game days since hatching or the latest evolution.
+  // The very first partner must reach its final evolution before farewell.
+  if (firstPetCycle && DEX_TBL[speciesId].evolvesTo != 0) return false;
+  // Later partners can be farewelled after three in-game days in any stage.
   return ageMinutes >= finalFormAge &&
          ageMinutes - finalFormAge >= FAREWELL_AGE_MIN;
 }
@@ -649,6 +654,8 @@ void Pet::save() {
   prefs.putBool("shy", shiny);
   prefs.putBool("eshy", eggShiny);
   prefs.putBool("stpk", starterPick);
+  prefs.putBool("firstpet", firstPetCycle);
+  prefs.putBytes("dexnorm", dexNormalReg, sizeof(dexNormalReg));
   prefs.putBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
   prefs.putUInt("age", ageMinutes);
   prefs.putUInt("ffage", finalFormAge);
@@ -694,7 +701,13 @@ void Pet::load() {
   shiny = prefs.getBool("shy", false);
   eggShiny = prefs.getBool("eshy", false);
   starterPick = prefs.getBool("stpk", false);
+  firstPetCycle = prefs.getBool("firstpet", false);
   prefs.getBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
+  if (prefs.isKey("dexnorm")) prefs.getBytes("dexnorm", dexNormalReg, sizeof(dexNormalReg));
+  else {
+    memcpy(dexNormalReg, dexReg, sizeof(dexNormalReg));
+    for (int i = 0; i < 19; ++i) dexNormalReg[i] &= (uint8_t)~dexShinyReg[i];
+  }
   ageMinutes = prefs.getUInt("age", 0);
   finalFormAge = prefs.getUInt("ffage", 0);
   if (prefs.isKey("dexn")) {

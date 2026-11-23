@@ -702,6 +702,37 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             }
         )
     }
+    if (pet?.ceremony == 1) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("💗 작별의 시간") },
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    PetSprite(
+                        speciesId = pet?.speciesId ?: 1,
+                        shiny = pet?.shiny ?: false,
+                        actionId = 1,
+                        actionToken = 9901,
+                        loopAction = true,
+                        modifier = Modifier.size(132.dp)
+                    )
+                    Text("함께한 추억을 안고 새로운 모험을 떠나요", textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                    LinearProgressIndicator(
+                        progress = { pet?.ceremonyT ?: 0f },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = PokePurple,
+                        trackColor = PokeLavender
+                    )
+                    Text("새 알을 준비하고 있어요…", style = MaterialTheme.typography.labelSmall, color = PokePurple)
+                }
+            },
+            confirmButton = { Text("작별 중…", color = PokePurple, fontWeight = FontWeight.Bold) }
+        )
+    }
     if (showReleaseConfirm) {
         AlertDialog(
             onDismissRequest = { showReleaseConfirm = false },

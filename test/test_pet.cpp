@@ -29,6 +29,20 @@ static void setStats(Pet &p, uint8_t f, uint8_t j, uint8_t e, uint8_t h) {
 }
 
 // ---------------------------------------------------------------- huevo
+TEST(dex, normal_and_shiny_collection_are_tracked_separately) {
+  Pet normalPet;
+  normalPet.registerSpecies(25, false);
+  CHECK(normalPet.isRegistered(25));
+  CHECK(normalPet.isNormalRegistered(25));
+  CHECK(!normalPet.isShinyRegistered(25));
+
+  Pet shinyPet;
+  shinyPet.registerSpecies(25, true);
+  CHECK(shinyPet.isRegistered(25));
+  CHECK(!shinyPet.isNormalRegistered(25));
+  CHECK(shinyPet.isShinyRegistered(25));
+}
+
 TEST(egg, primera_partida_pide_inicial) {
   mockNvsReset();
   Pet p;

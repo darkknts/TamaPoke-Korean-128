@@ -491,24 +491,39 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     verticalArrangement = Arrangement.spacedBy(if (compactLayout) 1.dp else 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 46.dp else 52.dp),
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 52.dp else 58.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
-                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Text("No. ${pet!!.speciesId.toString().padStart(3, '0')}", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = PokePurple)
-                            Text(
-                                dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
-                                modifier = Modifier.weight(1f),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = PokeInk,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                maxLines = 1
-                            )
-                        }
+                            Box(modifier = Modifier.fillMaxWidth().height(if (compactLayout) 30.dp else 34.dp)) {
+                                Text(
+                                    "No. ${pet!!.speciesId.toString().padStart(3, '0')}",
+                                    modifier = Modifier.align(Alignment.CenterStart),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = PokePurple
+                                )
+                                Text(
+                                    dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
+                                    modifier = Modifier.fillMaxWidth().align(Alignment.Center).padding(horizontal = 48.dp),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = PokeInk,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                    maxLines = 1
+                                )
+                                if (pet!!.shiny) {
+                                    Text(
+                                        "✨ 이로치",
+                                        modifier = Modifier.align(Alignment.CenterEnd),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = Color(0xFFB58A32)
+                                    )
+                                }
+                            }
                         }
                         Surface(color = Color.White, shape = RoundedCornerShape(50)) {
                             Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
@@ -583,7 +598,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Text("포켓몬 돌보기", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                             // 버튼 순서를 고정: 방출 → 진화 → 미니게임
-                            if (pet!!.canRelease) {
+                            if (pet!!.canFarewell) {
                                 OutlinedButton(
                                     onClick = { showReleaseConfirm = true },
                                     contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)
@@ -689,13 +704,13 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     if (showReleaseConfirm) {
         AlertDialog(
             onDismissRequest = { showReleaseConfirm = false },
-            title = { Text("포켓몬을 방출할까요?") },
-            text = { Text("방출하면 현재 포켓몬과의 기록을 마무리하고, 10초간 작별 의식이 진행된 뒤 새로운 알을 받습니다. 이 작업은 되돌릴 수 없습니다.") },
+            title = { Text("포켓몬과 작별할까요?") },
+            text = { Text("최종 진화 후 3일이 지나 작별할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알에 희귀도와 이로치 확률 보너스가 적용됩니다.") },
             confirmButton = {
                 Button(onClick = {
                     showReleaseConfirm = false
-                    performPetAction(7) { PetNative.release() }
-                }) { Text("방출하기") }
+                    performPetAction(7) { PetNative.farewell() }
+                }) { Text("작별하기") }
             },
             dismissButton = {
                 OutlinedButton(onClick = { showReleaseConfirm = false }) { Text("취소") }

@@ -496,7 +496,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Column(
-                            modifier = Modifier.width(if (compactLayout) 104.dp else 118.dp).padding(start = 4.dp, top = 5.dp),
+                            modifier = Modifier.width(if (compactLayout) 104.dp else 118.dp).padding(start = 8.dp, top = 7.dp),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
@@ -510,7 +510,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                             Text(
                                 dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
-                                modifier = Modifier.align(Alignment.TopCenter).padding(top = if (compactLayout) 0.dp else 1.dp),
+                                modifier = Modifier.align(Alignment.TopCenter).padding(top = 0.dp),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = PokeInk,
@@ -531,42 +531,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                     fontWeight = FontWeight.ExtraBold,
                                     color = Color(0xFFB58A32)
                                 )
-                            }
-                        }
-                    } {
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                            Text("나의 파트너", modifier = Modifier.padding(top = 3.dp), style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
-                            Box(modifier = Modifier.fillMaxWidth().height(if (compactLayout) 38.dp else 42.dp)) {
-                                Text(
-                                    "No. ${pet!!.speciesId.toString().padStart(3, '0')}",
-                                    modifier = Modifier.align(Alignment.CenterStart),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = PokePurple
-                                )
-                                Row(
-                                    modifier = Modifier.align(Alignment.Center).padding(start = if (pet!!.shiny) 62.dp else 50.dp, end = if (pet!!.shiny) 46.dp else 34.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(if (compactLayout) 5.dp else 8.dp)
-                                ) {
-                                    Text(
-                                        dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
-                                        style = MaterialTheme.typography.titleLarge,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = PokeInk,
-                                        maxLines = 1
-                                    )
-                                    EvolutionTrack(entries = dexEntries, currentId = pet!!.speciesId, compact = compactLayout, inline = true)
-                                }
-                                if (pet!!.shiny) {
-                                    Text(
-                                        "✨ 이로치",
-                                        modifier = Modifier.align(Alignment.CenterEnd),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = Color(0xFFB58A32)
-                                    )
-                                }
                             }
                         }
                         Surface(color = Color.White, shape = RoundedCornerShape(50)) {

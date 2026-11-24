@@ -767,7 +767,8 @@ TEST(ceremony, siguiente_companero_puede_despedirse_en_cualquier_etapa) {
 
 TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
   Pet first;
-  makePet(first, 25); // one-stage species
+  makePet(first, 25); // species with an evolution; stage timer is tested for a subsequent pet
+  first.firstPetCycle = false;
   first.finalFormAge = 0;
   first.ageMinutes = FAREWELL_AGE_MIN - 1;
   CHECK(!first.canFarewellNow());

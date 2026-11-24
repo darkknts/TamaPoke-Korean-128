@@ -800,7 +800,7 @@ TEST(ceremony, evolucion_reinicia_el_reloj_de_despedida) {
   setStats(p, 100, 100, 100, 100);
   p.ageMinutes = 2160; // level 37: Charmeleon can evolve to Charizard
   p.evolve();
-  CHECK_EQ(p.finalFormAge, (uint32_t)700);
+  CHECK_EQ(p.finalFormAge, (uint32_t)2160);
   CHECK(!p.canFarewellNow());
 }
 

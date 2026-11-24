@@ -1163,7 +1163,13 @@ private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier)
     }
 }
 @Composable
-private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boolean, inline: Boolean = false, modifier: Modifier = Modifier) {
+private fun EvolutionTrack(
+    entries: List<DexEntry>,
+    currentId: Int,
+    compact: Boolean,
+    inline: Boolean = false,
+    modifier: Modifier = Modifier
+) {
     val path = remember(entries, currentId) {
         val byId = entries.associateBy { it.id }
         val result = mutableListOf<Int>()
@@ -1177,63 +1183,22 @@ private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boo
         }
         result
     }
+    if (inline && path.isEmpty()) return
     Row(
         modifier = if (inline) modifier else Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (inline) Arrangement.Start else Arrangement.Center
     ) {
-        if (!inline) {
-            Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.width(7.dp))
-        }
-        if (inline) {
-            if (path.isNotEmpty()) {
-                Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
-                path.forEach { id ->
-                    Text("›", modifier = Modifier.padding(horizontal = 2.dp), color = Color(0xFFAAA1B0), fontWeight = FontWeight.Bold)
-                    PetSprite(
-                        speciesId = id,
-                        shiny = false,
-                        modifier = Modifier.size(if (compact) 22.dp else 25.dp),
-                        imageSize = if (compact) 21.dp else 24.dp
-                    )
-                }
-            }
-        } else {
-                    Box(
-                        modifier = Modifier.size(if (compact) 18.dp else 20.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFE7E1EA)),
-                        contentAlignment = Alignment.Center
-                    ) { Text("??", color = Color(0xFF8F8795), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
-                }
-                if (index < path.lastIndex) Text("›", color = Color(0xFFAAA1B0), fontWeight = FontWeight.Bold)
-            }
-        } else {
-            path.forEachIndexed { index, id ->
-                val entry = entries.firstOrNull { it.id == id }
-                val known = entry?.registered == true
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                    if (known) {
-                        PetSprite(speciesId = id, shiny = entry?.shiny == true, modifier = Modifier.size(if (compact) 25.dp else 30.dp), imageSize = if (compact) 24.dp else 28.dp)
-                    } else {
-                        Box(
-                            modifier = Modifier.size(if (compact) 25.dp else 30.dp).clip(RoundedCornerShape(7.dp)).background(Color(0xFFE7E1EA)),
-                            contentAlignment = Alignment.Center
-                        ) { Text("??", color = Color(0xFF8F8795), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
-                    }
-                    Text(
-                        when {
-                            id == currentId -> "현재"
-                            index == 0 -> "1차"
-                            index == path.lastIndex -> "최종"
-                            else -> "${index + 1}차"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (id == currentId) PokePurple else Color(0xFF8B8191),
-                        fontWeight = if (id == currentId) FontWeight.Bold else FontWeight.Normal
-                    )
-                }
-                if (index < path.lastIndex) Text("›", modifier = Modifier.padding(horizontal = 3.dp), color = Color(0xFFAAA1B0), fontWeight = FontWeight.Bold)
-            }
+        Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
+        if (!inline) Spacer(Modifier.width(7.dp))
+        path.forEach { id ->
+            Text("›", modifier = Modifier.padding(horizontal = if (compact) 1.dp else 2.dp), color = Color(0xFFAAA1B0), fontWeight = FontWeight.Bold)
+            PetSprite(
+                speciesId = id,
+                shiny = false,
+                modifier = Modifier.size(if (inline) { if (compact) 22.dp else 25.dp } else { if (compact) 25.dp else 30.dp }),
+                imageSize = if (inline) { if (compact) 21.dp else 24.dp } else { if (compact) 24.dp else 28.dp }
+            )
         }
     }
 }

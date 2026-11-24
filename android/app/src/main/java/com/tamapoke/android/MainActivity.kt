@@ -496,7 +496,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                            Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
+                            Text("나의 파트너", modifier = Modifier.padding(top = 3.dp), style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
                             Box(modifier = Modifier.fillMaxWidth().height(if (compactLayout) 38.dp else 42.dp)) {
                                 Text(
                                     "No. ${pet!!.speciesId.toString().padStart(3, '0')}",
@@ -506,7 +506,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                     color = PokePurple
                                 )
                                 Row(
-                                    modifier = Modifier.align(Alignment.Center).padding(horizontal = if (pet!!.shiny) 54.dp else 42.dp),
+                                    modifier = Modifier.align(Alignment.Center).padding(start = if (pet!!.shiny) 62.dp else 50.dp, end = if (pet!!.shiny) 46.dp else 34.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(if (compactLayout) 5.dp else 8.dp)
                                 ) {
@@ -1163,10 +1163,10 @@ private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boo
             path.forEachIndexed { index, id ->
                 val entry = entries.firstOrNull { it.id == id }
                 if (entry?.registered == true) {
-                    PetSprite(speciesId = id, shiny = entry.shiny, modifier = Modifier.size(if (compact) 20.dp else 24.dp), imageSize = if (compact) 19.dp else 23.dp)
+                    PetSprite(speciesId = id, shiny = entry.shiny, modifier = Modifier.size(if (compact) 18.dp else 20.dp), imageSize = if (compact) 17.dp else 19.dp)
                 } else {
                     Box(
-                        modifier = Modifier.size(if (compact) 20.dp else 24.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFE7E1EA)),
+                        modifier = Modifier.size(if (compact) 18.dp else 20.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFE7E1EA)),
                         contentAlignment = Alignment.Center
                     ) { Text("??", color = Color(0xFF8F8795), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) }
                 }

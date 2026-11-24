@@ -497,7 +497,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     ) {
                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
-                            Box(modifier = Modifier.fillMaxWidth().height(if (compactLayout) 30.dp else 34.dp)) {
+                            Box(modifier = Modifier.fillMaxWidth().height(if (compactLayout) 38.dp else 42.dp)) {
                                 Text(
                                     "No. ${pet!!.speciesId.toString().padStart(3, '0')}",
                                     modifier = Modifier.align(Alignment.CenterStart),
@@ -505,15 +505,20 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                     fontWeight = FontWeight.SemiBold,
                                     color = PokePurple
                                 )
-                                Text(
-                                    dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
-                                    modifier = Modifier.fillMaxWidth().align(Alignment.Center).padding(horizontal = 48.dp),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = PokeInk,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    maxLines = 1
-                                )
+                                Row(
+                                    modifier = Modifier.align(Alignment.Center).padding(horizontal = if (pet!!.shiny) 54.dp else 42.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(if (compactLayout) 5.dp else 8.dp)
+                                ) {
+                                    Text(
+                                        dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = PokeInk,
+                                        maxLines = 1
+                                    )
+                                    EvolutionTrack(entries = dexEntries, currentId = pet!!.speciesId, compact = compactLayout, inline = true)
+                                }
                                 if (pet!!.shiny) {
                                     Text(
                                         "✨ 이로치",
@@ -529,7 +534,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             Text("Lv. ${pet!!.level}", modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp), color = PokePurple, fontWeight = FontWeight.ExtraBold, style = MaterialTheme.typography.titleMedium)
                         }
                     }
-                    EvolutionTrack(entries = dexEntries, currentId = pet!!.speciesId, compact = compactLayout)
                     Box(
                         modifier = Modifier.fillMaxWidth().height(if (compactLayout) 104.dp else 132.dp)
                             .clip(RoundedCornerShape(24.dp))
@@ -1120,7 +1124,7 @@ private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier)
     }
 }
 @Composable
-private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boolean) {
+private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boolean, inline: Boolean = false) {
     val path = remember(entries, currentId) {
         val byId = entries.associateBy { it.id }
         val ancestors = mutableListOf<Int>()
@@ -1145,9 +1149,9 @@ private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boo
         result
     }
     Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+        modifier = if (inline) Modifier else Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
+        horizontalArrangement = if (inline) Arrangement.Start else Arrangement.Center
     ) {
         Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
         Spacer(Modifier.width(7.dp))

@@ -510,7 +510,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                             Text(
                                 dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
-                                modifier = Modifier.align(Alignment.TopCenter).padding(top = 0.dp),
+                                modifier = Modifier.align(Alignment.TopCenter).offset(x = (-12).dp).padding(top = 0.dp),
                                 style = MaterialTheme.typography.titleLarge,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = PokeInk,
@@ -521,7 +521,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                                 currentId = pet!!.speciesId,
                                 compact = compactLayout,
                                 inline = true,
-                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 1.dp)
+                                modifier = Modifier.align(Alignment.BottomCenter).offset(x = (-12).dp).padding(bottom = 1.dp)
                             )
                             if (pet!!.shiny) {
                                 Text(
@@ -1157,12 +1157,22 @@ private fun EvolutionTrack(
         if (!inline) Spacer(Modifier.width(7.dp))
         path.forEach { id ->
             Text("›", modifier = Modifier.padding(horizontal = if (compact) 1.dp else 2.dp), color = Color(0xFFAAA1B0), fontWeight = FontWeight.Bold)
-            PetSprite(
-                speciesId = id,
-                shiny = false,
-                modifier = Modifier.size(if (inline) { if (compact) 22.dp else 25.dp } else { if (compact) 25.dp else 30.dp }),
-                imageSize = if (inline) { if (compact) 21.dp else 24.dp } else { if (compact) 24.dp else 28.dp }
-            )
+            val evolutionEntry = entries.firstOrNull { it.id == id }
+            if (evolutionEntry?.registered == true) {
+                PetSprite(
+                    speciesId = id,
+                    shiny = evolutionEntry.shiny,
+                    modifier = Modifier.size(if (inline) { if (compact) 30.dp else 36.dp } else { if (compact) 32.dp else 38.dp }),
+                    imageSize = if (inline) { if (compact) 29.dp else 35.dp } else { if (compact) 31.dp else 37.dp }
+                )
+            } else {
+                Box(
+                    modifier = Modifier.size(if (inline) { if (compact) 30.dp else 36.dp } else { if (compact) 32.dp else 38.dp }),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("??", color = Color(0xFF8F8795), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleSmall)
+                }
+            }
         }
     }
 }

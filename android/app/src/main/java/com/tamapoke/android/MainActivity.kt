@@ -1,6 +1,8 @@
 package com.tamapoke.android
 
 import android.os.Bundle
+import android.media.AudioAttributes
+import android.media.MediaPlayer
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
 import java.util.zip.ZipOutputStream
@@ -41,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +58,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.random.Random
 
 private val PokePurple = Color(0xFF8A63C7)
@@ -199,6 +205,50 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
         }
     }
     var soundEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("sound_enabled", true)) }
+    var musicEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("music_enabled", true)) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(showGame, musicEnabled, lifecycleOwner) {
+        var musicPlayer: MediaPlayer? = null
+        val musicAsset = if (showGame) "audio/battle.m4a" else "audio/background.m4a"
+        fun startMusic() {
+            if (!musicEnabled || musicPlayer?.isPlaying == true) return
+            runCatching {
+                if (musicPlayer == null) {
+                    val descriptor = context.assets.openFd(musicAsset)
+                    musicPlayer = MediaPlayer().apply {
+                        setAudioAttributes(AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_GAME)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .build())
+                        setDataSource(descriptor.fileDescriptor, descriptor.startOffset, descriptor.length)
+                        isLooping = true
+                        setVolume(0.72f, 0.72f)
+                        prepare()
+                    }
+                    descriptor.close()
+                }
+                musicPlayer?.start()
+            }.onFailure {
+                musicPlayer?.release()
+                musicPlayer = null
+            }
+        }
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> startMusic()
+                Lifecycle.Event.ON_STOP -> runCatching { musicPlayer?.pause() }
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) startMusic()
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            runCatching { musicPlayer?.stop() }
+            musicPlayer?.release()
+            musicPlayer = null
+        }
+    }
     var hapticsEnabled by remember { mutableStateOf(context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).getBoolean("haptics_enabled", true)) }
     var backupMessage by remember { mutableStateOf("") }
     val backupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
@@ -419,6 +469,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             SettingsScreen(
                 compact = compactLayout,
                 soundEnabled = soundEnabled,
+                musicEnabled = musicEnabled,
                 hapticsEnabled = hapticsEnabled,
                 backupMessage = backupMessage,
                 onBackup = { backupLauncher.launch("tamapoke-backup.zip") },
@@ -427,6 +478,10 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     soundEnabled = it
                     context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).edit().putBoolean("sound_enabled", it).apply()
                     if (it) SoundFeedback.play(context, 1)
+                },
+                onMusicChange = {
+                    musicEnabled = it
+                    context.getSharedPreferences("tamapoke_settings", android.content.Context.MODE_PRIVATE).edit().putBoolean("music_enabled", it).apply()
                 },
                 onHapticsChange = {
                     hapticsEnabled = it
@@ -1000,11 +1055,13 @@ private fun ManualCard(title: String, description: String) {
 private fun SettingsScreen(
     compact: Boolean,
     soundEnabled: Boolean,
+    musicEnabled: Boolean,
     hapticsEnabled: Boolean,
     backupMessage: String,
     onBackup: () -> Unit,
     onRestore: () -> Unit,
     onSoundChange: (Boolean) -> Unit,
+    onMusicChange: (Boolean) -> Unit,
     onHapticsChange: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
@@ -1018,6 +1075,10 @@ private fun SettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) { Text("효과음", color = PokeInk, fontWeight = FontWeight.Bold); Text("돌봄과 게임 동작의 짧은 알림음", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall) }
                     androidx.compose.material3.Switch(checked = soundEnabled, onCheckedChange = onSoundChange)
+                }
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                    Column(Modifier.weight(1f)) { Text("배경음악", color = PokeInk, fontWeight = FontWeight.Bold); Text("일반 화면은 배경음, 미니게임은 배틀음 반복 재생", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall) }
+                    androidx.compose.material3.Switch(checked = musicEnabled, onCheckedChange = onMusicChange)
                 }
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(Modifier.weight(1f)) { Text("진동 피드백", color = PokeInk, fontWeight = FontWeight.Bold); Text("버튼을 누를 때 가벼운 진동", color = Color(0xFF766B80), style = MaterialTheme.typography.bodySmall) }

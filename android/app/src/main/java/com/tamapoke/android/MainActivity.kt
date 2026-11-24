@@ -1153,8 +1153,10 @@ private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boo
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (inline) Arrangement.Start else Arrangement.Center
     ) {
-        Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.width(7.dp))
+        if (!inline) {
+            Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.width(7.dp))
+        }
         if (inline) {
             Text("현재", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
             Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)

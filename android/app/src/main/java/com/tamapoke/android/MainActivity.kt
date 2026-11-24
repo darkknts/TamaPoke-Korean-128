@@ -491,10 +491,49 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                     verticalArrangement = Arrangement.spacedBy(if (compactLayout) 1.dp else 2.dp)
                 ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 52.dp else 58.dp),
+                        modifier = Modifier.fillMaxWidth().height(if (compactLayout) 64.dp else 70.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
+                        Column(
+                            modifier = Modifier.width(if (compactLayout) 104.dp else 118.dp).padding(start = 4.dp, top = 5.dp),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text("나의 파트너", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
+                            Text(
+                                "No. ${pet!!.speciesId.toString().padStart(3, '0')}",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = PokePurple
+                            )
+                        }
+                        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                            Text(
+                                dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
+                                modifier = Modifier.align(Alignment.TopCenter).padding(top = if (compactLayout) 0.dp else 1.dp),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = PokeInk,
+                                maxLines = 1
+                            )
+                            EvolutionTrack(
+                                entries = dexEntries,
+                                currentId = pet!!.speciesId,
+                                compact = compactLayout,
+                                inline = true,
+                                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 1.dp)
+                            )
+                            if (pet!!.shiny) {
+                                Text(
+                                    "✨ 이로치",
+                                    modifier = Modifier.align(Alignment.TopEnd).padding(end = 2.dp, top = 4.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = Color(0xFFB58A32)
+                                )
+                            }
+                        }
+                    } {
                         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                             Text("나의 파트너", modifier = Modifier.padding(top = 3.dp), style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.ExtraBold)
                             Box(modifier = Modifier.fillMaxWidth().height(if (compactLayout) 38.dp else 42.dp)) {
@@ -1124,22 +1163,12 @@ private fun GrowthStat(label: String, value: Int, modifier: Modifier = Modifier)
     }
 }
 @Composable
-private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boolean, inline: Boolean = false) {
+private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boolean, inline: Boolean = false, modifier: Modifier = Modifier) {
     val path = remember(entries, currentId) {
         val byId = entries.associateBy { it.id }
-        val ancestors = mutableListOf<Int>()
+        val result = mutableListOf<Int>()
         var cursor = currentId
-        repeat(3) {
-            val previous = entries.firstOrNull { it.evolvesTo == cursor }?.id
-            if (previous != null && previous !in ancestors) {
-                ancestors.add(previous)
-                cursor = previous
-            }
-        }
-        val result = ancestors.asReversed().toMutableList()
-        if (currentId !in result) result.add(currentId)
-        cursor = currentId
-        repeat(3) {
+        repeat(2) {
             val next = byId[cursor]?.evolvesTo ?: 0
             if (next > 0 && next !in result) {
                 result.add(next)
@@ -1149,7 +1178,7 @@ private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boo
         result
     }
     Row(
-        modifier = if (inline) Modifier else Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+        modifier = if (inline) modifier else Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = if (inline) Arrangement.Start else Arrangement.Center
     ) {
@@ -1158,13 +1187,19 @@ private fun EvolutionTrack(entries: List<DexEntry>, currentId: Int, compact: Boo
             Spacer(Modifier.width(7.dp))
         }
         if (inline) {
-            Text("현재", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
-            Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
-            path.forEachIndexed { index, id ->
-                val entry = entries.firstOrNull { it.id == id }
-                if (entry?.registered == true) {
-                    PetSprite(speciesId = id, shiny = entry.shiny, modifier = Modifier.size(if (compact) 18.dp else 20.dp), imageSize = if (compact) 17.dp else 19.dp)
-                } else {
+            if (path.isNotEmpty()) {
+                Text("진화", style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
+                path.forEach { id ->
+                    Text("›", modifier = Modifier.padding(horizontal = 2.dp), color = Color(0xFFAAA1B0), fontWeight = FontWeight.Bold)
+                    PetSprite(
+                        speciesId = id,
+                        shiny = false,
+                        modifier = Modifier.size(if (compact) 22.dp else 25.dp),
+                        imageSize = if (compact) 21.dp else 24.dp
+                    )
+                }
+            }
+        } else {
                     Box(
                         modifier = Modifier.size(if (compact) 18.dp else 20.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFFE7E1EA)),
                         contentAlignment = Alignment.Center

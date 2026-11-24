@@ -338,10 +338,12 @@ TEST(evolve, no_evoluciona_dormido_ni_de_huevo_ni_en_ceremonia) {
   Pet p;
   makePet(p, 4);
   p.ageMinutes = 20 * 60;
+  p.firstPetCycle = false;
   CHECK(p.canEvolveNow());
   p.toggleLight();
   CHECK(!p.canEvolveNow());
   p.toggleLight();
+  p.ageMinutes = FAREWELL_AGE_MIN;
   p.startFarewell();
   CHECK(!p.canEvolveNow());
 
@@ -774,6 +776,7 @@ TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
 
   Pet second;
   makePet(second, 5); // second evolution stage
+  second.firstPetCycle = false;
   second.finalFormAge = 150;
   second.ageMinutes = 150 + FAREWELL_AGE_MIN - 1;
   CHECK(!second.canFarewellNow());
@@ -782,6 +785,7 @@ TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
 
   Pet final;
   makePet(final, 6); // final evolution stage
+  final.firstPetCycle = false;
   final.finalFormAge = 500;
   final.ageMinutes = 500 + FAREWELL_AGE_MIN - 1;
   CHECK(!final.canFarewellNow());
@@ -792,7 +796,9 @@ TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
 TEST(ceremony, evolucion_reinicia_el_reloj_de_despedida) {
   Pet p;
   makePet(p, 5);
-  p.ageMinutes = 700;
+  p.firstPetCycle = false;
+  setStats(p, 100, 100, 100, 100);
+  p.ageMinutes = 2160; // level 37: Charmeleon can evolve to Charizard
   p.evolve();
   CHECK_EQ(p.finalFormAge, (uint32_t)700);
   CHECK(!p.canFarewellNow());
@@ -855,6 +861,7 @@ TEST(ceremony, durante_la_ceremonia_no_se_puede_interactuar) {
 TEST(ceremony, todas_las_salidas_usan_despedida_y_bonus) {
   Pet p;
   makePet(p, 25);
+  p.firstPetCycle = false;
   p.ageMinutes = FAREWELL_AGE_MIN;
   CHECK(p.canFarewellNow());
   p.startFarewell();

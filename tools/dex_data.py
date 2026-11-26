@@ -275,7 +275,7 @@ DEX = [
     (239, 'elekid', 'ELEKID', 'electrico', 125, 30),
     (240, 'magby', 'MAGBY', 'fuego', 126, 30),
     (241, 'miltank', 'MILTANK', 'normal', 0, 0),
-    (242, 'blissey', 'BLISSEY', 'normal', 113, 30),
+    (242, 'blissey', 'BLISSEY', 'normal', 0, 0),
     (243, 'raikou', 'RAIKOU', 'electrico', 0, 0),
     (244, 'entei', 'ENTEI', 'fuego', 0, 0),
     (245, 'suicune', 'SUICUNE', 'agua', 0, 0),

@@ -220,7 +220,7 @@ void Pet::flushSave() {
 // quedan miembros sin registrar en la linea evolutiva de esta base?
 bool Pet::lineHasUnregistered(int16_t base) const {
   int16_t cur = base;
-  for (int guard = 0; cur >= 1 && cur <= 151 && guard < 6; guard++) {
+  for (int guard = 0; cur >= 1 && cur <= DEX_COUNT && guard < 6; guard++) {
     if (!isRegistered(cur)) return true;
     if (cur == DEX_EEVEE) {
       for (int16_t b = 134; b <= 136; b++)
@@ -233,7 +233,7 @@ bool Pet::lineHasUnregistered(int16_t base) const {
 }
 
 uint8_t Pet::eggRarity() const {
-  return (eggTarget >= 1 && eggTarget <= 151) ? DEX_TBL[eggTarget].rarity : R_COMUN;
+  return (eggTarget >= 1 && eggTarget <= DEX_COUNT) ? DEX_TBL[eggTarget].rarity : R_COMUN;
 }
 
 // elige la especie del huevo: tirada de rareza (mejorada por una despedida
@@ -258,9 +258,9 @@ int16_t Pet::pickEggSpecies() {
   // si la pokedex del tier esta completa, vale cualquiera del tier
   for (int pass = 0; pass < 2; pass++) {
     for (int t = tier; t >= R_COMUN; t--) {
-      int16_t cand[80];
+      int16_t cand[251];
       int n = 0;
-      for (int16_t d = 1; d <= 151 && n < 80; d++) {
+      for (int16_t d = 1; d <= DEX_COUNT && n < 251; d++) {
         if (DEX_TBL[d].rarity != t) continue;
         if (pass == 0 && !lineHasUnregistered(d)) continue;
         cand[n++] = d;
@@ -272,7 +272,7 @@ int16_t Pet::pickEggSpecies() {
 }
 
 void Pet::registerSpecies(int16_t dex, bool isShiny) {
-  if (dex < 1 || dex > 151) return;
+  if (dex < 1 || dex > DEX_COUNT) return;
   dexReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
   if (isShiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
   else dexNormalReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
@@ -387,7 +387,7 @@ uint16_t Pet::speStat() const {
 
 uint16_t Pet::registeredCount() const {
   uint16_t n = 0;
-  for (int i = 1; i <= 151; i++)
+  for (int i = 1; i <= DEX_COUNT; i++)
     if (isRegistered(i)) n++;
   return n;
 }

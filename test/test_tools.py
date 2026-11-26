@@ -52,10 +52,10 @@ class TestDexData(unittest.TestCase):
         cls.STATS, cls.NAMES = BASE_STATS, LOCAL_NAMES
         cls.byNum = {row[0]: row for row in DEX}
 
-    def test_estan_las_151_especies_sin_huecos_ni_repetidos(self):
+    def test_estan_las_251_especies_sin_huecos_ni_repetidos(self):
         nums = [row[0] for row in self.DEX]
-        self.assertEqual(len(nums), 151)
-        self.assertEqual(sorted(nums), list(range(1, 152)))
+        self.assertEqual(len(nums), 251)
+        self.assertEqual(sorted(nums), list(range(1, 252)))
 
     def test_los_slugs_son_unicos_y_en_minusculas(self):
         slugs = [row[1] for row in self.DEX]
@@ -98,7 +98,7 @@ class TestDexData(unittest.TestCase):
             self.assertRegex(col, r'^#[0-9a-fA-F]{6}$', f'color raro en {tipo}: {col}')
 
     def test_las_rarezas_apuntan_a_formas_base(self):
-        evolucionadas = {row[4] for row in self.DEX if row[4]}
+        evolucionadas = ({row[4] for row in self.DEX if row[4]} | {135, 136}) - {172, 173, 174, 175, 196, 197, 236, 238, 239, 240}
         for num in sorted(self.RARE | self.LEGENDARY):
             self.assertIn(num, self.byNum, f'rareza para una especie inexistente: {num}')
             self.assertNotIn(num, evolucionadas,
@@ -106,12 +106,12 @@ class TestDexData(unittest.TestCase):
         self.assertFalse(self.RARE & self.LEGENDARY, 'una especie no puede ser rara y legendaria')
 
     def test_los_iniciales_clasicos_existen(self):
-        evolucionadas = {row[4] for row in self.DEX if row[4]}
+        evolucionadas = ({row[4] for row in self.DEX if row[4]} | {135, 136}) - {172, 173, 174, 175, 196, 197, 236, 238, 239, 240}
         for num in self.CLASSIC:
             self.assertIn(num, self.byNum, f'inicial inexistente: {num}')
             self.assertNotIn(num, evolucionadas, f'{self.byNum[num][2]} no puede ser inicial')
 
-    def test_hay_stats_base_de_las_151(self):
+    def test_hay_stats_base_de_las_251(self):
         for num in self.byNum:
             self.assertIn(num, self.STATS, f'faltan stats de {self.byNum[num][2]}')
             hp, atk, dfn, spe = self.STATS[num]

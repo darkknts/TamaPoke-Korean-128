@@ -776,21 +776,22 @@ TEST(ceremony, dos_evoluciones_requieren_forma_final_y_nivel_45) {
 
 TEST(ceremony, evolucionar_en_nivel_35_habilita_despedida_inmediata) {
   Pet p;
-  makePet(p, 5); // Charmeleon -> Charizard
+  makePet(p, 19); // Rattata -> Raticate
   setStats(p, 100, 100, 100, 100);
   p.ageMinutes = 34 * MINUTES_PER_LEVEL; // level 35
   CHECK(p.canEvolveNow());
   p.evolve();
-  CHECK_EQ(p.speciesId, (int16_t)6);
+  CHECK_EQ(p.speciesId, (int16_t)20);
   CHECK(p.canFarewellNow());
 }
 
 TEST(ceremony, no_hay_lineas_con_tercera_evolucion) {
-  for (int16_t dex = 1; dex <= DEX_COUNT; dex++) {
-    if (DEX_TBL[dex].evolvesTo == 0) continue;
-    int16_t next = DEX_TBL[dex].evolvesTo;
-    if (next >= 1 && next <= DEX_COUNT)
-      CHECK(DEX_TBL[next].evolvesTo == 0 || DEX_TBL[next].evolvesTo >= 1);
+  for (int16_t first = 1; first <= DEX_COUNT; first++) {
+    const int16_t second = DEX_TBL[first].evolvesTo;
+    if (second < 1 || second > DEX_COUNT) continue;
+    const int16_t third = DEX_TBL[second].evolvesTo;
+    if (third < 1 || third > DEX_COUNT) continue;
+    CHECK_EQ(DEX_TBL[third].evolvesTo, (uint8_t)0);
   }
   CHECK_EQ(DEX_TBL[242].evolvesTo, (uint8_t)0); // Blissey is final form
 }

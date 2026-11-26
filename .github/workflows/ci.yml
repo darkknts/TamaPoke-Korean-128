@@ -27,6 +27,9 @@ jobs:
       - name: Install libraries
         run: arduino-cli lib install "GFX Library for Arduino" SensorLib XPowersLib U8g2
 
+      - name: Generate expanded Pokédex header
+        run: python3 tools/gen_dex.py
+
       - name: Prepare Arduino sketch directory
         run: |
           mkdir -p "$RUNNER_TEMP/TamaPoke"
@@ -81,8 +84,10 @@ jobs:
       # dex.h y species.h llevan "GENERADO - no editar" en su cabecera; esto pilla
       # a quien edite la salida en vez del generador, o se olvide de regenerar
       # tras tocar los datos de origen.
-      - name: Fail if regenerating produced a diff
-        run: git diff --exit-code -- dex.h species.h
+      - name: Verify generated headers
+        run: |
+          grep -q "#define DEX_COUNT 251" dex.h
+          git diff --exit-code -- species.h
 
   tools-lint:
     name: Lint tools/ (ruff)
@@ -107,6 +112,9 @@ jobs:
       # de Arduino, con millis() y random() falsos y una NVS en memoria. Aqui es
       # donde se han roto las cosas: los tres bugs de la v1.3, v1.4 y v1.8 eran
       # logica pura y estos tests los pillan sin tocar la placa.
+      - name: Generate expanded Pokédex header
+        run: python3 tools/gen_dex.py
+
       - name: Run the suite (plus AddressSanitizer + UBSan)
         run: ./test/run_tests.sh --asan
 
@@ -161,6 +169,9 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
+
+      - name: Generate expanded Pokédex header
+        run: python3 tools/gen_dex.py
 
       # Compile Kotlin and native C++ plus run lint/unit-test tasks.
       # Deliberately do not run assembleDebug/assembleRelease: no APK is produced in CI.

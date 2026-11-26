@@ -394,17 +394,34 @@ uint16_t Pet::registeredCount() const {
   return n;
 }
 
-// Primera mascota: solo puede despedirse tras alcanzar la forma final.
-// Las mascotas siguientes pueden despedirse tras tres dias en cualquier etapa.
+// Evolucion por etapas: cuenta los predecesores de la especie actual.
+// Eevee tiene cinco ramas, aunque la tabla compacta solo almacena una.
+static uint8_t evolutionDepthTo(int16_t dex, uint8_t guard = 0) {
+  if (dex < 1 || dex > DEX_COUNT || guard >= 4) return 0;
+  uint8_t depth = 0;
+  for (int16_t parent = 1; parent <= DEX_COUNT; parent++) {
+    if (DEX_TBL[parent].evolvesTo == dex) {
+      uint8_t candidate = (uint8_t)(evolutionDepthTo(parent, guard + 1) + 1);
+      if (candidate > depth) depth = candidate;
+    }
+  }
+  if (dex == 134 || dex == 135 || dex == 136 || dex == 196 || dex == 197) {
+    if (depth < 1) depth = 1; // Eevee -> one of five branches
+  }
+  return depth;
+}
+
+// 방출 조건: 진화가 없는 종 Lv25, 1회 진화 계열 Lv35,
+// 2회 진화 계열 Lv45. 현재 최종 진화형에 도달해야 방출할 수 있다.
 bool Pet::canFarewellNow() const {
   if (isEgg() || sleeping || ceremony != CER_NONE || speciesId < 1 || speciesId > DEX_COUNT)
     return false;
 
-  // The very first partner must reach its final evolution before farewell.
-  if (firstPetCycle && DEX_TBL[speciesId].evolvesTo != 0) return false;
-  // Later partners can be farewelled after three in-game days in any stage.
-  return ageMinutes >= finalFormAge &&
-         ageMinutes - finalFormAge >= FAREWELL_AGE_MIN;
+  if (DEX_TBL[speciesId].evolvesTo != 0) return false;
+
+  const uint8_t depth = evolutionDepthTo(speciesId);
+  const uint16_t requiredLevel = (uint16_t)(25 + depth * 10);
+  return level() >= requiredLevel;
 }
 
 // abandono total durante 1h: lista para escaparse. La dispara el usuario con el

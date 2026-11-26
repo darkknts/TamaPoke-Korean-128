@@ -1,6 +1,7 @@
 package com.tamapoke.android
 
 import android.os.Bundle
+import android.app.Activity
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import java.util.zip.ZipEntry
@@ -11,6 +12,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.compose.setContent
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,6 +66,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlin.random.Random
 
 private val PokePurple = Color(0xFF8A63C7)
+
+private fun generationLabel(dexId: Int): String = if (dexId in 152..251) "2세대" else "1세대"
 private val PokeInk = Color(0xFF40354D)
 private val PokeBackground = Color(0xFFFFFCF8)
 private val PokeLavender = Color(0xFFF4EEFF)
@@ -157,12 +161,28 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var showManual by remember { mutableStateOf(false) }
     var showGame by remember { mutableStateOf(false) }
     var showReleaseConfirm by remember { mutableStateOf(false) }
+    var showExitConfirm by remember { mutableStateOf(false) }
     var showWildEncounter by remember { mutableStateOf(false) }
     var showFriendVisit by remember { mutableStateOf(false) }
     var showFriendPlay by remember { mutableStateOf(false) }
     var friendVisitDex by remember { mutableIntStateOf(0) }
     var gameMode by remember { mutableStateOf("menu") }
     val context = LocalContext.current
+    BackHandler(enabled = true) {
+        when {
+            showExitConfirm -> showExitConfirm = false
+            showReleaseConfirm -> showReleaseConfirm = false
+            selectedDexEntry != null -> selectedDexEntry = null
+            showDex -> showDex = false
+            showGrowth -> showGrowth = false
+            showAchievements -> showAchievements = false
+            showSettings -> showSettings = false
+            showManual -> showManual = false
+            showGame && gameMode != "menu" -> gameMode = "menu"
+            showGame -> showGame = false
+            else -> showExitConfirm = true
+        }
+    }
     var dexEntries by remember { mutableStateOf(runCatching { PetNative.dexEntries() }.getOrDefault(emptyList())) }
     fun openMainScreen(screen: String) {
         showGame = false
@@ -566,14 +586,22 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                             )
                         }
                         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                            Text(
-                                dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
+                            Row(
                                 modifier = Modifier.align(Alignment.TopCenter).offset(x = (-12).dp).padding(top = 0.dp),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = PokeInk,
-                                maxLines = 1
-                            )
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(5.dp)
+                            ) {
+                                Text(
+                                    dexEntries.firstOrNull { it.id == pet!!.speciesId }?.name ?: "포켓몬",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.ExtraBold,
+                                    color = PokeInk,
+                                    maxLines = 1
+                                )
+                                Surface(color = PokeLavender, shape = RoundedCornerShape(50)) {
+                                    Text(generationLabel(pet!!.speciesId), modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), style = MaterialTheme.typography.labelSmall, color = PokePurple, fontWeight = FontWeight.Bold)
+                                }
+                            }
                             EvolutionTrack(
                                 entries = dexEntries,
                                 currentId = pet!!.speciesId,
@@ -811,6 +839,23 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             },
             dismissButton = {
                 OutlinedButton(onClick = { showReleaseConfirm = false }) { Text("취소") }
+            }
+        )
+    }
+}
+    if (showExitConfirm) {
+        AlertDialog(
+            onDismissRequest = { showExitConfirm = false },
+            title = { Text("게임을 종료할까요?") },
+            text = { Text("게임을 종료하고 홈 화면으로 돌아갈까요?") },
+            confirmButton = {
+                Button(onClick = {
+                    showExitConfirm = false
+                    (context as? Activity)?.finish()
+                }) { Text("확인") }
+            },
+            dismissButton = {
+                OutlinedButton(onClick = { showExitConfirm = false }) { Text("취소") }
             }
         )
     }
@@ -1593,7 +1638,7 @@ private fun WildBattleScreen(
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column {
-                            Text("야생 포켓몬 · Lv.$enemyLevel", color = PokeInk, fontWeight = FontWeight.Bold)
+                            Text("야생 포켓몬 · ${generationLabel(enemy!!.id)} · Lv.$enemyLevel", color = PokeInk, fontWeight = FontWeight.Bold)
                             Text(enemy?.name ?: "야생 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokeInk)
                         }
                         Text("HP $enemyHp / $eMax", color = PokeInk, style = MaterialTheme.typography.labelMedium)
@@ -1641,7 +1686,7 @@ private fun WildBattleScreen(
                 Column(Modifier.padding(horizontal = 12.dp, vertical = 9.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Column {
-                            Text("내 포켓몬 · Lv.${player.level}", color = PokeInk, fontWeight = FontWeight.Bold)
+                            Text("내 포켓몬 · ${generationLabel(player.speciesId)} · Lv.${player.level}", color = PokeInk, fontWeight = FontWeight.Bold)
                             Text("No. ${player.speciesId}", color = PokeInk, style = MaterialTheme.typography.titleMedium)
                         }
                         Text("HP $playerHp / $pMax", color = PokeInk, style = MaterialTheme.typography.labelMedium)

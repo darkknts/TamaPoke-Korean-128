@@ -34,7 +34,7 @@ private fun readU16LE(input: DataInputStream): Int {
 }
 
 internal fun loadPokemonSprite(context: Context, speciesId: Int, shiny: Boolean): PokemonSprite? {
-    if (speciesId !in 1..151) return null
+    if (speciesId !in 1..251) return null
     fun loadAsset(isShiny: Boolean): PokemonSprite? {
         val prefix = if (isShiny) "ps" else "p"
         val fileName = "%s%03d.bin".format(prefix, speciesId)

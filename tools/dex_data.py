@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Fuente unica de datos de la Pokedex gen 1 para TamaPoke.
+"""Fuente unica de datos de la Pokedex gen 1 y 2 para TamaPoke.
 
 Cada entrada: (num, slug, nombre_pantalla, tipo, evoluciona_a, nivel)
 - slug: nombre en minusculas de la especie (identificador interno)
@@ -288,11 +288,11 @@ DEX = [
 ]
 
 # el primer huevo de la partida siempre es un inicial clasico
-CLASSIC = [1, 4, 7, 25, 133]
+CLASSIC = [1, 4, 7, 133]  # Pichu is the Gen 2 baby form of Pikachu
 
 # rarezas de las formas base (lo que no este aqui y sea base = comun)
 RARE = {58, 77, 83, 88, 95, 106, 107, 108, 111, 113, 114, 115, 122, 123,
-        124, 125, 126, 127, 128, 131, 132, 137, 138, 140, 142, 143, 147}
+        127, 128, 131, 132, 137, 138, 140, 142, 143, 147}
 LEGENDARY = {144, 145, 146, 150, 151, 243, 244, 245, 249, 250, 251}
 
 SLUGS = {n: s for n, s, *_ in DEX}

@@ -743,7 +743,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             title = { Text("💚 친구 포켓몬이 놀러왔어요!") },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("${visitorName}가 함께 놀고 싶어 해요.")
+                    Text("${generationLabel(friendVisitDex)} ${visitorName}가 함께 놀고 싶어 해요.")
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                         PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 0, actionToken = 0, loopAction = false, modifier = Modifier.size(76.dp))
                         Text("💗", style = MaterialTheme.typography.titleLarge)
@@ -766,7 +766,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             title = { Text("🎉 친구와 즐거운 시간!") },
             text = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("내 포켓몬과 ${visitorName}가 함께 놀고 있어요.")
+                    Text("내 포켓몬과 ${generationLabel(friendVisitDex)} ${visitorName}가 함께 놀고 있어요.")
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                         PetSprite(speciesId = pet?.speciesId ?: 1, shiny = pet?.shiny ?: false, actionId = 1, actionToken = 1, loopAction = true, modifier = Modifier.size(84.dp))
                         Text("💞", style = MaterialTheme.typography.headlineMedium)

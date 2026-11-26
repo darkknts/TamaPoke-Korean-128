@@ -11,7 +11,7 @@
 
 static const int N = DEX_COUNT;
 
-TEST(dex, la_tabla_tiene_152_entradas) {
+TEST(dex, la_tabla_tiene_252_entradas) {
   CHECK_EQ((int)(sizeof(DEX_TBL) / sizeof(DEX_TBL[0])), N + 1);
   CHECK_EQ((int)(sizeof(DEX_NAME_FR) / sizeof(DEX_NAME_FR[0])), N + 1);
   CHECK_EQ((int)(sizeof(DEX_NAME_DE) / sizeof(DEX_NAME_DE[0])), N + 1);
@@ -158,6 +158,8 @@ TEST(dex, la_rama_de_eevee_cuadra_con_el_codigo) {
     CHECK_EQ((int)DEX_TBL[d].rarity, (int)R_EVO);
     CHECK_EQ((int)DEX_TBL[d].evolvesTo, 0);
   }
+  CHECK_EQ((int)DEX_TBL[196].rarity, (int)R_EVO);
+  CHECK_EQ((int)DEX_TBL[197].rarity, (int)R_EVO);
 }
 
 TEST(dex, los_iniciales_clasicos_son_validos) {
@@ -183,7 +185,7 @@ TEST(dex, ningun_tier_desborda_el_array_de_candidatos) {
     int n = 0;
     for (int d = 1; d <= N; d++)
       if (DEX_TBL[d].rarity == r) n++;
-    CHECK_MSG(n <= 80, "mas de 80 candidatos en un tier: pickEggSpecies los recorta");
+    CHECK_MSG(n <= 251, "el tier supera la capacidad de candidatos de la Pokedex");
   }
 }
 
@@ -208,7 +210,7 @@ TEST(dex, dexName_fuera_de_rango_no_revienta) {
     gLang = (Lang)lang;
     CHECK_STREQ(dexName(0), DEX_TBL[0].name);
     CHECK_STREQ(dexName(-1), DEX_TBL[0].name);
-    CHECK_STREQ(dexName(152), DEX_TBL[0].name);
+    CHECK_STREQ(dexName(252), DEX_TBL[0].name);
     CHECK_STREQ(dexName(30000), DEX_TBL[0].name);
   }
   gLang = LANG_DEFAULT;

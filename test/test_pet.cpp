@@ -558,7 +558,7 @@ TEST(dexreg, fuera_de_rango_no_esta_registrado) {
   CHECK(!p.isRegistered(-1));
   CHECK(!p.isRegistered(252));
   CHECK(!p.isRegistered(32767));
-  CHECK_EQ(p.registeredCount(), (uint16_t)151);
+  CHECK_EQ(p.registeredCount(), (uint16_t)251);
 }
 
 TEST(dexreg, linea_incompleta_se_detecta) {

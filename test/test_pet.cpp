@@ -538,16 +538,16 @@ TEST(mood, refleja_el_estado) {
 }
 
 // ---------------------------------------------------------------- pokedex
-TEST(dexreg, bitmap_cubre_1_a_151) {
+TEST(dexreg, bitmap_cubre_1_a_251) {
   Pet p;
   makePet(p, 4);
   memset(p.dexReg, 0, sizeof(p.dexReg));
   CHECK_EQ(p.registeredCount(), (uint16_t)0);
-  for (int16_t d = 1; d <= 151; d++) {
+  for (int16_t d = 1; d <= 251; d++) {
     p.dexReg[(d - 1) >> 3] |= (uint8_t)(1 << ((d - 1) & 7));
     CHECK(p.isRegistered(d));
   }
-  CHECK_EQ(p.registeredCount(), (uint16_t)151);
+  CHECK_EQ(p.registeredCount(), (uint16_t)251);
 }
 
 TEST(dexreg, fuera_de_rango_no_esta_registrado) {
@@ -556,7 +556,7 @@ TEST(dexreg, fuera_de_rango_no_esta_registrado) {
   memset(p.dexReg, 0xFF, sizeof(p.dexReg));
   CHECK(!p.isRegistered(0));
   CHECK(!p.isRegistered(-1));
-  CHECK(!p.isRegistered(152));
+  CHECK(!p.isRegistered(252));
   CHECK(!p.isRegistered(32767));
   CHECK_EQ(p.registeredCount(), (uint16_t)151);
 }
@@ -574,7 +574,7 @@ TEST(dexreg, la_rama_de_eevee_cuenta_las_tres) {
   Pet p;
   makePet(p, DEX_EEVEE);
   CHECK(p.lineHasUnregistered(DEX_EEVEE));
-  for (int16_t d = 134; d <= 136; d++)
+  for (int16_t d : { 134, 135, 136, 196, 197 })
     p.dexReg[(d - 1) >> 3] |= (uint8_t)(1 << ((d - 1) & 7));
   CHECK(!p.lineHasUnregistered(DEX_EEVEE));
 }
@@ -585,7 +585,7 @@ TEST(egg, el_sorteo_siempre_da_una_especie_valida) {
   for (int i = 0; i < 400; i++) {
     randomSeed(i * 7919 + 1);
     int16_t d = p.pickEggSpecies();
-    CHECK_RANGE(d, (int16_t)1, (int16_t)151);
+    CHECK_RANGE(d, (int16_t)1, (int16_t)251);
     CHECK_MSG(DEX_TBL[d].rarity != R_EVO, "de un huevo nunca sale una forma evolucionada");
   }
 }
@@ -926,7 +926,7 @@ TEST(offline, el_huevo_eclosiona_en_tu_ausencia) {
   p.setClock(1000u * 86400);
   p.syncClock(1000u * 86400 + 600);  // 10 minutos
   CHECK(!p.isEgg());
-  CHECK_RANGE(p.speciesId, (int16_t)1, (int16_t)151);
+  CHECK_RANGE(p.speciesId, (int16_t)1, (int16_t)251);
 }
 
 TEST(offline, durmiendo_se_descansa_tambien_apagado) {

@@ -59,7 +59,7 @@ public:
   bool firstPetCycle = false; // primera mascota: solo se despide al alcanzar la forma final
   uint32_t ageMinutes = 0;
   uint32_t finalFormAge = 0;  // ageMinutes when the current evolution stage was reached
-  int16_t speciesId = -1;      // numero de Pokedex (1-151), -1 = huevo
+  int16_t speciesId = -1;      // numero de Pokedex (1-251), -1 = huevo
   int16_t prevSpeciesId = -1;  // para la animacion de evolucion
   uint8_t careMistakes = 0;   // descuidos: cada uno retrasa la evolucion 1 nivel
   bool sleeping = false;
@@ -151,10 +151,10 @@ public:
     return dex >= 1 && dex <= 251 && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   bool isNormalRegistered(int16_t dex) const {
-    return dex >= 1 && dex <= 151 && (dexNormalReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+    return dex >= 1 && dex <= 251 && (dexNormalReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   bool isShinyRegistered(int16_t dex) const {
-    return dex >= 1 && dex <= 151 && (dexShinyReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+    return dex >= 1 && dex <= 251 && (dexShinyReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   uint16_t registeredCount() const;
   bool lineHasUnregistered(int16_t base) const;

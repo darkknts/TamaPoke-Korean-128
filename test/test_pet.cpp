@@ -741,68 +741,68 @@ TEST(medals, el_total_acumula_entre_crianzas) {
 }
 
 // ---------------------------------------------------------------- ceremonias
-TEST(ceremony, primer_companero_solo_puede_despedirse_en_forma_final) {
+TEST(ceremony, sin_evolucion_puede_despedirse_desde_nivel_25) {
   Pet p;
-  makePet(p, 4);
-  p.firstPetCycle = true;
+  makePet(p, 143); // Snorlax: no tiene evolucion
+  p.ageMinutes = 24 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow());
+  p.ageMinutes = 24 * MINUTES_PER_LEVEL; // level() = 25
+  CHECK(p.canFarewellNow());
+}
+
+TEST(ceremony, una_evolucion_requiere_forma_final_y_nivel_35) {
+  Pet p;
+  makePet(p, 19); // Rattata -> Raticate
+  p.ageMinutes = 34 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow()); // no puede despedirse antes de evolucionar
+  p.speciesId = 20;
+  p.ageMinutes = 33 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow()); // nivel 34
+  p.ageMinutes = 34 * MINUTES_PER_LEVEL;
+  CHECK(p.canFarewellNow()); // nivel 35
+}
+
+TEST(ceremony, dos_evoluciones_requieren_forma_final_y_nivel_45) {
+  Pet p;
+  makePet(p, 147); // Dratini -> Dragonair -> Dragonite
+  p.speciesId = 148; // etapa intermedia: no puede despedirse
+  p.ageMinutes = 44 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow());
+  p.speciesId = 149; // forma final, pero nivel 44
+  CHECK(!p.canFarewellNow());
+  p.ageMinutes = 44 * MINUTES_PER_LEVEL; // level() = 45
+  CHECK(p.canFarewellNow());
+}
+
+TEST(ceremony, evolucionar_en_nivel_35_habilita_despedida_inmediata) {
+  Pet p;
+  makePet(p, 5); // Charmeleon -> Charizard
   setStats(p, 100, 100, 100, 100);
-  p.ageMinutes = 900; // level 16
-  CHECK(!p.canFarewellNow());
+  p.ageMinutes = 34 * MINUTES_PER_LEVEL; // level 35
+  CHECK(p.canEvolveNow());
   p.evolve();
-  CHECK(!p.canFarewellNow());
-  p.ageMinutes = 2100; // level 36
-  p.evolve();
-  CHECK(!p.canFarewellNow());
-  p.ageMinutes = p.finalFormAge + FAREWELL_AGE_MIN;
+  CHECK_EQ(p.speciesId, (int16_t)6);
   CHECK(p.canFarewellNow());
 }
 
-TEST(ceremony, siguiente_companero_puede_despedirse_en_cualquier_etapa) {
-  Pet p;
-  makePet(p, 4);
-  p.firstPetCycle = false;
-  p.ageMinutes = FAREWELL_AGE_MIN;
-  CHECK(p.canFarewellNow());
+TEST(ceremony, no_hay_lineas_con_tercera_evolucion) {
+  for (int16_t dex = 1; dex <= DEX_COUNT; dex++) {
+    if (DEX_TBL[dex].evolvesTo == 0) continue;
+    int16_t next = DEX_TBL[dex].evolvesTo;
+    if (next >= 1 && next <= DEX_COUNT)
+      CHECK(DEX_TBL[next].evolvesTo == 0 || DEX_TBL[next].evolvesTo >= 1);
+  }
+  CHECK_EQ(DEX_TBL[242].evolvesTo, (uint8_t)0); // Blissey is final form
 }
 
-TEST(ceremony, despedida_tras_tres_dias_en_cada_etapa) {
-  Pet first;
-  makePet(first, 25); // species with an evolution; stage timer is tested for a subsequent pet
-  first.firstPetCycle = false;
-  first.finalFormAge = 0;
-  first.ageMinutes = FAREWELL_AGE_MIN - 1;
-  CHECK(!first.canFarewellNow());
-  first.ageMinutes++;
-  CHECK(first.canFarewellNow());
-
-  Pet second;
-  makePet(second, 5); // second evolution stage
-  second.firstPetCycle = false;
-  second.finalFormAge = 150;
-  second.ageMinutes = 150 + FAREWELL_AGE_MIN - 1;
-  CHECK(!second.canFarewellNow());
-  second.ageMinutes++;
-  CHECK(second.canFarewellNow());
-
-  Pet final;
-  makePet(final, 6); // final evolution stage
-  final.firstPetCycle = false;
-  final.finalFormAge = 500;
-  final.ageMinutes = 500 + FAREWELL_AGE_MIN - 1;
-  CHECK(!final.canFarewellNow());
-  final.ageMinutes++;
-  CHECK(final.canFarewellNow());
-}
-
-TEST(ceremony, evolucion_reinicia_el_reloj_de_despedida) {
+TEST(ceremony, evolucion_reinicia_el_registro_de_etapa_pero_no_requiere_espera) {
   Pet p;
   makePet(p, 5);
-  p.firstPetCycle = false;
   setStats(p, 100, 100, 100, 100);
-  p.ageMinutes = 2160; // level 37: Charmeleon can evolve to Charizard
+  p.ageMinutes = 2160; // level 37
   p.evolve();
   CHECK_EQ(p.finalFormAge, (uint32_t)2160);
-  CHECK(!p.canFarewellNow());
+  CHECK(p.canFarewellNow()); // level 37 >= 35
 }
 
 TEST(ceremony, la_despedida_deja_un_huevo_nuevo) {

@@ -66,9 +66,9 @@ public:
   uint32_t lastSeenEpoch = 0;   // ultima hora RTC vista (para progresion offline)
   uint8_t ceremony = CER_NONE;  // despedida/escapada/liberacion en curso
   uint8_t lastEnd = CER_NONE;   // como acabo la anterior (afecta al huevo)
-  uint8_t dexReg[19] = { 0 };       // especies descubiertas (bitmap 151 bits)
-  uint8_t dexNormalReg[19] = { 0 }; // variante normal descubierta
-  uint8_t dexShinyReg[19] = { 0 };  // variante shiny descubierta
+  uint8_t dexReg[32] = { 0 };       // especies descubiertas (bitmap 251 bits)
+  uint8_t dexNormalReg[32] = { 0 }; // variante normal descubierta
+  uint8_t dexShinyReg[32] = { 0 };  // variante shiny descubierta
   // racha de cuidado diario (del jugador: persiste entre crianzas)
   uint16_t streak = 0, bestStreak = 0;
   uint32_t lastCareDay = 0;
@@ -148,7 +148,7 @@ public:
   // Publico para pruebas de registro de variantes normal e shiny.
   void registerSpecies(int16_t dex, bool isShiny = false);
   bool isRegistered(int16_t dex) const {
-    return dex >= 1 && dex <= 151 && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+    return dex >= 1 && dex <= 251 && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   bool isNormalRegistered(int16_t dex) const {
     return dex >= 1 && dex <= 151 && (dexNormalReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));

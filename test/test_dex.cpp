@@ -164,7 +164,7 @@ TEST(dex, los_iniciales_clasicos_son_validos) {
   CHECK_EQ((int)(sizeof(CLASSIC_DEX) / sizeof(CLASSIC_DEX[0])), NUM_CLASSIC_DEX);
   for (int i = 0; i < NUM_CLASSIC_DEX; i++) {
     int16_t d = CLASSIC_DEX[i];
-    CHECK_RANGE(d, (int16_t)1, (int16_t)151);
+    CHECK_RANGE(d, (int16_t)1, (int16_t)251);
     CHECK_MSG(DEX_TBL[d].rarity != R_EVO, "un inicial no puede ser una forma evolucionada");
   }
 }
@@ -176,7 +176,7 @@ TEST(dex, hay_al_menos_una_especie_de_cada_rareza) {
     CHECK_MSG(count[r] > 0, "hay una rareza sin especies: el sorteo del huevo se quedaria sin candidatos");
 }
 
-// pickEggSpecies mete los candidatos de un tier en un array de 80: si algun
+// pickEggSpecies mete los candidatos de un tier en un array de 251: si algun
 // tier tuviera mas, se sortearia solo entre los 80 primeros
 TEST(dex, ningun_tier_desborda_el_array_de_candidatos) {
   for (int r = R_COMUN; r <= R_LEGENDARIO; r++) {

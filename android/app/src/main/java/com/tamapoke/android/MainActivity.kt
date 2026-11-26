@@ -1254,7 +1254,7 @@ private fun DexScreen(entries: List<DexEntry>, compact: Boolean, selectedGenerat
         ) {
             Column {
                 Text("포켓몬 도감", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = PokeInk)
-                Text("${if (selectedGeneration == 1) "1세대" else "2세대"} · $registeredCount / $generationCount종 발견", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+                Text("${if (selectedGeneration == 1) "1세대" else "2세대"} · $registeredCount / ${generationCount}종 발견", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
             }
             OutlinedButton(onClick = onBack) { Text("돌아가기") }
         }

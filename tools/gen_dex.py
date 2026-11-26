@@ -50,7 +50,7 @@ def main():
         "};\n\n")
     # formas base = las que no son evolucion de nadie (las ramas de Eevee si lo son)
     evolved = {evo for *_, evo, _lvl in [(d[4], d[5]) for d in DEX] for evo in [_[0] for _ in [(d[4],) for d in DEX]]}
-    evolved = {d[4] for d in DEX if d[4]} | {135, 136}
+    evolved = ({d[4] for d in DEX if d[4]} | {135, 136}) - {172, 173, 174, 175, 236, 238, 239, 240}
     rarities = []
     out.append("static const DexEntry DEX_TBL[DEX_COUNT + 1] = {\n")
     out.append('  { "?", 0, 0, 0, 0x2946, 50, 50, 50, 50, 0 },  // 0: sin usar\n')

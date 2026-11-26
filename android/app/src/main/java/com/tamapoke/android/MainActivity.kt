@@ -150,6 +150,7 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
     var spriteActionToken by remember { mutableIntStateOf(0) }
     var showDex by remember { mutableStateOf(false) }
     var selectedDexEntry by remember { mutableStateOf<DexEntry?>(null) }
+    var selectedDexGeneration by remember { mutableIntStateOf(1) }
     var showGrowth by remember { mutableStateOf(false) }
     var showAchievements by remember { mutableStateOf(false) }
     var showSettings by remember { mutableStateOf(false) }
@@ -498,6 +499,8 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
                 DexScreen(
                     entries = dexEntries,
                     compact = compactLayout,
+                    selectedGeneration = selectedDexGeneration,
+                    onGenerationChange = { selectedDexGeneration = it },
                     onSelect = { selectedDexEntry = it },
                     onBack = { showDex = false }
                 )
@@ -1029,7 +1032,7 @@ private fun GameManualScreen(compact: Boolean, onBack: () -> Unit) {
         ManualCard("타이밍 맞추기", "총 10라운드입니다. 움직이는 표시가 초록색 구간에 들어왔을 때 '지금 누르기'를 누르세요. 정확도에 따라 점수가 달라집니다.")
         ManualCard("카드 짝 맞추기", "열매 카드 8장에 숨겨진 같은 그림 4쌍을 찾으세요. 카드를 두 장씩 열어 짝을 맞추며, 시도 횟수에 따라 훈련 점수가 정해집니다.")
         Text("도감과 기록", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
-        ManualCard("도감", "도감에서 151종의 발견 여부를 확인할 수 있습니다. 발견한 포켓몬을 선택하면 상세 정보와 이로치 발견 여부를 확인할 수 있습니다.")
+        ManualCard("도감", "도감에서 251종의 발견 여부를 확인할 수 있습니다. 발견한 포켓몬을 선택하면 상세 정보와 이로치 발견 여부를 확인할 수 있습니다.")
         ManualCard("성장 리포트와 메달", "성장 화면에서 전투 능력치, 친밀도, 연속 돌봄, 메달 및 도감 등록 수를 확인할 수 있습니다. 메달 화면에서 8종의 업적 달성 여부를 볼 수 있습니다.")
         Text("작별과 새 포켓몬", style = MaterialTheme.typography.titleMedium, color = PokePurple, fontWeight = FontWeight.Bold)
         ManualCard("작별", "처음 만난 파트너는 마지막 진화까지 성장한 뒤 게임 시간 3일이 지나면 작별할 수 있습니다. 이후 만나는 포켓몬은 1차·2차 등 현재 진화 단계에서 3일이 지나면 작별할 수 있습니다. 작별 의식이 끝나면 새 알을 받으며, 다음 알의 희귀도와 이로치 확률에 보너스가 적용됩니다.")
@@ -1137,7 +1140,7 @@ private fun GrowthScreen(pet: PetState, compact: Boolean, onBack: () -> Unit, on
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             InfoChip("🏅 메달", "${Integer.bitCount(pet.medals)} / 8", Modifier.weight(1f))
-            InfoChip("📖 도감 등록", "${pet.registeredCount} / 151", Modifier.weight(1f))
+            InfoChip("📖 도감 등록", "${pet.registeredCount} / 251", Modifier.weight(1f))
         }
     }
 }
@@ -1239,8 +1242,10 @@ private fun EvolutionTrack(
 }
 
 @Composable
-private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onSelect: (DexEntry) -> Unit, onBack: () -> Unit) {
-    val registeredCount = entries.count { it.registered }
+private fun DexScreen(entries: List<DexEntry>, compact: Boolean, selectedGeneration: Int, onGenerationChange: (Int) -> Unit, onSelect: (DexEntry) -> Unit, onBack: () -> Unit) {
+    val generationEntries = entries.filter { if (selectedGeneration == 1) it.id in 1..151 else it.id in 152..251 }
+    val registeredCount = generationEntries.count { it.registered }
+    val generationCount = if (selectedGeneration == 1) 151 else 100
     Column(verticalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1249,18 +1254,22 @@ private fun DexScreen(entries: List<DexEntry>, compact: Boolean, onSelect: (DexE
         ) {
             Column {
                 Text("포켓몬 도감", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = PokeInk)
-                Text("$registeredCount / 151종 발견", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
+                Text("${if (selectedGeneration == 1) "1세대" else "2세대"} · $registeredCount / $generationCount종 발견", style = MaterialTheme.typography.labelMedium, color = PokePurple, fontWeight = FontWeight.Bold)
             }
             OutlinedButton(onClick = onBack) { Text("돌아가기") }
         }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = { onGenerationChange(1) }, modifier = Modifier.weight(1f), colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = if (selectedGeneration == 1) PokeLavender else Color.Transparent)) { Text("1세대 · 001~151") }
+            OutlinedButton(onClick = { onGenerationChange(2) }, modifier = Modifier.weight(1f), colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = if (selectedGeneration == 2) PokeLavender else Color.Transparent)) { Text("2세대 · 152~251") }
+        }
         LinearProgressIndicator(
-            progress = { registeredCount / 151f },
+            progress = { registeredCount / generationCount.toFloat() },
             modifier = Modifier.fillMaxWidth(),
             color = PokePurple,
             trackColor = PokeLavender
         )
         val columnCount = if (compact) 2 else 3
-        entries.chunked(columnCount).forEach { rowEntries ->
+        generationEntries.chunked(columnCount).forEach { rowEntries ->
             Row(horizontalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 7.dp), modifier = Modifier.fillMaxWidth()) {
                 rowEntries.forEach { entry ->
                     Card(

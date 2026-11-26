@@ -9,6 +9,7 @@ on:
       - feature/android-pet-name-manual-energy
     paths:
       - "android/**"
+      - "tools/**"
       - "pet.cpp"
       - "pet.h"
       - "dex.h"
@@ -46,6 +47,25 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
+
+      - name: Install sprite packer dependency
+        run: python -m pip install pillow
+
+      - name: Generate 251-species dex header
+        run: python tools/gen_dex.py
+
+      - name: Download and pack Gen 2 animated sprites
+        run: |
+          python tools/pack_pmd.py $(seq 152 251)
+          python - <<'PY'
+          from pathlib import Path
+          root = Path("tools/sdcard/mons")
+          missing = [f"p{n:03d}.bin" for n in range(152, 252) if not (root / f"p{n:03d}.bin").is_file()]
+          missing += [f"ps{n:03d}.bin" for n in range(152, 252) if not (root / f"ps{n:03d}.bin").is_file()]
+          if missing:
+              raise SystemExit("Missing Gen 2 sprites: " + ", ".join(missing))
+          print("Verified all 200 Gen 2 normal/shiny sprites")
+          PY
 
       - name: Build debug APK
         working-directory: android

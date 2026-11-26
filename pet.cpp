@@ -225,6 +225,8 @@ bool Pet::lineHasUnregistered(int16_t base) const {
     if (cur == DEX_EEVEE) {
       for (int16_t b = 134; b <= 136; b++)
         if (!isRegistered(b)) return true;
+      for (int16_t b = 196; b <= 197; b++)
+        if (!isRegistered(b)) return true;
       return false;
     }
     cur = DEX_TBL[cur].evolvesTo;
@@ -473,11 +475,12 @@ void Pet::evolve() {
   int16_t next = d.evolvesTo;
   if (speciesId == DEX_EEVEE) {
     // rama de Eevee: prefiere la evolucion que falte en la pokedex
-    int16_t opts[3];
+    const int16_t branches[] = { 134, 135, 136, 196, 197 };
+    int16_t opts[5];
     int n = 0;
-    for (int16_t b = 134; b <= 136; b++)
+    for (int16_t b : branches)
       if (!isRegistered(b)) opts[n++] = b;
-    next = n > 0 ? opts[random(n)] : (int16_t)(134 + random(3));
+    next = n > 0 ? opts[random(n)] : branches[random(5)];
   }
   speciesId = next;
   registerSpecies(speciesId, shiny);

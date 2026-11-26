@@ -98,7 +98,7 @@ class TestDexData(unittest.TestCase):
             self.assertRegex(col, r'^#[0-9a-fA-F]{6}$', f'color raro en {tipo}: {col}')
 
     def test_las_rarezas_apuntan_a_formas_base(self):
-        evolucionadas = ({row[4] for row in self.DEX if row[4]} | {135, 136}) - {172, 173, 174, 175, 196, 197, 236, 238, 239, 240}
+        evolucionadas = ({row[4] for row in self.DEX if row[4]} | {135, 136}) - {172, 173, 174, 175, 236, 238, 239, 240}
         for num in sorted(self.RARE | self.LEGENDARY):
             self.assertIn(num, self.byNum, f'rareza para una especie inexistente: {num}')
             self.assertNotIn(num, evolucionadas,

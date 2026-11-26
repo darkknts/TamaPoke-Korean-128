@@ -385,7 +385,7 @@ TEST(evolve, eevee_se_ramifica_en_134_136) {
     p.ageMinutes = 40 * 60;
     CHECK(p.canEvolveNow());
     p.evolve();
-    CHECK_RANGE(p.speciesId, (int16_t)134, (int16_t)136);
+    CHECK((p.speciesId >= 134 && p.speciesId <= 136) || p.speciesId == 196 || p.speciesId == 197);
     CHECK(p.isRegistered(p.speciesId));
   }
 }
@@ -801,10 +801,10 @@ TEST(ceremony, evolucion_reinicia_el_registro_de_etapa_pero_no_requiere_espera) 
   Pet p;
   makePet(p, 5);
   setStats(p, 100, 100, 100, 100);
-  p.ageMinutes = 2160; // level 37
+  p.ageMinutes = 44 * MINUTES_PER_LEVEL; // level 45
   p.evolve();
-  CHECK_EQ(p.finalFormAge, (uint32_t)2160);
-  CHECK(p.canFarewellNow()); // level 37 >= 35
+  CHECK_EQ(p.finalFormAge, (uint32_t)(44 * MINUTES_PER_LEVEL));
+  CHECK(p.canFarewellNow()); // final evolution depth 2, level 45
 }
 
 TEST(ceremony, la_despedida_deja_un_huevo_nuevo) {

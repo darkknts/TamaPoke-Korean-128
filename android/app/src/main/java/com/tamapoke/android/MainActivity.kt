@@ -842,7 +842,6 @@ private fun PetHome(engineStatus: String, initialState: PetState?) {
             }
         )
     }
-}
     if (showExitConfirm) {
         AlertDialog(
             onDismissRequest = { showExitConfirm = false },

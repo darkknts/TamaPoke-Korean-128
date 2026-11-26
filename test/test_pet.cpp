@@ -343,6 +343,7 @@ TEST(evolve, no_evoluciona_dormido_ni_de_huevo_ni_en_ceremonia) {
   p.toggleLight();
   CHECK(!p.canEvolveNow());
   p.toggleLight();
+  p.speciesId = 6; // use a final form for the farewell-state guard
   p.ageMinutes = FAREWELL_AGE_MIN;
   p.startFarewell();
   CHECK(!p.canEvolveNow());
@@ -744,7 +745,7 @@ TEST(medals, el_total_acumula_entre_crianzas) {
 TEST(ceremony, sin_evolucion_puede_despedirse_desde_nivel_25) {
   Pet p;
   makePet(p, 143); // Snorlax: no tiene evolucion
-  p.ageMinutes = 24 * MINUTES_PER_LEVEL;
+  p.ageMinutes = 23 * MINUTES_PER_LEVEL; // level 24
   CHECK(!p.canFarewellNow());
   p.ageMinutes = 24 * MINUTES_PER_LEVEL; // level() = 25
   CHECK(p.canFarewellNow());
@@ -864,7 +865,7 @@ TEST(ceremony, todas_las_salidas_usan_despedida_y_bonus) {
   Pet p;
   makePet(p, 25);
   p.firstPetCycle = false;
-  p.ageMinutes = FAREWELL_AGE_MIN;
+  p.ageMinutes = 24 * MINUTES_PER_LEVEL; // Snorlax has no evolution: level 25
   CHECK(p.canFarewellNow());
   p.startFarewell();
   CHECK_EQ(p.ceremony, (uint8_t)CER_FAREWELL);

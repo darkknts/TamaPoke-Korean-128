@@ -770,6 +770,7 @@ TEST(ceremony, dos_evoluciones_requieren_forma_final_y_nivel_45) {
   p.ageMinutes = 44 * MINUTES_PER_LEVEL;
   CHECK(!p.canFarewellNow());
   p.speciesId = 149; // forma final, pero nivel 44
+  p.ageMinutes = 43 * MINUTES_PER_LEVEL;
   CHECK(!p.canFarewellNow());
   p.ageMinutes = 44 * MINUTES_PER_LEVEL; // level() = 45
   CHECK(p.canFarewellNow());
@@ -863,7 +864,7 @@ TEST(ceremony, durante_la_ceremonia_no_se_puede_interactuar) {
 
 TEST(ceremony, todas_las_salidas_usan_despedida_y_bonus) {
   Pet p;
-  makePet(p, 25);
+  makePet(p, 143);
   p.firstPetCycle = false;
   p.ageMinutes = 24 * MINUTES_PER_LEVEL; // Snorlax has no evolution: level 25
   CHECK(p.canFarewellNow());

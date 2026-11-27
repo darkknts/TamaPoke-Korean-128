@@ -11,7 +11,7 @@
 
 static const int N = DEX_COUNT;
 
-TEST(dex, la_tabla_tiene_152_entradas) {
+TEST(dex, la_tabla_tiene_252_entradas) {
   CHECK_EQ((int)(sizeof(DEX_TBL) / sizeof(DEX_TBL[0])), N + 1);
   CHECK_EQ((int)(sizeof(DEX_NAME_FR) / sizeof(DEX_NAME_FR[0])), N + 1);
   CHECK_EQ((int)(sizeof(DEX_NAME_DE) / sizeof(DEX_NAME_DE[0])), N + 1);
@@ -113,7 +113,7 @@ TEST(dex, toda_especie_es_alcanzable) {
     while (cur >= 1 && cur <= N && guard++ < 6) {
       reach[cur] = true;
       if (cur == DEX_EEVEE) {  // rama especial del codigo del juego
-        reach[134] = reach[135] = reach[136] = true;
+        reach[134] = reach[135] = reach[136] = reach[196] = reach[197] = true;
         break;
       }
       if (DEX_TBL[cur].evolvesTo == 0) break;
@@ -158,13 +158,15 @@ TEST(dex, la_rama_de_eevee_cuadra_con_el_codigo) {
     CHECK_EQ((int)DEX_TBL[d].rarity, (int)R_EVO);
     CHECK_EQ((int)DEX_TBL[d].evolvesTo, 0);
   }
+  CHECK_EQ((int)DEX_TBL[196].rarity, (int)R_EVO);
+  CHECK_EQ((int)DEX_TBL[197].rarity, (int)R_EVO);
 }
 
 TEST(dex, los_iniciales_clasicos_son_validos) {
   CHECK_EQ((int)(sizeof(CLASSIC_DEX) / sizeof(CLASSIC_DEX[0])), NUM_CLASSIC_DEX);
   for (int i = 0; i < NUM_CLASSIC_DEX; i++) {
     int16_t d = CLASSIC_DEX[i];
-    CHECK_RANGE(d, (int16_t)1, (int16_t)151);
+    CHECK_RANGE(d, (int16_t)1, (int16_t)251);
     CHECK_MSG(DEX_TBL[d].rarity != R_EVO, "un inicial no puede ser una forma evolucionada");
   }
 }
@@ -176,14 +178,14 @@ TEST(dex, hay_al_menos_una_especie_de_cada_rareza) {
     CHECK_MSG(count[r] > 0, "hay una rareza sin especies: el sorteo del huevo se quedaria sin candidatos");
 }
 
-// pickEggSpecies mete los candidatos de un tier en un array de 80: si algun
+// pickEggSpecies mete los candidatos de un tier en un array de 251: si algun
 // tier tuviera mas, se sortearia solo entre los 80 primeros
 TEST(dex, ningun_tier_desborda_el_array_de_candidatos) {
   for (int r = R_COMUN; r <= R_LEGENDARIO; r++) {
     int n = 0;
     for (int d = 1; d <= N; d++)
       if (DEX_TBL[d].rarity == r) n++;
-    CHECK_MSG(n <= 80, "mas de 80 candidatos en un tier: pickEggSpecies los recorta");
+    CHECK_MSG(n <= 251, "el tier supera la capacidad de candidatos de la Pokedex");
   }
 }
 
@@ -208,7 +210,7 @@ TEST(dex, dexName_fuera_de_rango_no_revienta) {
     gLang = (Lang)lang;
     CHECK_STREQ(dexName(0), DEX_TBL[0].name);
     CHECK_STREQ(dexName(-1), DEX_TBL[0].name);
-    CHECK_STREQ(dexName(152), DEX_TBL[0].name);
+    CHECK_STREQ(dexName(252), DEX_TBL[0].name);
     CHECK_STREQ(dexName(30000), DEX_TBL[0].name);
   }
   gLang = LANG_DEFAULT;

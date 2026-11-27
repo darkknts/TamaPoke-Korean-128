@@ -29,6 +29,20 @@ static void setStats(Pet &p, uint8_t f, uint8_t j, uint8_t e, uint8_t h) {
 }
 
 // ---------------------------------------------------------------- huevo
+TEST(dex, normal_and_shiny_collection_are_tracked_separately) {
+  Pet normalPet;
+  normalPet.registerSpecies(25, false);
+  CHECK(normalPet.isRegistered(25));
+  CHECK(normalPet.isNormalRegistered(25));
+  CHECK(!normalPet.isShinyRegistered(25));
+
+  Pet shinyPet;
+  shinyPet.registerSpecies(25, true);
+  CHECK(shinyPet.isRegistered(25));
+  CHECK(!shinyPet.isNormalRegistered(25));
+  CHECK(shinyPet.isShinyRegistered(25));
+}
+
 TEST(egg, primera_partida_pide_inicial) {
   mockNvsReset();
   Pet p;
@@ -324,10 +338,13 @@ TEST(evolve, no_evoluciona_dormido_ni_de_huevo_ni_en_ceremonia) {
   Pet p;
   makePet(p, 4);
   p.ageMinutes = 20 * 60;
+  p.firstPetCycle = false;
   CHECK(p.canEvolveNow());
   p.toggleLight();
   CHECK(!p.canEvolveNow());
   p.toggleLight();
+  p.speciesId = 6; // use a final form for the farewell-state guard
+  p.ageMinutes = FAREWELL_AGE_MIN;
   p.startFarewell();
   CHECK(!p.canEvolveNow());
 
@@ -368,7 +385,7 @@ TEST(evolve, eevee_se_ramifica_en_134_136) {
     p.ageMinutes = 40 * 60;
     CHECK(p.canEvolveNow());
     p.evolve();
-    CHECK_RANGE(p.speciesId, (int16_t)134, (int16_t)136);
+    CHECK((p.speciesId >= 134 && p.speciesId <= 136) || p.speciesId == 196 || p.speciesId == 197);
     CHECK(p.isRegistered(p.speciesId));
   }
 }
@@ -522,16 +539,16 @@ TEST(mood, refleja_el_estado) {
 }
 
 // ---------------------------------------------------------------- pokedex
-TEST(dexreg, bitmap_cubre_1_a_151) {
+TEST(dexreg, bitmap_cubre_1_a_251) {
   Pet p;
   makePet(p, 4);
   memset(p.dexReg, 0, sizeof(p.dexReg));
   CHECK_EQ(p.registeredCount(), (uint16_t)0);
-  for (int16_t d = 1; d <= 151; d++) {
+  for (int16_t d = 1; d <= 251; d++) {
     p.dexReg[(d - 1) >> 3] |= (uint8_t)(1 << ((d - 1) & 7));
     CHECK(p.isRegistered(d));
   }
-  CHECK_EQ(p.registeredCount(), (uint16_t)151);
+  CHECK_EQ(p.registeredCount(), (uint16_t)251);
 }
 
 TEST(dexreg, fuera_de_rango_no_esta_registrado) {
@@ -540,9 +557,9 @@ TEST(dexreg, fuera_de_rango_no_esta_registrado) {
   memset(p.dexReg, 0xFF, sizeof(p.dexReg));
   CHECK(!p.isRegistered(0));
   CHECK(!p.isRegistered(-1));
-  CHECK(!p.isRegistered(152));
+  CHECK(!p.isRegistered(252));
   CHECK(!p.isRegistered(32767));
-  CHECK_EQ(p.registeredCount(), (uint16_t)151);
+  CHECK_EQ(p.registeredCount(), (uint16_t)251);
 }
 
 TEST(dexreg, linea_incompleta_se_detecta) {
@@ -558,7 +575,7 @@ TEST(dexreg, la_rama_de_eevee_cuenta_las_tres) {
   Pet p;
   makePet(p, DEX_EEVEE);
   CHECK(p.lineHasUnregistered(DEX_EEVEE));
-  for (int16_t d = 134; d <= 136; d++)
+  for (int16_t d : { 134, 135, 136, 196, 197 })
     p.dexReg[(d - 1) >> 3] |= (uint8_t)(1 << ((d - 1) & 7));
   CHECK(!p.lineHasUnregistered(DEX_EEVEE));
 }
@@ -569,7 +586,7 @@ TEST(egg, el_sorteo_siempre_da_una_especie_valida) {
   for (int i = 0; i < 400; i++) {
     randomSeed(i * 7919 + 1);
     int16_t d = p.pickEggSpecies();
-    CHECK_RANGE(d, (int16_t)1, (int16_t)151);
+    CHECK_RANGE(d, (int16_t)1, (int16_t)251);
     CHECK_MSG(DEX_TBL[d].rarity != R_EVO, "de un huevo nunca sale una forma evolucionada");
   }
 }
@@ -725,18 +742,70 @@ TEST(medals, el_total_acumula_entre_crianzas) {
 }
 
 // ---------------------------------------------------------------- ceremonias
-TEST(ceremony, despedida_solo_en_forma_final_y_a_los_3_dias) {
+TEST(ceremony, sin_evolucion_puede_despedirse_desde_nivel_25) {
   Pet p;
-  makePet(p, 6);  // CHARIZARD, forma final
-  p.ageMinutes = FAREWELL_AGE_MIN - 1;
+  makePet(p, 143); // Snorlax: no tiene evolucion
+  p.ageMinutes = 23 * MINUTES_PER_LEVEL; // level 24
   CHECK(!p.canFarewellNow());
-  p.ageMinutes = FAREWELL_AGE_MIN;
+  p.ageMinutes = 24 * MINUTES_PER_LEVEL; // level() = 25
   CHECK(p.canFarewellNow());
+}
 
-  Pet q;
-  makePet(q, 4);  // CHARMANDER no es forma final
-  q.ageMinutes = FAREWELL_AGE_MIN * 3;
-  CHECK(!q.canFarewellNow());
+TEST(ceremony, una_evolucion_requiere_forma_final_y_nivel_35) {
+  Pet p;
+  makePet(p, 19); // Rattata -> Raticate
+  p.ageMinutes = 34 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow()); // no puede despedirse antes de evolucionar
+  p.speciesId = 20;
+  p.ageMinutes = 33 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow()); // nivel 34
+  p.ageMinutes = 34 * MINUTES_PER_LEVEL;
+  CHECK(p.canFarewellNow()); // nivel 35
+}
+
+TEST(ceremony, dos_evoluciones_requieren_forma_final_y_nivel_45) {
+  Pet p;
+  makePet(p, 147); // Dratini -> Dragonair -> Dragonite
+  p.speciesId = 148; // etapa intermedia: no puede despedirse
+  p.ageMinutes = 44 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow());
+  p.speciesId = 149; // forma final, pero nivel 44
+  p.ageMinutes = 43 * MINUTES_PER_LEVEL;
+  CHECK(!p.canFarewellNow());
+  p.ageMinutes = 44 * MINUTES_PER_LEVEL; // level() = 45
+  CHECK(p.canFarewellNow());
+}
+
+TEST(ceremony, evolucionar_en_nivel_35_habilita_despedida_inmediata) {
+  Pet p;
+  makePet(p, 19); // Rattata -> Raticate
+  setStats(p, 100, 100, 100, 100);
+  p.ageMinutes = 34 * MINUTES_PER_LEVEL; // level 35
+  CHECK(p.canEvolveNow());
+  p.evolve();
+  CHECK_EQ(p.speciesId, (int16_t)20);
+  CHECK(p.canFarewellNow());
+}
+
+TEST(ceremony, no_hay_lineas_con_tercera_evolucion) {
+  for (int16_t first = 1; first <= DEX_COUNT; first++) {
+    const int16_t second = DEX_TBL[first].evolvesTo;
+    if (second < 1 || second > DEX_COUNT) continue;
+    const int16_t third = DEX_TBL[second].evolvesTo;
+    if (third < 1 || third > DEX_COUNT) continue;
+    CHECK_EQ(DEX_TBL[third].evolvesTo, (uint8_t)0);
+  }
+  CHECK_EQ(DEX_TBL[242].evolvesTo, (uint8_t)0); // Blissey is final form
+}
+
+TEST(ceremony, evolucion_reinicia_el_registro_de_etapa_pero_no_requiere_espera) {
+  Pet p;
+  makePet(p, 5);
+  setStats(p, 100, 100, 100, 100);
+  p.ageMinutes = 44 * MINUTES_PER_LEVEL; // level 45
+  p.evolve();
+  CHECK_EQ(p.finalFormAge, (uint32_t)(44 * MINUTES_PER_LEVEL));
+  CHECK(p.canFarewellNow()); // final evolution depth 2, level 45
 }
 
 TEST(ceremony, la_despedida_deja_un_huevo_nuevo) {
@@ -754,7 +823,7 @@ TEST(ceremony, la_despedida_deja_un_huevo_nuevo) {
   CHECK_EQ(p.ageMinutes, (uint32_t)0);
 }
 
-TEST(ceremony, escaparse_pide_una_hora_de_abandono_total) {
+TEST(ceremony, escaparse_pide_catorce_dias_de_abandono_total) {
   Pet p;
   makePet(p, 4);
   setStats(p, 0, 0, 0, 0);
@@ -793,15 +862,19 @@ TEST(ceremony, durante_la_ceremonia_no_se_puede_interactuar) {
   CHECK(!p.sleeping);
 }
 
-TEST(ceremony, soltar_marca_el_final_como_liberacion) {
+TEST(ceremony, todas_las_salidas_usan_despedida_y_bonus) {
   Pet p;
-  makePet(p, 4);
-  p.release();
-  CHECK_EQ(p.ceremony, (uint8_t)CER_RELEASE);
-  CHECK_EQ(p.lastEnd, (uint8_t)CER_RELEASE);
+  makePet(p, 143);
+  p.firstPetCycle = false;
+  p.ageMinutes = 24 * MINUTES_PER_LEVEL; // Snorlax has no evolution: level 25
+  CHECK(p.canFarewellNow());
+  p.startFarewell();
+  CHECK_EQ(p.ceremony, (uint8_t)CER_FAREWELL);
+  CHECK_EQ(p.lastEnd, (uint8_t)CER_FAREWELL);
   mockAdvanceMillis(CEREMONY_MS + 1);
   p.update(millis());
   CHECK(p.isEgg());
+  CHECK_EQ(p.lastEnd, (uint8_t)CER_FAREWELL);
 }
 
 TEST(ceremony, un_huevo_no_se_despide_ni_se_suelta) {
@@ -856,7 +929,7 @@ TEST(offline, el_huevo_eclosiona_en_tu_ausencia) {
   p.setClock(1000u * 86400);
   p.syncClock(1000u * 86400 + 600);  // 10 minutos
   CHECK(!p.isEgg());
-  CHECK_RANGE(p.speciesId, (int16_t)1, (int16_t)151);
+  CHECK_RANGE(p.speciesId, (int16_t)1, (int16_t)251);
 }
 
 TEST(offline, durmiendo_se_descansa_tambien_apagado) {

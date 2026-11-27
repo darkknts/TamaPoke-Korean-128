@@ -23,7 +23,7 @@ TYPE_BIOME = {
     'agua': 1, 'planta': 2, 'bicho': 2, 'fuego': 3,
     'roca': 4, 'tierra': 4, 'dragon': 1, 'hielo': 5,  # los dragones gen1 (Dratini) viven en el agua
     'normal': 0, 'electrico': 0, 'lucha': 0, 'veneno': 0,
-    'psiquico': 0, 'fantasma': 0,
+    'psiquico': 0, 'fantasma': 0, 'acero': 4, 'siniestro': 0, 'hada': 0,
 }
 
 # excepciones por dex# (el tipo no basta): fosiles marinos roca/agua -> playa
@@ -34,7 +34,7 @@ def main():
     out = []
     out.append("#pragma once\n#include <stdint.h>\n#include \"i18n.h\"  // gLang\n\n")
     out.append("// GENERADO por tools/gen_dex.py desde tools/dex_data.py - no editar\n\n")
-    out.append("#define DEX_COUNT 151\n")
+    out.append("#define DEX_COUNT 251\n")
     out.append("#define DEX_EEVEE 133  // rama al azar: 134/135/136\n\n")
     out.append(
         "// rareza: 0 = solo por evolucion, 1 = comun, 2 = raro, 3 = legendario\n"
@@ -50,7 +50,7 @@ def main():
         "};\n\n")
     # formas base = las que no son evolucion de nadie (las ramas de Eevee si lo son)
     evolved = {evo for *_, evo, _lvl in [(d[4], d[5]) for d in DEX] for evo in [_[0] for _ in [(d[4],) for d in DEX]]}
-    evolved = {d[4] for d in DEX if d[4]} | {135, 136}
+    evolved = ({d[4] for d in DEX if d[4]} | {134, 135, 136, 196, 197}) - {172, 173, 174, 175, 236, 238, 239, 240}
     rarities = []
     out.append("static const DexEntry DEX_TBL[DEX_COUNT + 1] = {\n")
     out.append('  { "?", 0, 0, 0, 0x2946, 50, 50, 50, 50, 0 },  // 0: sin usar\n')
@@ -78,7 +78,7 @@ def main():
     for lg in ('fr', 'de', 'ja', 'ko'):
         out.append(f"static const char *const DEX_NAME_{lg.upper()}[DEX_COUNT + 1] = {{\n")
         fila = []
-        for num in range(0, 152):
+        for num in range(0, 252):
             nm = LOCAL_NAMES.get(num, {}).get(lg)
             fila.append(f'"{nm}"' if nm else 'nullptr')
             if len(fila) == 4:

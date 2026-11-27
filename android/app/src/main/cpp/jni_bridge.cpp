@@ -44,10 +44,10 @@ Java_com_tamapoke_android_PetNative_nativeGetState(JNIEnv* env, jobject) {
     const uint32_t nextLevelMinutes = g_pet->level() >= 999
         ? 0 : MINUTES_PER_LEVEL - (g_pet->ageMinutes % MINUTES_PER_LEVEL);
     std::snprintf(json, sizeof(json),
-        "{\"egg\":%s,\"speciesId\":%d,\"biome\":%d,\"level\":%u,\"fullness\":%u,\"joy\":%u,\"energy\":%u,\"hygiene\":%u,\"ageMinutes\":%u,\"canEvolve\":%s,\"sleeping\":%s,\"shiny\":%s,\"starterPick\":%s,\"atk\":%u,\"def\":%u,\"speed\":%u,\"bond\":%u,\"streak\":%u,\"medals\":%u,\"registeredCount\":%u,\"nextLevelMinutes\":%u}",
+        "{\"egg\":%s,\"speciesId\":%d,\"biome\":%d,\"level\":%u,\"fullness\":%u,\"joy\":%u,\"energy\":%u,\"hygiene\":%u,\"ageMinutes\":%u,\"canEvolve\":%s,\"canFarewell\":%s,\"sleeping\":%s,\"ceremony\":%u,\"ceremonyT\":%.3f,\"shiny\":%s,\"starterPick\":%s,\"atk\":%u,\"def\":%u,\"speed\":%u,\"bond\":%u,\"streak\":%u,\"medals\":%u,\"registeredCount\":%u,\"nextLevelMinutes\":%u}",
         g_pet->isEgg() ? "true" : "false", g_pet->speciesId, biome, g_pet->level(),
         g_pet->fullness, g_pet->joy, g_pet->energy, g_pet->hygiene, g_pet->ageMinutes,
-        g_pet->canEvolveNow() ? "true" : "false", g_pet->sleeping ? "true" : "false", g_pet->shiny ? "true" : "false",
+        g_pet->canEvolveNow() ? "true" : "false", g_pet->canFarewellNow() ? "true" : "false", g_pet->sleeping ? "true" : "false", static_cast<unsigned>(g_pet->ceremony), g_pet->ceremonyT(), g_pet->shiny ? "true" : "false",
         g_pet->awaitingStarter() ? "true" : "false", g_pet->atkStat(), g_pet->defStat(), g_pet->speStat(),
         g_pet->bond, g_pet->streak, g_pet->medals, g_pet->registeredCount(), nextLevelMinutes);
     return env->NewStringUTF(json);
@@ -76,12 +76,14 @@ Java_com_tamapoke_android_PetNative_nativeGetDexState(JNIEnv* env, jobject) {
     json += "[";
     for (int dex = 1; dex <= DEX_COUNT; ++dex) {
         if (dex > 1) json += ",";
-        char item[192];
+        char item[224];
         const char* name = DEX_NAME_KO[dex] ? DEX_NAME_KO[dex] : DEX_TBL[dex].name;
         std::snprintf(item, sizeof(item),
-            "{\"id\":%d,\"name\":\"%s\",\"registered\":%s,\"shiny\":%s}",
+            "{\"id\":%d,\"name\":\"%s\",\"registered\":%s,\"normal\":%s,\"shiny\":%s,\"evolvesTo\":%u,\"hp\":%u,\"atk\":%u,\"def\":%u,\"speed\":%u,\"rarity\":%u}",
             dex, name, g_pet->isRegistered(dex) ? "true" : "false",
-            g_pet->isShinyRegistered(dex) ? "true" : "false");
+            g_pet->isNormalRegistered(dex) ? "true" : "false",
+            g_pet->isShinyRegistered(dex) ? "true" : "false", DEX_TBL[dex].evolvesTo, DEX_TBL[dex].bHp,
+            DEX_TBL[dex].bAtk, DEX_TBL[dex].bDef, DEX_TBL[dex].bSpe, DEX_TBL[dex].rarity);
         json += item;
     }
     json += "]";
@@ -95,7 +97,12 @@ extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlay
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlay(JNIEnv*, jobject) { if (g_pet) g_pet->play(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeClean(JNIEnv*, jobject) { if (g_pet) g_pet->clean(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeCaress(JNIEnv*, jobject) { if (g_pet) g_pet->caress(); }
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativePlayWithFriend(JNIEnv*, jobject) { if (g_pet) g_pet->playWithFriend(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEggTap(JNIEnv*, jobject) { if (g_pet) g_pet->eggTap(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeToggleSleep(JNIEnv*, jobject) { if (g_pet) g_pet->toggleLight(); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeEvolve(JNIEnv*, jobject) { if (g_pet) g_pet->evolve(); }
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeApplyBattleWin(JNIEnv*, jobject, jint dex, jboolean closeWin) { if (g_pet) g_pet->applyBattleWin(static_cast<int16_t>(dex), closeWin == JNI_TRUE); }
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeRegisterCaught(JNIEnv*, jobject, jint dex) { if (g_pet) g_pet->registerCaught(static_cast<int16_t>(dex)); }
 extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeChooseStarter(JNIEnv*, jobject, jint dex) { if (g_pet) g_pet->chooseStarter(static_cast<int16_t>(dex)); }
+
+extern "C" JNIEXPORT void JNICALL Java_com_tamapoke_android_PetNative_nativeFarewell(JNIEnv*, jobject) { if (g_pet && g_pet->canFarewellNow()) g_pet->startFarewell(); }

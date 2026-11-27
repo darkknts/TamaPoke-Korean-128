@@ -12,8 +12,8 @@
 #define HEART_MS 1500UL
 #define EVOLVE_ANIM_MS 5200UL              // animacion de evolucion (mas larga = mas epica)
 #define CEREMONY_MS 10000UL                // duracion de la despedida en pantalla
-#define FAREWELL_AGE_MIN (3UL * 24 * 60)   // se despide a los 3 dias de juego (en forma final)
-#define RUNAWAY_TICKS 60                   // se escapa tras 1 h con TODO a cero
+#define FAREWELL_AGE_MIN (3UL * 24 * 60)   // three in-game days in the current evolution stage
+#define RUNAWAY_TICKS (14UL * 24UL * 60UL) // 14 dias con TODO a cero
 
 // milisegundos que faltan hasta `deadline` (0 si ya paso, o si deadline==0:
 // "temporizador inactivo"). Todos los temporizadores del juego (dialogos,
@@ -30,7 +30,7 @@ static inline uint32_t timeLeft(uint32_t deadline) {
 }
 
 // ceremonias de fin de ciclo
-enum : uint8_t { CER_NONE = 0, CER_FAREWELL, CER_RUNAWAY, CER_RELEASE };
+enum : uint8_t { CER_NONE = 0, CER_FAREWELL, CER_RUNAWAY };
 
 enum PetMood : uint8_t { MOOD_HAPPY, MOOD_SAD, MOOD_EATING, MOOD_SLEEPING };
 
@@ -56,16 +56,19 @@ public:
   uint8_t trAtk = 0, trDef = 0, trSpe = 0;
   bool berryKnown = false;  // ya descubrio su baya favorita
   bool shiny = false;       // variante de color rara (se sortea en el huevo)
+  bool firstPetCycle = false; // primera mascota: solo se despide al alcanzar la forma final
   uint32_t ageMinutes = 0;
-  int16_t speciesId = -1;      // numero de Pokedex (1-151), -1 = huevo
+  uint32_t finalFormAge = 0;  // ageMinutes when the current evolution stage was reached
+  int16_t speciesId = -1;      // numero de Pokedex (1-251), -1 = huevo
   int16_t prevSpeciesId = -1;  // para la animacion de evolucion
   uint8_t careMistakes = 0;   // descuidos: cada uno retrasa la evolucion 1 nivel
   bool sleeping = false;
   uint32_t lastSeenEpoch = 0;   // ultima hora RTC vista (para progresion offline)
   uint8_t ceremony = CER_NONE;  // despedida/escapada/liberacion en curso
   uint8_t lastEnd = CER_NONE;   // como acabo la anterior (afecta al huevo)
-  uint8_t dexReg[19] = { 0 };       // pokedex de criados (bitmap 151 bits)
-  uint8_t dexShinyReg[19] = { 0 };  // criados en version shiny
+  uint8_t dexReg[32] = { 0 };       // especies descubiertas (bitmap 251 bits)
+  uint8_t dexNormalReg[32] = { 0 }; // variante normal descubierta
+  uint8_t dexShinyReg[32] = { 0 };  // variante shiny descubierta
   // racha de cuidado diario (del jugador: persiste entre crianzas)
   uint16_t streak = 0, bestStreak = 0;
   uint32_t lastCareDay = 0;
@@ -91,6 +94,8 @@ public:
   }
   void playResult(uint8_t score);  // recompensa del minijuego (entrena VEL)
   uint8_t trainStrength(uint16_t hits);  // saco de entrenamiento (entrena FUE)
+  void applyBattleWin(int16_t wildDex, bool closeWin);
+  void registerCaught(int16_t dex);
 
   // stats de combate: base real de gen 1 x genes + nivel + entrenamiento
   uint16_t atkStat() const;
@@ -99,13 +104,15 @@ public:
   void play();
   void toggleLight();  // dormir / despertar
   void clean();
-  void caress();  // tocar al bicho
+  void caress();
+  void playWithFriend();  // tocar al bicho
   void eggTap();  // tocar el huevo: 3 toques y eclosiona
   void newEgg();   // empezar de cero con un inicial aleatorio
-  void release();  // soltar (pulsacion larga + confirmar)
   void syncClock(uint32_t nowEpoch);  // aplica el tiempo transcurrido apagado
   void setClock(uint32_t nowEpoch);   // fija la hora sin aplicar progresion
   void startFarewell();  // tambien usable desde la consola serie (BYE)
+  // Compatibilidad con la antigua accion de soltar: ahora respeta las reglas de despedida.
+  void release() { startFarewell(); }
   void startRunaway();   // tambien usable desde la consola serie (RUN)
 
   bool isEgg() const { return speciesId < 0; }
@@ -118,8 +125,8 @@ public:
   }
   bool canEvolveNow() const;  // condiciones de evolucion cumplidas (lista)
   void evolve();              // dispara la transformacion (la llama un toque del usuario)
-  bool canFarewellNow() const;  // forma final + 7 dias: lista para despedirse (boton)
-  bool canRunawayNow() const;   // abandono total 1h: lista para escaparse (boton triste)
+  bool canFarewellNow() const;  // primera mascota: forma final; siguientes: 3 dias por etapa
+  bool canRunawayNow() const;   // abandono total 14 dias: lista para escaparse (boton triste)
   // el usuario decide en un dialogo; "mantener/quedaros" pospone y re-ofrece luego
   bool wantEvolveButton() const { return canEvolveNow() && level() > evoDeclinedLv; }
   bool wantFarewellButton() const { return canFarewellNow() && ageMinutes >= farDeclinedAge; }
@@ -138,11 +145,16 @@ public:
     uint32_t lv = 1 + ageMinutes / MINUTES_PER_LEVEL;
     return lv > 999 ? 999 : (uint16_t)lv;
   }
+  // Publico para pruebas de registro de variantes normal e shiny.
+  void registerSpecies(int16_t dex, bool isShiny = false);
   bool isRegistered(int16_t dex) const {
-    return dex >= 1 && dex <= 151 && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+    return dex >= 1 && dex <= 251 && (dexReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+  }
+  bool isNormalRegistered(int16_t dex) const {
+    return dex >= 1 && dex <= 251 && (dexNormalReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   bool isShinyRegistered(int16_t dex) const {
-    return dex >= 1 && dex <= 151 && (dexShinyReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
+    return dex >= 1 && dex <= 251 && (dexShinyReg[(dex - 1) >> 3] & (1 << ((dex - 1) & 7)));
   }
   uint16_t registeredCount() const;
   bool lineHasUnregistered(int16_t base) const;
@@ -186,7 +198,7 @@ private:
   uint16_t evoDeclinedLv = 0;   // "mantener forma": no ofrecer evolucion hasta subir de nivel
   uint32_t farDeclinedAge = 0;  // "quedaros juntos": no ofrecer despedida hasta esta edad
   bool starterPick = false;     // primera partida: esperando que el jugador elija inicial
-  uint8_t neglectTicks = 0;
+  uint16_t neglectTicks = 0;
   uint16_t goodTicks = 0;  // racha bien cuidado: forja la DEF
   uint32_t ceremonyUntil = 0;
   uint8_t bondToday = 0;       // tope diario de subida de vinculo
@@ -199,7 +211,6 @@ private:
   void checkMedals();
   void tick();
   void hatch();
-  void registerSpecies(int16_t dex);
   void save();
   void load();
   static uint8_t clamp100(int v) { return v < 0 ? 0 : (v > 100 ? 100 : v); }

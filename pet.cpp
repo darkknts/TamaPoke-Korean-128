@@ -16,6 +16,9 @@ void Pet::begin() {
 void Pet::newEgg() {
   ceremony = CER_NONE;
   neglectTicks = 0;
+  finalFormAge = 0;
+  firstPetCycle = prefs.getBool("firstpet", true);
+  if (lastEnd == CER_FAREWELL) firstPetCycle = false;
   weight = 0;
   speciesId = -1;
   prevSpeciesId = -1;
@@ -78,7 +81,11 @@ void Pet::syncClock(uint32_t nowEpoch) {
       continue;
     }
     fullness = dropTo(fullness, 2, 15);
+#ifdef TAMAPOKE_ANDROID
+    if (ageMinutes % 3 == 0) energy = dropTo(energy, 1, 15);
+#else
     energy = dropTo(energy, 1, 15);
+#endif
     hygiene = dropTo(hygiene, 1, 15);
     joy = dropTo(joy, 1, 15);
   }
@@ -143,7 +150,11 @@ void Pet::tick() {
   if (ageMinutes % MINUTES_PER_LEVEL == 0) sfxPlay(SFX_LEVEL);  // subio de nivel (despierto)
 
   fullness = clamp100(fullness - 2);
+#ifdef TAMAPOKE_ANDROID
+  if (ageMinutes % 3 == 0) energy = clamp100(energy - 1);
+#else
   energy = clamp100(energy - 1);
+#endif
 #ifndef TAMAPOKE_ANDROID
   if (fullness > 40 && poops < 3 && random(100) < 15) poops++;
   hygiene = clamp100(hygiene - 1 - 4 * poops);
@@ -184,7 +195,7 @@ void Pet::tick() {
 
   checkMedals();  // la evolucion la dispara el usuario (canEvolveNow + tap), no el tick
 
-  // abandono total: con TODO a cero durante una hora queda lista para escaparse;
+  // abandono total: con TODO a cero durante 14 dias queda lista para escaparse;
   // NO se va sola, la dispara el usuario con el boton (final triste, lo presencia)
   if (fullness == 0 && joy == 0 && energy == 0 && hygiene == 0) {
     if (neglectTicks < RUNAWAY_TICKS) neglectTicks++;
@@ -209,10 +220,12 @@ void Pet::flushSave() {
 // quedan miembros sin registrar en la linea evolutiva de esta base?
 bool Pet::lineHasUnregistered(int16_t base) const {
   int16_t cur = base;
-  for (int guard = 0; cur >= 1 && cur <= 151 && guard < 6; guard++) {
+  for (int guard = 0; cur >= 1 && cur <= DEX_COUNT && guard < 6; guard++) {
     if (!isRegistered(cur)) return true;
     if (cur == DEX_EEVEE) {
       for (int16_t b = 134; b <= 136; b++)
+        if (!isRegistered(b)) return true;
+      for (int16_t b = 196; b <= 197; b++)
         if (!isRegistered(b)) return true;
       return false;
     }
@@ -222,7 +235,7 @@ bool Pet::lineHasUnregistered(int16_t base) const {
 }
 
 uint8_t Pet::eggRarity() const {
-  return (eggTarget >= 1 && eggTarget <= 151) ? DEX_TBL[eggTarget].rarity : R_COMUN;
+  return (eggTarget >= 1 && eggTarget <= DEX_COUNT) ? DEX_TBL[eggTarget].rarity : R_COMUN;
 }
 
 // elige la especie del huevo: tirada de rareza (mejorada por una despedida
@@ -247,9 +260,9 @@ int16_t Pet::pickEggSpecies() {
   // si la pokedex del tier esta completa, vale cualquiera del tier
   for (int pass = 0; pass < 2; pass++) {
     for (int t = tier; t >= R_COMUN; t--) {
-      int16_t cand[80];
+      int16_t cand[251];
       int n = 0;
-      for (int16_t d = 1; d <= 151 && n < 80; d++) {
+      for (int16_t d = 1; d <= DEX_COUNT && n < 251; d++) {
         if (DEX_TBL[d].rarity != t) continue;
         if (pass == 0 && !lineHasUnregistered(d)) continue;
         cand[n++] = d;
@@ -260,10 +273,36 @@ int16_t Pet::pickEggSpecies() {
   return CLASSIC_DEX[random(NUM_CLASSIC_DEX)];  // inalcanzable, por si acaso
 }
 
-void Pet::registerSpecies(int16_t dex) {
-  if (dex < 1 || dex > 151) return;
+void Pet::registerSpecies(int16_t dex, bool isShiny) {
+  if (dex < 1 || dex > DEX_COUNT) return;
   dexReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
-  if (shiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+  if (isShiny) dexShinyReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+  else dexNormalReg[(dex - 1) >> 3] |= (1 << ((dex - 1) & 7));
+}
+
+void Pet::applyBattleWin(int16_t wildDex, bool closeWin) {
+  if (isEgg() || ceremony != CER_NONE) return;
+  if (wildDex < 1 || wildDex > DEX_COUNT) wildDex = 1;
+  const DexEntry &wild = DEX_TBL[wildDex];
+  uint8_t amount = wild.rarity == R_RARO ? 2 : 1;
+  if (closeWin) amount++;
+  if (wild.bAtk >= wild.bDef && wild.bAtk >= wild.bSpe)
+    trDef = clamp100((int)trDef + amount);
+  else if (wild.bDef >= wild.bAtk && wild.bDef >= wild.bSpe)
+    trAtk = clamp100((int)trAtk + amount);
+  else
+    trSpe = clamp100((int)trSpe + amount);
+  joy = clamp100((int)joy + 8 + (closeWin ? 4 : 0));
+  energy = energy > 8 ? energy - 8 : 0;
+  fullness = fullness > 3 ? fullness - 3 : 0;
+  bond = bond < 98 ? bond + (closeWin ? 3 : 2) : 100;
+  save();
+}
+
+void Pet::registerCaught(int16_t dex) {
+  if (isEgg() || ceremony != CER_NONE || dex < 1 || dex > DEX_COUNT) return;
+  registerSpecies(dex);
+  save();
 }
 
 // la racha y el vinculo mejoran el sorteo del huevo (0..~14)
@@ -350,16 +389,39 @@ uint16_t Pet::speStat() const {
 
 uint16_t Pet::registeredCount() const {
   uint16_t n = 0;
-  for (int i = 1; i <= 151; i++)
+  for (int i = 1; i <= DEX_COUNT; i++)
     if (isRegistered(i)) n++;
   return n;
 }
 
-// forma final que ya cumplio su ciclo (7 dias): lista para despedirse. La
-// despedida la dispara el usuario con el boton (no salta sola, para que la vea)
+// Evolucion por etapas: cuenta los predecesores de la especie actual.
+// Eevee tiene cinco ramas, aunque la tabla compacta solo almacena una.
+static uint8_t evolutionDepthTo(int16_t dex, uint8_t guard = 0) {
+  if (dex < 1 || dex > DEX_COUNT || guard >= 4) return 0;
+  uint8_t depth = 0;
+  for (int16_t parent = 1; parent <= DEX_COUNT; parent++) {
+    if (DEX_TBL[parent].evolvesTo == dex) {
+      uint8_t candidate = (uint8_t)(evolutionDepthTo(parent, guard + 1) + 1);
+      if (candidate > depth) depth = candidate;
+    }
+  }
+  if (dex == 134 || dex == 135 || dex == 136 || dex == 196 || dex == 197) {
+    if (depth < 1) depth = 1; // Eevee -> one of five branches
+  }
+  return depth;
+}
+
+// 방출 조건: 진화가 없는 종 Lv25, 1회 진화 계열 Lv35,
+// 2회 진화 계열 Lv45. 현재 최종 진화형에 도달해야 방출할 수 있다.
 bool Pet::canFarewellNow() const {
-  return !isEgg() && !sleeping && ceremony == CER_NONE &&
-         DEX_TBL[speciesId].evolvesTo == 0 && ageMinutes >= FAREWELL_AGE_MIN;
+  if (isEgg() || sleeping || ceremony != CER_NONE || speciesId < 1 || speciesId > DEX_COUNT)
+    return false;
+
+  if (DEX_TBL[speciesId].evolvesTo != 0) return false;
+
+  const uint8_t depth = evolutionDepthTo(speciesId);
+  const uint16_t requiredLevel = (uint16_t)(25 + depth * 10);
+  return level() >= requiredLevel;
 }
 
 // abandono total durante 1h: lista para escaparse. La dispara el usuario con el
@@ -369,7 +431,7 @@ bool Pet::canRunawayNow() const {
 }
 
 void Pet::startFarewell() {
-  if (isEgg() || ceremony != CER_NONE) return;
+  if (!canFarewellNow()) return;
   lastEnd = CER_FAREWELL;
   ceremony = CER_FAREWELL;
   ceremonyUntil = millis() + CEREMONY_MS;
@@ -383,16 +445,6 @@ void Pet::startRunaway() {
   lastEnd = CER_RUNAWAY;
   ceremony = CER_RUNAWAY;
   ceremonyUntil = millis() + CEREMONY_MS;
-  sfxPlay(SFX_BYE);
-  save();
-}
-
-void Pet::release() {
-  if (isEgg() || ceremony != CER_NONE) return;
-  lastEnd = CER_RELEASE;
-  ceremony = CER_RELEASE;
-  ceremonyUntil = millis() + CEREMONY_MS;
-  heartUntil = ceremonyUntil;
   sfxPlay(SFX_BYE);
   save();
 }
@@ -411,7 +463,7 @@ void Pet::hatch() {
   medals = 0;
   newMedal = 0;
   nick[0] = 0;
-  registerSpecies(speciesId);  // criado = registrado en la pokedex
+  registerSpecies(speciesId, shiny);  // registra la variante real que acaba de nacer
   checkMedals();     // por si nace ya en forma final (legendario)
   sfxPlay(SFX_HATCH);
   save();
@@ -435,18 +487,20 @@ bool Pet::canEvolveNow() const {
 void Pet::evolve() {
   if (!canEvolveNow()) return;
   const DexEntry &d = DEX_TBL[speciesId];
+  finalFormAge = ageMinutes; // reset the farewell clock for every newly reached stage
   prevSpeciesId = speciesId;
   int16_t next = d.evolvesTo;
   if (speciesId == DEX_EEVEE) {
     // rama de Eevee: prefiere la evolucion que falte en la pokedex
-    int16_t opts[3];
+    const int16_t branches[] = { 134, 135, 136, 196, 197 };
+    int16_t opts[5];
     int n = 0;
-    for (int16_t b = 134; b <= 136; b++)
+    for (int16_t b : branches)
       if (!isRegistered(b)) opts[n++] = b;
-    next = n > 0 ? opts[random(n)] : (int16_t)(134 + random(3));
+    next = n > 0 ? opts[random(n)] : branches[random(5)];
   }
   speciesId = next;
-  registerSpecies(speciesId);
+  registerSpecies(speciesId, shiny);
   sfxPlay(SFX_EVOLVE);
   evolveUntil = millis() + EVOLVE_ANIM_MS;
   save();
@@ -491,7 +545,11 @@ void Pet::playResult(uint8_t score) {
   uint8_t v = trSpe + score / 5;  // jugar entrena la velocidad
   trSpe = v > 100 ? 100 : v;
   joy = clamp100(joy + 5 + (score > 15 ? 30 : score * 2));
+#ifdef TAMAPOKE_ANDROID
+  energy = dropTo(energy, 6 + score / 3, 5);
+#else
   energy = dropTo(energy, 10 + score / 2, 5);
+#endif
   fullness = dropTo(fullness, 5, 5);
 #ifndef TAMAPOKE_ANDROID
   int burn = (int)weight - score * 2;  // el ejercicio quema peso
@@ -533,7 +591,11 @@ void Pet::play() {
   if (ceremony != CER_NONE) return;
   if (isEgg() || sleeping) return;
   joy = clamp100(joy + 25);
+#ifdef TAMAPOKE_ANDROID
+  energy = clamp100(energy - 6);
+#else
   energy = clamp100(energy - 10);
+#endif
   fullness = clamp100(fullness - 5);
   heartUntil = millis() + HEART_MS;
   addBond(2);
@@ -565,6 +627,17 @@ void Pet::caress() {
   joy = clamp100(joy + 5);
   heartUntil = millis() + HEART_MS;
   addBond(1);
+  registerCare();
+  save();
+}
+
+void Pet::playWithFriend() {
+  if (ceremony != CER_NONE || isEgg() || sleeping) return;
+  joy = clamp100((int)joy + 18);
+  energy = energy > 8 ? energy - 8 : 0;
+  fullness = fullness > 5 ? fullness - 5 : 0;
+  heartUntil = millis() + HEART_MS;
+  addBond(2);
   registerCare();
   save();
 }
@@ -601,8 +674,11 @@ void Pet::save() {
   prefs.putBool("shy", shiny);
   prefs.putBool("eshy", eggShiny);
   prefs.putBool("stpk", starterPick);
+  prefs.putBool("firstpet", firstPetCycle);
+  prefs.putBytes("dexnorm", dexNormalReg, sizeof(dexNormalReg));
   prefs.putBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
   prefs.putUInt("age", ageMinutes);
+  prefs.putUInt("ffage", finalFormAge);
   prefs.putShort("dexn", speciesId);
   prefs.putShort("eggT2", eggTarget);
   prefs.putUChar("crack", eggTaps);
@@ -645,8 +721,10 @@ void Pet::load() {
   shiny = prefs.getBool("shy", false);
   eggShiny = prefs.getBool("eshy", false);
   starterPick = prefs.getBool("stpk", false);
+  firstPetCycle = prefs.getBool("firstpet", false);
   prefs.getBytes("dexsh", dexShinyReg, sizeof(dexShinyReg));
   ageMinutes = prefs.getUInt("age", 0);
+  finalFormAge = prefs.getUInt("ffage", 0);
   if (prefs.isKey("dexn")) {
     speciesId = prefs.getShort("dexn", -1);
     eggTarget = prefs.getShort("eggT2", 4);
@@ -663,6 +741,10 @@ void Pet::load() {
   sleeping = prefs.getBool("sleep", false);
   lastEnd = prefs.getUChar("lend", CER_NONE);
   prefs.getBytes("dexreg", dexReg, sizeof(dexReg));
+  if (prefs.isKey("dexnorm")) prefs.getBytes("dexnorm", dexNormalReg, sizeof(dexNormalReg));
+  else {
+    memcpy(dexNormalReg, dexReg, sizeof(dexNormalReg)); // legacy saves had no variant split; preserve old entries as collected
+  }
   streak = prefs.getUShort("strk", 0);
   bestStreak = prefs.getUShort("bstrk", 0);
   lastCareDay = prefs.getUInt("cday", 0);
@@ -673,6 +755,13 @@ void Pet::load() {
   gameHi = prefs.getUShort("ghi", 0);
   strHi = prefs.getUShort("shi", 0);
   prefs.getString("nick", nick, sizeof(nick));
+  // Migrate old saves: start the final-form waiting period from this update.
+  if (speciesId >= 1 && finalFormAge == 0) {
+    // Legacy saves lack a stage-entry timestamp. Start eligibility from now.
+    finalFormAge = ageMinutes;
+    save();
+  }
   // siembra: la mascota actual cuenta como criada (guardados antiguos)
-  if (speciesId >= 1) registerSpecies(speciesId);
+  if (speciesId >= 1) registerSpecies(speciesId, shiny);
+  save();
 }

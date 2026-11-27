@@ -113,7 +113,7 @@ TEST(dex, toda_especie_es_alcanzable) {
     while (cur >= 1 && cur <= N && guard++ < 6) {
       reach[cur] = true;
       if (cur == DEX_EEVEE) {  // rama especial del codigo del juego
-        reach[134] = reach[135] = reach[136] = true;
+        reach[134] = reach[135] = reach[136] = reach[196] = reach[197] = true;
         break;
       }
       if (DEX_TBL[cur].evolvesTo == 0) break;
